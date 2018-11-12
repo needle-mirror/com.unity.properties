@@ -1,11 +1,11 @@
 ﻿#if (NET_4_6 || NET_STANDARD_2_0)
+using System.Collections.Generic;
 
 namespace Unity.Properties
 {
     /// <summary>
     /// Adapter for the <see cref="IPropertyVisitor"/> interface.
-    /// Only primitive Visit methods are required to override. VisitEnum default implementation forward the call to
-    /// their Visit counterparts.
+    /// Only primitive Visit methods are required to override.
     /// </summary>
     public abstract class PropertyVisitorAdapter : IPropertyVisitor
     {
@@ -21,23 +21,23 @@ namespace Unity.Properties
             return false;
         }
 
+        public virtual bool CustomVisit<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
+            where TContainer : class, IPropertyContainer
+        {
+            return false;
+        }
+
+        public virtual bool CustomVisit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
+            where TContainer : struct, IPropertyContainer
+        {
+            return false;
+        }
+
         public abstract void Visit<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
             where TContainer : class, IPropertyContainer;
 
         public abstract void Visit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
             where TContainer : struct, IPropertyContainer;
-
-        public virtual void VisitEnum<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-            where TContainer : class, IPropertyContainer where TValue : struct
-        {
-            Visit(container, context);
-        }
-
-        public virtual void VisitEnum<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-            where TContainer : struct, IPropertyContainer where TValue : struct
-        {
-            Visit(ref container, context);
-        }
 
         public virtual bool BeginContainer<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
             where TContainer : class, IPropertyContainer where TValue : IPropertyContainer
@@ -83,24 +83,24 @@ namespace Unity.Properties
         {
         }
 
-        public virtual bool BeginCollection<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
+        public virtual bool BeginCollection<TContainer, TValue>(TContainer container, VisitContext<IList<TValue>> context)
             where TContainer : class, IPropertyContainer
         {
             return true;
         }
         
-        public virtual bool BeginCollection<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
+        public virtual bool BeginCollection<TContainer, TValue>(ref TContainer container, VisitContext<IList<TValue>> context)
             where TContainer : struct, IPropertyContainer
         {
             return true;
         }
 
-        public virtual void EndCollection<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
+        public virtual void EndCollection<TContainer, TValue>(TContainer container, VisitContext<IList<TValue>> context)
             where TContainer : class, IPropertyContainer
         {
         }
         
-        public virtual void EndCollection<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
+        public virtual void EndCollection<TContainer, TValue>(ref TContainer container, VisitContext<IList<TValue>> context)
             where TContainer : struct, IPropertyContainer
         {
         }
@@ -131,6 +131,12 @@ namespace Unity.Properties
         /// </summary>
         protected bool IsListItem => ListIndex >= 0;
 
+        /// <summary>
+        /// Whether or not the current property is a list property (and not an element of the list).
+        /// TODO: fix this if nested lists are introduced.
+        /// </summary>
+        protected bool IsListProperty => (Property is IListProperty) && (false == IsListItem);
+
         protected virtual void VisitSetup<TContainer, TValue>(ref TContainer container, ref VisitContext<TValue> context)
             where TContainer : IPropertyContainer
         {
@@ -138,14 +144,18 @@ namespace Unity.Properties
             ListIndex = context.Index;
         }
 
-        private bool CustomVisit<TValue>(TValue value)
+        private bool ExcludeVisitImpl<TValue>(TValue value)
         {
             var validationHandler = this as IExcludeVisit<TValue>;
             if (validationHandler != null && validationHandler.ExcludeVisit(value) || ExcludeVisit(value))
             {
                 return true;
             }
-
+            return false;
+        }
+        
+        private bool CustomVisitImpl<TValue>(TValue value)
+        {
             var handler = this as ICustomVisit<TValue>;
             if (handler == null)
             {
@@ -154,24 +164,45 @@ namespace Unity.Properties
             
             handler.CustomVisit(value);
             return true;
-
         }
         
         public override bool ExcludeVisit<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
         {
             VisitSetup(ref container, ref context);
-            return CustomVisit(context.Value);
+            if (IsListProperty)
+            {
+                // lists are always visited - if required, override ExcludeVisit to return true
+                return false;
+            }
+            return ExcludeVisitImpl(context.Value);
         }
         
         public override bool ExcludeVisit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
         {
             VisitSetup(ref container, ref context);
-            return CustomVisit(context.Value);
+            if (IsListProperty)
+            {
+                // lists are always visited - if required, override ExcludeVisit to return true
+                return false;
+            }
+            return ExcludeVisitImpl(context.Value);
         }
 
         protected virtual bool ExcludeVisit<TValue>(TValue value)
         {
             return false;
+        }
+        
+        public override bool CustomVisit<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
+        {
+            VisitSetup(ref container, ref context);
+            return CustomVisitImpl(context.Value);
+        }
+
+        public override bool CustomVisit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
+        {
+            VisitSetup(ref container, ref context);
+            return CustomVisitImpl(context.Value);
         }
 
         /// <summary>
@@ -208,18 +239,6 @@ namespace Unity.Properties
         }
 
         public override void Visit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            Visit(context.Value);
-        }
-        
-        public override void VisitEnum<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            Visit(context.Value);
-        }
-        
-        public override void VisitEnum<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
         {
             VisitSetup(ref container, ref context);
             Visit(context.Value);
@@ -273,25 +292,25 @@ namespace Unity.Properties
             EndContainer();
         }
         
-        public override bool BeginCollection<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
+        public override bool BeginCollection<TContainer, TValue>(TContainer container, VisitContext<IList<TValue>> context)
         {
             VisitSetup(ref container, ref context);
             return BeginCollection();
         }
         
-        public override bool BeginCollection<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
+        public override bool BeginCollection<TContainer, TValue>(ref TContainer container, VisitContext<IList<TValue>> context)
         {
             VisitSetup(ref container, ref context);
             return BeginCollection();
         }
 
-        public override void EndCollection<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
+        public override void EndCollection<TContainer, TValue>(TContainer container, VisitContext<IList<TValue>> context)
         {
             VisitSetup(ref container, ref context);
             EndCollection();
         }
         
-        public override void EndCollection<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
+        public override void EndCollection<TContainer, TValue>(ref TContainer container, VisitContext<IList<TValue>> context)
         {
             VisitSetup(ref container, ref context);
             EndCollection();

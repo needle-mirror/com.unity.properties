@@ -67,6 +67,16 @@ namespace Unity.Properties
                 return false;
             }
 
+            public bool CustomVisit<TContainer, TValue>(TContainer container, VisitContext<TValue> context) where TContainer : class, IPropertyContainer
+            {
+                return false;
+            }
+
+            public bool CustomVisit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context) where TContainer : struct, IPropertyContainer
+            {
+                return false;
+            }
+
             public void Visit<TContainer, TValue>(TContainer container, VisitContext<TValue> context) 
                 where TContainer : class, IPropertyContainer
             {
@@ -100,30 +110,32 @@ namespace Unity.Properties
                 PopContainer(context.Property.Name, context.Value, context.Index);
             }
             
-            public bool BeginCollection<TContainer, TValue>(TContainer container, VisitContext<TValue> context) where TContainer : class, IPropertyContainer
+            public bool BeginCollection<TContainer, TValue>(TContainer container, VisitContext<IList<TValue>> context) where TContainer : class, IPropertyContainer
             {
-                BeginCollection(context.Property.Name);
-                return true;
+                return BeginCollection(context.Property.Name);
             }
 
-            public bool BeginCollection<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context) where TContainer : struct, IPropertyContainer
+            public bool BeginCollection<TContainer, TValue>(ref TContainer container, VisitContext<IList<TValue>> context) where TContainer : struct, IPropertyContainer
             {
-                BeginCollection(context.Property.Name);
-                return true;
+                return BeginCollection(context.Property.Name);
             }
 
-            public void EndCollection<TContainer, TValue>(TContainer container, VisitContext<TValue> context) where TContainer : class, IPropertyContainer
+            public void EndCollection<TContainer, TValue>(TContainer container, VisitContext<IList<TValue>> context) where TContainer : class, IPropertyContainer
             {
                 
             }
 
-            public void EndCollection<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context) where TContainer : struct, IPropertyContainer
+            public void EndCollection<TContainer, TValue>(ref TContainer container, VisitContext<IList<TValue>> context) where TContainer : struct, IPropertyContainer
             {
             }
 
-            private void BeginCollection(string name)
+            private bool BeginCollection(string name)
             {
                 var container = m_PropertyContainers.Peek();
+                if (container == null)
+                {
+                    return false;
+                }
                 var property = container.PropertyBag.FindProperty(name);
                 
                 // When copying a list from a source to a dest we ALWAYS clear the destination list
@@ -131,11 +143,10 @@ namespace Unity.Properties
                 
                 // class properties
                 (property as IListClassProperty)?.Clear(container);
-                (property as IHashSetClassProperty)?.Clear(container);
                 
                 // struct properties
                 (property as IListStructProperty)?.Clear(ref container);
-                (property as IHashSetStructProperty)?.Clear(ref container);
+                return true;
             }
             
             private bool PushContainer(string name, int index)
@@ -273,17 +284,9 @@ namespace Unity.Properties
                         return;
                     }
                 
-                    var hashSetTypedItemProperty = property as IHashSetTypedItemClassProperty<TValue>;
-                    if (hashSetTypedItemProperty != null)
-                    {
-                        hashSetTypedItemProperty.Add(target, value);
-                        return;
-                    }
-                
                     // fallback to object interface methods
                     (property as IValueClassProperty)?.SetObjectValue(target, value);
                     (property as IListClassProperty)?.AddObject(target, value);
-                    (property as IHashSetClassProperty)?.AddObject(target, value);
                 }
                 // Handle struct properties
                 else if (property is IStructProperty)
@@ -308,19 +311,10 @@ namespace Unity.Properties
                         m_PropertyContainers.Push(target);
                         return;
                     }
-                
-                    var hashSetTypedItemProperty = property as IHashSetTypedItemStructProperty<TValue>;
-                    if (hashSetTypedItemProperty != null)
-                    {
-                        hashSetTypedItemProperty.Add(ref target, value);
-                        m_PropertyContainers.Push(target);
-                        return;
-                    }
                     
                     // fallback to object interface methods
                     (property as IValueStructProperty)?.SetObjectValue(ref target, value);
                     (property as IListStructProperty)?.AddObject(ref target, value);
-                    (property as IHashSetStructProperty)?.AddObject(ref target, value);
                     m_PropertyContainers.Push(target);
                 }
             }
