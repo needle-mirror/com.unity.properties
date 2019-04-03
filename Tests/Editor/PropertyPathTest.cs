@@ -1,4 +1,5 @@
-﻿#if NET_4_6
+﻿#if (NET_4_6 || NET_STANDARD_2_0)
+
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
@@ -62,9 +63,13 @@ namespace Unity.Properties.Tests
             var path = PropertyPath.Parse(nameof(TestContainer.IntValue));
             var container = new TestContainer
             {
-                IntValue = 123,
-                FloatList = {1, 2, 3}
+                IntValue = 123
             };
+            
+            container.FloatList.Add(1);
+            container.FloatList.Add(2);
+            container.FloatList.Add(3);
+            
             var resolution = path.Resolve(container);
 
             Assert.IsTrue(resolution.success);
@@ -80,9 +85,13 @@ namespace Unity.Properties.Tests
             var path = PropertyPath.Parse("FloatList[1]");
             var container = new TestContainer
             {
-                IntValue = 123,
-                FloatList = {1, 2, 3}
+                IntValue = 123
             };
+            
+            container.FloatList.Add(1);
+            container.FloatList.Add(2);
+            container.FloatList.Add(3);
+            
             var resolution = path.Resolve(container);
             
             Assert.IsTrue(resolution.success);
@@ -91,30 +100,34 @@ namespace Unity.Properties.Tests
             Assert.AreEqual(1, resolution.listIndex);
             Assert.AreEqual(2f, resolution.value);
         }
-        
+
         [Test]
         public void Resolve_Container_List_Item()
         {
-            var path = PropertyPath.Parse("ChildList[1].IntValue");
-            var container = new TestContainer
+            var path = PropertyPath.Parse("ChildContainer.ChildList[1].IntValue");
+            var container = new TestNestedContainer
             {
-                IntValue = 123,
-                ChildList =
+                ChildContainer = new TestContainer
                 {
-                    new TestChildContainer() {IntValue = 123 }, 
-                    new TestChildContainer() {IntValue = 456 }
+                    IntValue = 123,
+                    ChildList =
+                    {
+                        new TestChildContainer {IntValue = 123},
+                        new TestChildContainer {IntValue = 456}
+                    }
                 }
             };
+
             var resolution = path.Resolve(container);
-            
+
             Assert.IsTrue(resolution.success);
-            Assert.AreEqual(container.ChildList[1], resolution.container);
+            Assert.AreEqual(container.ChildContainer.ChildList[1], resolution.container);
             Assert.AreEqual(TestChildContainer.IntValueProperty, resolution.property);
             Assert.AreEqual(PropertyPath.InvalidListIndex, resolution.listIndex);
             Assert.AreEqual(456, resolution.value);
         }
-
-        
     }
 }
-#endif // NET_4_6
+
+#endif // (NET_4_6 || NET_STANDARD_2_0)
+

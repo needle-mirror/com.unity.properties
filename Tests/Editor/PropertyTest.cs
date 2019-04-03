@@ -1,4 +1,5 @@
-﻿#if NET_4_6
+﻿#if (NET_4_6 || NET_STANDARD_2_0)
+
 using UnityEngine;
 using NUnit.Framework;
 
@@ -32,7 +33,7 @@ namespace Unity.Properties.Tests
 		{
 			// this test is to make sure properties from base classes can be used in
 			// derived classes to build their property bag.
-			var p = TestContainer.IntValueProperty as IProperty<DerivedContainer, int>;
+			var p = TestContainer.IntValueProperty as IValueClassProperty<DerivedContainer, int>;
 			Assert.NotNull(p);
 		}
 
@@ -47,4 +48,6 @@ namespace Unity.Properties.Tests
 		}
 	}
 }
-#endif // NET_4_6
+
+#endif // (NET_4_6 || NET_STANDARD_2_0)
+
