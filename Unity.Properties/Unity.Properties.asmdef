@@ -1,6 +1,14 @@
 {
     "name": "Unity.Properties",
-    "references": [],
+    "references": [
+        "Unity.Collections"
+    ],
+    "optionalUnityReferences": [],
     "includePlatforms": [],
-    "excludePlatforms": []
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
 }

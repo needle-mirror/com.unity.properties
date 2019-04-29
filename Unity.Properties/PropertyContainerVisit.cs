@@ -1,43 +1,31 @@
-﻿#if (NET_4_6 || NET_STANDARD_2_0)
-
 namespace Unity.Properties
 {
     public static partial class PropertyContainer
-    {
-        public static void Visit<TContainer>(this TContainer container, IPropertyVisitor visitor)
-            where TContainer : class, IPropertyContainer
+    { 
+        public static void Visit<TContainer, TVisitor>(TContainer container, TVisitor visitor, IVersionStorage versionStorage = null)
+            where TVisitor : IPropertyVisitor
         {
-            var properties = container.PropertyBag;
-
-            var typed = properties as IVisitableClass<TContainer>;
-
-            if (typed != null)
-            {
-                typed.Visit(container, visitor);
-            }
-            else
-            {
-                (properties as IVisitableClass).Visit(container, visitor);
-            }
+            Visit(ref container, visitor, versionStorage);
         }
-
-        public static void Visit<TContainer>(ref TContainer container, IPropertyVisitor visitor)
-            where TContainer : struct, IPropertyContainer
+        
+        public static void Visit<TContainer, TVisitor>(ref TContainer container, TVisitor visitor, IVersionStorage versionStorage = null)
+            where TVisitor : IPropertyVisitor
         {
-            var properties = container.PropertyBag;
-            
-            var typed = properties as IVisitableStruct<TContainer>;
-
-            if (typed != null)
+            var changeTracker = new ChangeTracker(versionStorage);
+            Visit(ref container, visitor, ref changeTracker);
+        }
+        
+        public static void Visit<TContainer, TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker)
+            where TVisitor : IPropertyVisitor
+        {
+            if (RuntimeTypeInfoCache<TContainer>.IsAbstractOrInterface())
             {
-                typed.Visit(ref container, visitor);
+                PropertyBagResolver.Resolve(container.GetType())?.Accept(container, visitor, ref changeTracker);
             }
             else
             {
-                (properties as IVisitableStruct).Visit(ref container, visitor);
+                PropertyBagResolver.Resolve<TContainer>()?.Accept(ref container, visitor, ref changeTracker);
             }
         }
     }
 }
-
-#endif // (NET_4_6 || NET_STANDARD_2_0)

@@ -1,12 +1,34 @@
-﻿#if (NET_4_6 || NET_STANDARD_2_0)
-
 namespace Unity.Properties
 {
+    /// <summary>
+    /// Interface to implement to get change detection for operations on a property tree.
+    /// </summary>
     public interface IVersionStorage
     {
-        void IncrementVersion<TContainer>(IProperty property, TContainer container)
-            where TContainer : IPropertyContainer;
+        void IncrementVersion<TProperty, TContainer, TValue>(TProperty property, ref TContainer container)
+            where TProperty : IProperty<TContainer, TValue>;
+    }
+
+    public struct ChangeTracker
+    {
+        private int m_Version;
+
+        public IVersionStorage VersionStorage { get; }
+
+        public bool IsChanged() => m_Version > 0;
+        public void MarkChanged() => m_Version++;
+
+        public ChangeTracker(IVersionStorage versionStorage)
+        {
+            VersionStorage = versionStorage;
+            m_Version = 0;
+        }
+
+        internal void IncrementVersion<TProperty, TContainer, TValue>(TProperty property, ref TContainer container)
+            where TProperty : IProperty<TContainer, TValue>
+        {
+            VersionStorage?.IncrementVersion<TProperty, TContainer, TValue>(property, ref container);
+            m_Version++;
+        }
     }
 }
-
-#endif // (NET_4_6 || NET_STANDARD_2_0)

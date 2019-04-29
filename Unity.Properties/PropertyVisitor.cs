@@ -1,321 +1,240 @@
-﻿#if (NET_4_6 || NET_STANDARD_2_0)
 using System.Collections.Generic;
 
 namespace Unity.Properties
 {
-    /// <summary>
-    /// Adapter for the <see cref="IPropertyVisitor"/> interface.
-    /// Only primitive Visit methods are required to override.
-    /// </summary>
-    public abstract class PropertyVisitorAdapter : IPropertyVisitor
+    internal struct VisitCollectionElementCallback<TContainer> : ICollectionElementGetter<TContainer>
     {
-        public virtual bool ExcludeVisit<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-            where TContainer : class, IPropertyContainer
+        private readonly IPropertyVisitor m_Visitor;
+        private ChangeTracker m_ChangeTracker;
+
+        public bool IsChanged() => m_ChangeTracker.IsChanged();
+
+        public VisitCollectionElementCallback(IPropertyVisitor visitor, IVersionStorage versionStorage)
         {
-            return false;
+            m_Visitor = visitor;
+            m_ChangeTracker = new ChangeTracker(versionStorage);
         }
 
-        public virtual bool ExcludeVisit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-            where TContainer : struct, IPropertyContainer
+        public void VisitProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container)
+            where TElementProperty : ICollectionElementProperty<TContainer, TElement>
         {
-            return false;
+            m_Visitor.VisitProperty<TElementProperty, TContainer, TElement>(property, ref container, ref m_ChangeTracker);
         }
 
-        public virtual bool CustomVisit<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-            where TContainer : class, IPropertyContainer
+        public void VisitCollectionProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container)
+            where TElementProperty : ICollectionProperty<TContainer, TElement>, ICollectionElementProperty<TContainer, TElement>
         {
-            return false;
-        }
-
-        public virtual bool CustomVisit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-            where TContainer : struct, IPropertyContainer
-        {
-            return false;
-        }
-
-        public abstract void Visit<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-            where TContainer : class, IPropertyContainer;
-
-        public abstract void Visit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-            where TContainer : struct, IPropertyContainer;
-
-        public virtual bool BeginContainer<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-            where TContainer : class, IPropertyContainer where TValue : IPropertyContainer
-        {
-            return true;
-        }
-        
-        public virtual bool BeginContainer<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-            where TContainer : struct, IPropertyContainer where TValue : IPropertyContainer
-        {
-            return true;
-        }
-
-        public virtual void EndContainer<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-            where TContainer : class, IPropertyContainer where TValue : IPropertyContainer
-        {
-        }
-
-        public virtual void EndContainer<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-            where TContainer : struct, IPropertyContainer where TValue : IPropertyContainer
-        {
-        }
-
-        public virtual bool BeginStructContainer<TContainer, TValue>(TContainer container, VisitContext<TValue> context) 
-            where TContainer : class, IPropertyContainer where TValue : struct, IPropertyContainer
-        {
-            return true;
-        }
-
-        public virtual bool BeginStructContainer<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context) 
-            where TContainer : struct, IPropertyContainer where TValue : struct, IPropertyContainer
-        {
-            return true;
-        }
-
-        public virtual void EndStructContainer<TContainer, TValue>(TContainer container, VisitContext<TValue> context) 
-            where TContainer : class, IPropertyContainer where TValue : struct, IPropertyContainer
-        {
-        }
-
-        public virtual void EndStructContainer<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context) 
-            where TContainer : struct, IPropertyContainer where TValue : struct, IPropertyContainer
-        {
-        }
-
-        public virtual bool BeginCollection<TContainer, TValue>(TContainer container, VisitContext<IList<TValue>> context)
-            where TContainer : class, IPropertyContainer
-        {
-            return true;
-        }
-        
-        public virtual bool BeginCollection<TContainer, TValue>(ref TContainer container, VisitContext<IList<TValue>> context)
-            where TContainer : struct, IPropertyContainer
-        {
-            return true;
-        }
-
-        public virtual void EndCollection<TContainer, TValue>(TContainer container, VisitContext<IList<TValue>> context)
-            where TContainer : class, IPropertyContainer
-        {
-        }
-        
-        public virtual void EndCollection<TContainer, TValue>(ref TContainer container, VisitContext<IList<TValue>> context)
-            where TContainer : struct, IPropertyContainer
-        {
+            m_Visitor.VisitCollectionProperty<TElementProperty, TContainer, TElement>(property, ref container, ref m_ChangeTracker);
         }
     }
-    
+
     /// <inheritdoc />
     /// <summary>
-    /// Default implementation of the <see cref="T:Unity.Properties.IPropertyVisitor" /> interface.
-    /// 
-    /// Use this adapter to simplify read-only use cases. For read-write scenarios (e.g. IMGUI modifying the
-    /// property values inline), consider using <see cref="T:Unity.Properties.PropertyVisitorAdapter" /> directly.
-    /// You can define the visitor behavior by adding <see cref="T:Unity.Properties.ICustomVisit" /> and <see cref="T:Unity.Properties.IExcludeVisit" /> mixins.
+    /// Default base class for extending the visitation API.
     /// </summary>
-    public abstract class PropertyVisitor : PropertyVisitorAdapter
+    public class PropertyVisitor : IPropertyVisitor
     {
-        /// <summary>
-        /// The property being visited.
-        /// </summary>
-        protected IProperty Property { get; set; }
-        
-        /// <summary>
-        /// Index for the current list item; -1 otherwise
-        /// </summary>
-        protected int ListIndex { get; set; }
+        private List<IPropertyVisitorAdapter> m_Adapters;
 
-        /// <summary>
-        /// Whether or not the current property is part of a list.
-        /// </summary>
-        protected bool IsListItem => ListIndex >= 0;
-
-        /// <summary>
-        /// Whether or not the current property is a list property (and not an element of the list).
-        /// TODO: fix this if nested lists are introduced.
-        /// </summary>
-        protected bool IsListProperty => (Property is IListProperty) && (false == IsListItem);
-
-        protected virtual void VisitSetup<TContainer, TValue>(ref TContainer container, ref VisitContext<TValue> context)
-            where TContainer : IPropertyContainer
+        public void AddAdapter(IPropertyVisitorAdapter adapter)
         {
-            Property = context.Property;
-            ListIndex = context.Index;
+            if (null == m_Adapters)
+            {
+                m_Adapters = new List<IPropertyVisitorAdapter>();
+            }
+
+            m_Adapters.Add(adapter);
         }
 
-        private bool ExcludeVisitImpl<TValue>(TValue value)
+        public VisitStatus VisitProperty<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref ChangeTracker propertyChangeTracker)
+            where TProperty : IProperty<TContainer, TValue>
         {
-            var validationHandler = this as IExcludeVisit<TValue>;
-            if (validationHandler != null && validationHandler.ExcludeVisit(value) || ExcludeVisit(value))
+            // Give users a chance to filter based on the data.
+            if (IsExcluded<TProperty, TContainer, TValue>(property, ref container))
             {
-                return true;
+                return VisitStatus.Handled;
             }
+
+            VisitStatus status;
+
+            var value = property.GetValue(ref container);
+            var valueChangeTracker = new ChangeTracker(propertyChangeTracker.VersionStorage);
+
+            status = property.IsContainer
+                ? TryVisitContainerWithAdapters(property, ref container, ref value, ref valueChangeTracker)
+                : TryVisitValueWithAdapters(property, ref container, ref value, ref valueChangeTracker);
+
+            if (property.IsReadOnly)
+            {
+                return status;
+            }
+
+            property.SetValue(ref container, value);
+
+            if (valueChangeTracker.IsChanged())
+            {
+                propertyChangeTracker.IncrementVersion<TProperty, TContainer, TValue>(property, ref container);
+            }
+
+            return status;
+        }
+
+        public VisitStatus VisitCollectionProperty<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref ChangeTracker propertyChangeTracker)
+            where TProperty : ICollectionProperty<TContainer, TValue>
+        {
+            // Give users a chance to filter based on the data.
+            if (IsExcluded<TProperty, TContainer, TValue>(property, ref container))
+            {
+                return VisitStatus.Handled;
+            }
+
+            var value = property.GetValue(ref container);
+
+            return TryVisitCollectionWithAdapters(property, ref container, ref value, ref propertyChangeTracker);
+        }
+
+        private VisitStatus TryVisitValueWithAdapters<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
+            where TProperty : IProperty<TContainer, TValue>
+        {
+            if (null != m_Adapters)
+            {
+                for (var i = 0; i < m_Adapters.Count; i++)
+                {
+                    VisitStatus status;
+
+                    if ((status = m_Adapters[i].TryVisitValue(this, property, ref container, ref value, ref changeTracker)) != VisitStatus.Unhandled)
+                    {
+                        return status;
+                    }
+                }
+            }
+
+            return Visit(property, ref container, ref value, ref changeTracker);
+        }
+
+        private VisitStatus TryVisitContainerWithAdapters<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
+            where TProperty : IProperty<TContainer, TValue>
+        {
+            VisitStatus status;
+
+            if (null != m_Adapters)
+            {
+                for (var i = 0; i < m_Adapters.Count; i++)
+                {
+                    if ((status = m_Adapters[i].TryVisitContainer(this, property, ref container, ref value, ref changeTracker)) != VisitStatus.Unhandled)
+                    {
+                        return status;
+                    }
+                }
+            }
+
+            if ((status = BeginContainer(property, ref container, ref value, ref changeTracker)) == VisitStatus.Handled)
+            {
+                PropertyContainer.Visit(ref value, this, ref changeTracker);
+                EndContainer(property, ref container, ref value, ref changeTracker);
+            }
+
+            return status;
+        }
+
+        private VisitStatus TryVisitCollectionWithAdapters<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
+            where TProperty : ICollectionProperty<TContainer, TValue>
+        {
+            VisitStatus status;
+
+            if (null != m_Adapters)
+            {
+                for (var i = 0; i < m_Adapters.Count; i++)
+                {
+                    if ((status = m_Adapters[i].TryVisitCollection(this, property, ref container, ref value, ref changeTracker)) != VisitStatus.Unhandled)
+                    {
+                        return status;
+                    }
+                }
+            }
+
+            if ((status = BeginCollection(property, ref container, ref value, ref changeTracker)) != VisitStatus.Unhandled)
+            {
+                if (status == VisitStatus.Handled)
+                {
+                    for (int i = 0, count = property.GetCount(ref container); i < count; i++)
+                    {
+                        var callback = new VisitCollectionElementCallback<TContainer>(this, changeTracker.VersionStorage);
+
+                        property.GetPropertyAtIndex(ref container, i, ref changeTracker, callback);
+
+                        if (callback.IsChanged())
+                        {
+                            changeTracker.IncrementVersion<TProperty, TContainer, TValue>(property, ref container);
+                        }
+                    }
+                }
+
+                EndCollection(property, ref container, ref value, ref changeTracker);
+            }
+
+            return status;
+        }
+
+        /// <summary>
+        /// Invoked before entering into any node.
+        /// </summary>
+        /// <returns>True if the visit event should be skipped.</returns>
+        public virtual bool IsExcluded<TProperty, TContainer, TValue>(TProperty property, ref TContainer container)
+            where TProperty : IProperty<TContainer, TValue>
+        {
             return false;
         }
-        
-        private bool CustomVisitImpl<TValue>(TValue value)
-        {
-            var handler = this as ICustomVisit<TValue>;
-            if (handler == null)
-            {
-                return false;
-            }
-            
-            handler.CustomVisit(value);
-            return true;
-        }
-        
-        public override bool ExcludeVisit<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            if (IsListProperty)
-            {
-                // lists are always visited - if required, override ExcludeVisit to return true
-                return false;
-            }
-            return ExcludeVisitImpl(context.Value);
-        }
-        
-        public override bool ExcludeVisit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            if (IsListProperty)
-            {
-                // lists are always visited - if required, override ExcludeVisit to return true
-                return false;
-            }
-            return ExcludeVisitImpl(context.Value);
-        }
 
-        protected virtual bool ExcludeVisit<TValue>(TValue value)
+        /// <summary>
+        /// Invoked when entering any value leaf node.
+        /// </summary>
+        protected virtual VisitStatus Visit<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
+            where TProperty : IProperty<TContainer, TValue>
         {
-            return false;
-        }
-        
-        public override bool CustomVisit<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            return CustomVisitImpl(context.Value);
-        }
-
-        public override bool CustomVisit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            return CustomVisitImpl(context.Value);
+            return VisitStatus.Handled;
         }
 
         /// <summary>
-        /// Override this method to visit generic property types (including Enum values).
+        /// Invoked before entering into a container node.
+        ///
+        /// If false is returned, the container should NOT be visited and <see cref="EndContainer{TProperty, TContainer,TValue}"/> should NOT be called.
         /// </summary>
-        /// <param name="value">The current property value.</param>
-        /// <typeparam name="TValue">The current property value type.</typeparam>
-        protected abstract void Visit<TValue>(TValue value);
-
-        protected virtual bool BeginContainer()
+        /// <returns>True if the visit event was consumed.</returns>
+        protected virtual VisitStatus BeginContainer<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
+            where TProperty : IProperty<TContainer, TValue>
         {
-            return true;
+            return VisitStatus.Handled;
         }
 
-        protected virtual void EndContainer()
+        /// <summary>
+        /// Invoked after completing the node. Only if <see cref="BeginContainer{TProperty,TContainer,TValue}"/> returned true.
+        /// </summary>
+        protected virtual void EndContainer<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
+            where TProperty : IProperty<TContainer, TValue>
         {
-            
+
         }
 
-        protected virtual bool BeginCollection()
+        /// <summary>
+        /// Invoked before entering into a collection node.
+        ///
+        /// If false is returned, the collection should NOT be visited and <see cref="EndCollection{TProperty,TContainer,TValue}"/> should NOT be called.
+        /// </summary>
+        /// <returns>True if the visit event was consumed.</returns>
+        protected virtual VisitStatus BeginCollection<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
+            where TProperty : ICollectionProperty<TContainer, TValue>
         {
-            return true;
+            return VisitStatus.Handled;
         }
 
-        protected virtual void EndCollection()
+        /// <summary>
+        /// Invoked after completing a collection node. Only if <see cref="BeginCollection{TProperty,TContainer,TValue}"/> returned true.
+        /// </summary>
+        protected virtual void EndCollection<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
+            where TProperty : ICollectionProperty<TContainer, TValue>
         {
-            
-        }
-        
-        public override void Visit<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            Visit(context.Value);
-        }
 
-        public override void Visit<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            Visit(context.Value);
-        }
-        
-        public override bool BeginContainer<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            return BeginContainer();
-        }
-        
-        public override bool BeginContainer<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            return BeginContainer();
-        }
-        
-        public override void EndContainer<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            EndContainer();
-        }
-        
-        public override void EndContainer<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            EndContainer();
-        }
-        
-        public override bool BeginStructContainer<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            return BeginContainer();
-        }
-        
-        public override bool BeginStructContainer<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            return BeginContainer();
-        }
-        
-        public override void EndStructContainer<TContainer, TValue>(TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            EndContainer();
-        }
-        
-        public override void EndStructContainer<TContainer, TValue>(ref TContainer container, VisitContext<TValue> context)
-        {
-            VisitSetup(ref container, ref context);
-            EndContainer();
-        }
-        
-        public override bool BeginCollection<TContainer, TValue>(TContainer container, VisitContext<IList<TValue>> context)
-        {
-            VisitSetup(ref container, ref context);
-            return BeginCollection();
-        }
-        
-        public override bool BeginCollection<TContainer, TValue>(ref TContainer container, VisitContext<IList<TValue>> context)
-        {
-            VisitSetup(ref container, ref context);
-            return BeginCollection();
-        }
-
-        public override void EndCollection<TContainer, TValue>(TContainer container, VisitContext<IList<TValue>> context)
-        {
-            VisitSetup(ref container, ref context);
-            EndCollection();
-        }
-        
-        public override void EndCollection<TContainer, TValue>(ref TContainer container, VisitContext<IList<TValue>> context)
-        {
-            VisitSetup(ref container, ref context);
-            EndCollection();
         }
     }
 }
-
-#endif // (NET_4_6 || NET_STANDARD_2_0)
