@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using NUnit.Framework;
 
@@ -10,9 +11,7 @@ namespace Unity.Properties.Tests
         [SetUp]
         public void SetUp()
         {
-            PropertyBagResolver.Register(new TestNestedContainerPropertyBag());
-            PropertyBagResolver.Register(new TestPrimitiveContainerPropertyBag());
-            PropertyBagResolver.Register(new TestArrayContainerPropertyBag());
+            TestData.InitializePropertyBags();
         }
 
         [Test]
@@ -26,7 +25,51 @@ namespace Unity.Properties.Tests
             Assert.AreEqual(10, container.Int32Value);
             Assert.AreEqual(2.5f, container.Float32Value);
         }
-        
+
+        [Test]
+        public void PropertyContainer_SetValue_Enums_Direct()
+        {
+            var container = new TestPrimitiveContainer();
+
+            PropertyContainer.SetValue(ref container, nameof(TestPrimitiveContainer.FlagsEnum), FlagsEnum.Value1 | FlagsEnum.Value4);
+            PropertyContainer.SetValue(ref container, nameof(TestPrimitiveContainer.UnorderedIntEnum), UnorderedIntEnum.Value4);
+
+            Assert.AreEqual(FlagsEnum.Value1 | FlagsEnum.Value4, container.FlagsEnum);
+            Assert.AreEqual(UnorderedIntEnum.Value4, container.UnorderedIntEnum);
+        }
+
+        [Test]
+        public void PropertyContainer_SetValue_Enums_As_Int()
+        {
+            var container = new TestPrimitiveContainer();
+
+            PropertyContainer.SetValue(ref container, nameof(TestPrimitiveContainer.FlagsEnum), (int)(FlagsEnum.Value1 | FlagsEnum.Value4));
+            PropertyContainer.SetValue(ref container, nameof(TestPrimitiveContainer.UnorderedIntEnum), (int)UnorderedIntEnum.Value4);
+
+            Assert.AreEqual(FlagsEnum.Value1 | FlagsEnum.Value4, container.FlagsEnum);
+            Assert.AreEqual(UnorderedIntEnum.Value4, container.UnorderedIntEnum);
+        }
+
+        [Test]
+        public void PropertyContainer_SetValue_Enums_As_String()
+        {
+            var container = new TestPrimitiveContainer();
+
+            PropertyContainer.SetValue(ref container, nameof(TestPrimitiveContainer.FlagsEnum), FlagsEnum.Value2.ToString());
+
+            Assert.AreEqual(FlagsEnum.Value2, container.FlagsEnum);
+        }
+
+        [Test]
+        public void PropertyContainer_SetValue_Enums_As_String_ThrowsWhenStringNotParsed()
+        {
+            var container = new TestPrimitiveContainer();
+
+            Assert.Throws<ArgumentException>(() => PropertyContainer.SetValue(ref container, nameof(TestPrimitiveContainer.FlagsEnum), "NotAValidValue"));
+
+            Assert.AreEqual(FlagsEnum.None, container.FlagsEnum);
+        }
+
         [Test]
         public void PropertyContainer_SetValue_NestedContainer()
         {
@@ -70,7 +113,7 @@ namespace Unity.Properties.Tests
             var container = new TestPrimitiveContainer();
             var value = new NotSupportedType();
 
-            Assert.Throws<Exception>(() =>
+            Assert.Throws<InvalidOperationException>(() =>
             {
                 PropertyContainer.SetValue(ref container, nameof(TestPrimitiveContainer.Int32Value), value);
             });
@@ -81,7 +124,7 @@ namespace Unity.Properties.Tests
         {
             var container = new TestPrimitiveContainer();
 
-            Assert.Throws<Exception>(() =>
+            Assert.Throws<InvalidOperationException>(() =>
             {
                 PropertyContainer.SetValue(ref container, "test", 10);
             });
@@ -107,7 +150,7 @@ namespace Unity.Properties.Tests
         [Test]
         public void PropertyContainer_SetValue_InvalidPropertyBag_Throws()
         { 
-            Assert.Throws<Exception>(() =>
+            Assert.Throws<InvalidOperationException>(() =>
             {
                 var container = 10;
                 PropertyContainer.SetValue(ref container, "test", 10);
@@ -154,6 +197,35 @@ namespace Unity.Properties.Tests
             var value = PropertyContainer.GetValue<TestPrimitiveContainer, int>(ref container, nameof(TestPrimitiveContainer.Float64Value));
             
             Assert.AreEqual(12345, value);
+        }
+        
+        [Test]
+        public void PropertyContainer_GetCount()
+        {
+            var container = new TestListContainer
+            {
+                Int32List = new List<int>
+                {
+                    1, 2, 3, 4, 5
+                }
+            };
+
+            Assert.That(PropertyContainer.GetCount(ref container, nameof(TestListContainer.Int32List)), Is.EqualTo(5));
+        }
+        
+        [Test]
+        public void PropertyContainer_SetCount()
+        {
+            var container = new TestListContainer
+            {
+                Int32List = new List<int>
+                {
+                    1, 2, 3, 4, 5
+                }
+            };
+            
+            PropertyContainer.SetCount(ref container, nameof(TestListContainer.Int32List), 10);
+            Assert.That(container.Int32List.Count, Is.EqualTo(10));
         }
     }
 }

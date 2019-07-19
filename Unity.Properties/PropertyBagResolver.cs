@@ -1,14 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Unity.Properties.Reflection;
 
 namespace Unity.Properties
 {
-    public interface IPropertyBagProvider
-    {
-        IPropertyBag<TContainer> Generate<TContainer>();
-        IPropertyBag Generate(Type type);
-    }
-
     public static class PropertyBagResolver
     {
         /// <summary>
@@ -24,8 +19,8 @@ namespace Unity.Properties
         /// Dynamic lookup by <see cref="System.Type"/> for property bags.
         /// </summary>
         private static readonly Dictionary<Type, IPropertyBag> s_PropertyBagByType = new Dictionary<Type, IPropertyBag>();
-
-        private static readonly IList<IPropertyBagProvider> s_PropertyBagProviders = new List<IPropertyBagProvider>();
+        
+        public static ReflectedPropertyBagProvider ReflectedPropertyBagProvider { get; } = new ReflectedPropertyBagProvider();
 
         public static void Register<TContainer>(IPropertyBag<TContainer> propertyBag)
         {
@@ -72,17 +67,12 @@ namespace Unity.Properties
             return propertyBag;
         }
 
-        public static void RegisterProvider(IPropertyBagProvider provider)
-        {
-            s_PropertyBagProviders.Add(provider);
-        }
-
         private static bool TryGeneratePropertyBag<TContainer>(out IPropertyBag<TContainer> propertyBag)
         {
-            for (var i = 0; i < s_PropertyBagProviders.Count; i++)
+            // Try to use reflection if present.
+            if (null != ReflectedPropertyBagProvider) 
             {
-                var provider = s_PropertyBagProviders[i];
-                propertyBag = provider.Generate<TContainer>();
+                propertyBag = ReflectedPropertyBagProvider.Generate<TContainer>();
 
                 if (null != propertyBag)
                 {
@@ -96,9 +86,10 @@ namespace Unity.Properties
 
         private static bool TryGeneratePropertyBag(Type type, out IPropertyBag propertyBag)
         {
-            foreach (var provider in s_PropertyBagProviders)
+            // Try to use reflection if present.
+            if (null != ReflectedPropertyBagProvider) 
             {
-                propertyBag = provider.Generate(type);
+                propertyBag = ReflectedPropertyBagProvider.Generate(type);
 
                 if (null != propertyBag)
                 {

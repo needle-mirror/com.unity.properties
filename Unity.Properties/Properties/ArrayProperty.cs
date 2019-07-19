@@ -103,9 +103,9 @@ namespace Unity.Properties
         }
 
         public void GetPropertyAtIndex<TGetter>(ref TContainer container, int index, ref ChangeTracker changeTracker, TGetter getter)
-            where TGetter : ICollectionElementGetter<TContainer>
+            where TGetter : ICollectionElementPropertyGetter<TContainer>
         {
-            getter.VisitProperty<CollectionElementProperty, TElement>(new CollectionElementProperty(this, index), ref container);
+            getter.VisitProperty<CollectionElementProperty, TElement>(new CollectionElementProperty(this, index), ref container, ref changeTracker);
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Unity.Properties
     /// </summary>
     public struct TransferVisitor<TSourceContainer> : IPropertyVisitor
     {
-        private struct TransferValueAction<TDestinationProperty, TDestinationContainer, TDestinationValue> : IPropertyQuery<TSourceContainer>
+        private struct TransferValueAction<TDestinationProperty, TDestinationContainer, TDestinationValue> : IPropertyGetter<TSourceContainer>
             where TDestinationProperty : IProperty<TDestinationContainer, TDestinationValue>
         {
             public TDestinationProperty DstProperty;
@@ -51,47 +51,45 @@ namespace Unity.Properties
                 }
             }
 
-            public void VisitCollectionProperty<TSourceProperty, TSourceValue>(TSourceProperty srcProperty, ref TSourceContainer srcContainer, ref ChangeTracker propertyChangeTracker)
+            public void VisitCollectionProperty<TSourceProperty, TSourceValue>(TSourceProperty srcProperty, ref TSourceContainer srcContainer, ref ChangeTracker changeTracker)
                 where TSourceProperty : ICollectionProperty<TSourceContainer, TSourceValue>
             {
                 throw new NotSupportedException();
             }
         }
 
-        private struct TransferCollectionAction<TDestinationProperty, TDestinationContainer, TDestinationValue> : IPropertyQuery<TSourceContainer>
+        private struct TransferCollectionAction<TDestinationProperty, TDestinationContainer, TDestinationValue> : IPropertyGetter<TSourceContainer>
             where TDestinationProperty : ICollectionProperty<TDestinationContainer, TDestinationValue>
         {
-            private struct TransferCollectionElement : ICollectionElementGetter<TSourceContainer>
+            private struct TransferCollectionElement : ICollectionElementPropertyGetter<TSourceContainer>
             {
                 public TDestinationProperty DstProperty;
                 public TDestinationContainer DstContainer;
                 public int Index;
 
-                public void VisitProperty<TSourceElementProperty, TSourceElement>(TSourceElementProperty srcElementProperty, ref TSourceContainer srcContainer)
+                public void VisitProperty<TSourceElementProperty, TSourceElement>(TSourceElementProperty srcElementProperty, ref TSourceContainer srcContainer, ref ChangeTracker propertyChangeTracker)
                     where TSourceElementProperty : ICollectionElementProperty<TSourceContainer, TSourceElement>
                 {
-                    var tracker = new ChangeTracker();
-
                     var assignment = new AssignDestinationElement<TSourceElement>
                     {
                         SrcElementValue = srcElementProperty.GetValue(ref srcContainer)
                     };
 
-                    DstProperty.GetPropertyAtIndex(ref DstContainer, Index, ref tracker, assignment);
+                    DstProperty.GetPropertyAtIndex(ref DstContainer, Index, ref propertyChangeTracker, assignment);
                 }
 
-                public void VisitCollectionProperty<TElementProperty, TElement>(TElementProperty property, ref TSourceContainer container)
+                public void VisitCollectionProperty<TElementProperty, TElement>(TElementProperty property, ref TSourceContainer container, ref ChangeTracker propertyChangeTracker)
                     where TElementProperty : ICollectionProperty<TSourceContainer, TElement>, ICollectionElementProperty<TSourceContainer, TElement>
                 {
                     throw new NotSupportedException();
                 }
             }
 
-            private struct AssignDestinationElement<TSourceElement> : ICollectionElementGetter<TDestinationContainer>
+            private struct AssignDestinationElement<TSourceElement> : ICollectionElementPropertyGetter<TDestinationContainer>
             {
                 public TSourceElement SrcElementValue;
 
-                public void VisitProperty<TDestinationElementProperty, TDestinationElement>(TDestinationElementProperty dstElementProperty, ref TDestinationContainer dstContainer)
+                public void VisitProperty<TDestinationElementProperty, TDestinationElement>(TDestinationElementProperty dstElementProperty, ref TDestinationContainer dstContainer, ref ChangeTracker propertyChangeTracker)
                     where TDestinationElementProperty : ICollectionElementProperty<TDestinationContainer, TDestinationElement>
                 {
                     if (TypeConversion.TryConvert<TSourceElement, TDestinationElement>(SrcElementValue, out var dstElementValue))
@@ -102,17 +100,13 @@ namespace Unity.Properties
                         }
 
                         dstElementProperty.SetValue(ref dstContainer, dstElementValue);
-
-                        /*
-                         * propertyChangeTracker.IncrementVersion<TDestinationProperty, TDestinationContainer, TDestinationValue>(DstProperty, ref DstContainer);
-                         */
-
+                        propertyChangeTracker.IncrementVersion<TDestinationElementProperty, TDestinationContainer, TDestinationElement>(dstElementProperty, ref dstContainer);
                         return;
                     }
 
                     if (dstElementProperty.IsContainer)
                     {
-                        var changeTracker = new ChangeTracker( /*propertyChangeTracker.VersionStorage*/);
+                        var changeTracker = new ChangeTracker(propertyChangeTracker.VersionStorage);
 
                         dstElementValue = dstElementProperty.GetValue(ref dstContainer);
 
@@ -120,16 +114,14 @@ namespace Unity.Properties
 
                         dstElementProperty.SetValue(ref dstContainer, dstElementValue);
 
-                        /*
                         if (changeTracker.IsChanged())
                         {
-                            propertyChangeTracker.IncrementVersion<TDestinationProperty, TDestinationContainer, TDestinationValue>(DstProperty, ref DstContainer);
+                            propertyChangeTracker.IncrementVersion<TDestinationElementProperty, TDestinationContainer, TDestinationElement>(dstElementProperty, ref dstContainer);
                         }
-                        */
                     }
                 }
 
-                public void VisitCollectionProperty<TElementProperty, TElement>(TElementProperty property, ref TDestinationContainer container)
+                public void VisitCollectionProperty<TElementProperty, TElement>(TElementProperty property, ref TDestinationContainer container, ref ChangeTracker propertyChangeTracker)
                     where TElementProperty : ICollectionProperty<TDestinationContainer, TElement>, ICollectionElementProperty<TDestinationContainer, TElement>
                 {
                     throw new NotSupportedException();
@@ -139,13 +131,13 @@ namespace Unity.Properties
             public TDestinationProperty DstProperty;
             public TDestinationContainer DstContainer;
 
-            public void VisitProperty<TProperty, TValue>(TProperty srcProperty, ref TSourceContainer srcContainer, ref ChangeTracker propertyChangeTracker)
+            public void VisitProperty<TProperty, TValue>(TProperty srcProperty, ref TSourceContainer srcContainer, ref ChangeTracker changeTracker)
                 where TProperty : IProperty<TSourceContainer, TValue>
             {
                 throw new NotSupportedException();
             }
 
-            public void VisitCollectionProperty<TProperty, TValue>(TProperty srcProperty, ref TSourceContainer srcContainer, ref ChangeTracker propertyChangeTracker)
+            public void VisitCollectionProperty<TProperty, TValue>(TProperty srcProperty, ref TSourceContainer srcContainer, ref ChangeTracker changeTracker)
                 where TProperty : ICollectionProperty<TSourceContainer, TValue>
             {
                 var srcCount = srcProperty.GetCount(ref srcContainer);
@@ -165,7 +157,7 @@ namespace Unity.Properties
                         Index = i
                     };
 
-                    srcProperty.GetPropertyAtIndex(ref srcContainer, i, ref propertyChangeTracker, transfer);
+                    srcProperty.GetPropertyAtIndex(ref srcContainer, i, ref changeTracker, transfer);
                     DstContainer = transfer.DstContainer;
                 }
             }
@@ -179,7 +171,7 @@ namespace Unity.Properties
         }
 
         public VisitStatus VisitProperty<TDestinationProperty, TDestinationContainer, TDestinationValue>(TDestinationProperty dstProperty, ref TDestinationContainer dstContainer,
-            ref ChangeTracker propertyChangeTracker)
+            ref ChangeTracker changeTracker)
             where TDestinationProperty : IProperty<TDestinationContainer, TDestinationValue>
         {
             var sourcePropertyBag = PropertyBagResolver.Resolve<TSourceContainer>();
@@ -195,14 +187,14 @@ namespace Unity.Properties
                 DstContainer = dstContainer
             };
 
-            sourcePropertyBag.FindProperty(dstProperty.GetName(), ref m_SrcContainer, ref propertyChangeTracker, ref transfer);
+            sourcePropertyBag.FindProperty(dstProperty.GetName(), ref m_SrcContainer, ref changeTracker, ref transfer);
             dstContainer = transfer.DstContainer;
 
             return VisitStatus.Handled;
         }
 
         public VisitStatus VisitCollectionProperty<TDestinationProperty, TDestinationContainer, TDestinationValue>(TDestinationProperty dstProperty,
-            ref TDestinationContainer dstContainer, ref ChangeTracker propertyChangeTracker)
+            ref TDestinationContainer dstContainer, ref ChangeTracker changeTracker)
             where TDestinationProperty : ICollectionProperty<TDestinationContainer, TDestinationValue>
         {
             var sourcePropertyBag = PropertyBagResolver.Resolve<TSourceContainer>();
@@ -218,7 +210,7 @@ namespace Unity.Properties
                 DstContainer = dstContainer
             };
 
-            sourcePropertyBag.FindProperty(dstProperty.GetName(), ref m_SrcContainer, ref propertyChangeTracker, ref transfer);
+            sourcePropertyBag.FindProperty(dstProperty.GetName(), ref m_SrcContainer, ref changeTracker, ref transfer);
             dstContainer = transfer.DstContainer;
 
             return VisitStatus.Handled;

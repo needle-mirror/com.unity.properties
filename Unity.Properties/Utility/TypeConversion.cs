@@ -47,16 +47,14 @@ namespace Unity.Properties
                 {
                     if (UnsafeUtility.IsBlittable(typeof(TSource)))
                     {
-                        destination = default(TDestination);
+                        destination = default;
                         var ptr = System.Runtime.CompilerServices.Unsafe.AsPointer(ref source);
                         System.Runtime.CompilerServices.Unsafe.Copy(ref destination, ptr);
                         return true;
                     }
 
-                    Debug.LogWarning($"TypeConverter for TSource=[{typeof(TSource)}] to TDestination=[{typeof(TDestination)}] is missing");
-
-                    // How can we avoid boxing! Without pre-registering all type converters :(
-                    destination = (TDestination) (object) source;
+                    Register<TSource, TSource>(value => value);
+                    destination = Convert<TSource, TDestination>(source);
                     return true;
                 }
 
@@ -68,7 +66,8 @@ namespace Unity.Properties
                         return true;
                     }
 
-                    destination = (TDestination) Enum.GetValues(typeof(TDestination)).GetValue(Convert<TSource, int>(source));
+                    // Boxing :(
+                    destination = (TDestination) (object)Convert<TSource, int>(source);
                     return true;
                 }
 

@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System;
 
 namespace Unity.Properties.Tests
 {
@@ -8,11 +9,7 @@ namespace Unity.Properties.Tests
         [SetUp]
         public void SetUp()
         {
-            PropertyBagResolver.Register(new TestNestedContainerPropertyBag());
-            PropertyBagResolver.Register(new TestPrimitiveContainerPropertyBag());
-            PropertyBagResolver.Register(new TestArrayContainerPropertyBag());
-            PropertyBagResolver.Register(new CustomDataFooPropertyBag());
-            PropertyBagResolver.Register(new CustomDataBarPropertyBag());
+            TestData.InitializePropertyBags();
         }
 
         [Test]
@@ -31,6 +28,30 @@ namespace Unity.Properties.Tests
             PropertyContainer.Transfer(ref dst, ref src);
 
             Assert.AreEqual(10, dst.Int32Value);
+        }
+
+        [Test]
+        public void ShouldGiveUnderstandableErrorMessageWhenPassingNullDestination()
+        {
+            var src = new CustomDataFoo();
+            CustomDataFoo dst = null;
+
+            var ex = Assert.Throws<ArgumentNullException>(() => PropertyContainer.Transfer(dst, src));
+            Assert.That(ex.ParamName, Is.EqualTo("destination"));
+            Assert.That(ex.Message, Is.EqualTo("Value cannot be null." + Environment.NewLine +
+                                               "Parameter name: destination"));
+        }
+
+        [Test]
+        public void ShouldGiveUnderstandableErrorMessageWhenPassingNullDestinationByRef()
+        {
+            var src = new CustomDataFoo();
+            CustomDataFoo dst = null;
+
+            var ex = Assert.Throws<ArgumentNullException>(() => PropertyContainer.Transfer(ref dst, ref src));
+            Assert.That(ex.ParamName, Is.EqualTo("destination"));
+            Assert.That(ex.Message, Is.EqualTo("Value cannot be null." + Environment.NewLine +
+                                               "Parameter name: destination"));
         }
     }
 }

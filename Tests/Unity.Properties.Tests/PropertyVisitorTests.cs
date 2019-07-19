@@ -40,9 +40,7 @@ namespace Unity.Properties.Tests
         [SetUp]
         public void SetUp()
         {
-            PropertyBagResolver.Register(new TestNestedContainerPropertyBag());
-            PropertyBagResolver.Register(new TestPrimitiveContainerPropertyBag());
-            PropertyBagResolver.Register(new TestArrayContainerPropertyBag());
+            TestData.InitializePropertyBags();
         }
 
         [Test]
@@ -69,6 +67,14 @@ namespace Unity.Properties.Tests
             };
 
             PropertyContainer.Visit(ref container, new DebugLogVisitor());
+        }
+        
+        [Test]
+        public void PropertyVisitor_Visit_BoxedStruct()
+        {
+            var container = new TestPrimitiveContainer();
+            var boxed = (object) container;
+            PropertyContainer.Visit(ref boxed, new DebugLogVisitor());
         }
     }
 }

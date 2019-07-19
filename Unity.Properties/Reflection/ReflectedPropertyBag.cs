@@ -7,7 +7,7 @@ namespace Unity.Properties.Reflection
         private interface IPropertyProxy
         {
             void Accept<TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor;
-            void FindProperty<TCallback>(ref TContainer container, ref ChangeTracker changeTracker, ref TCallback callback) where TCallback : IPropertyQuery<TContainer>;
+            void FindProperty<TCallback>(ref TContainer container, ref ChangeTracker changeTracker, ref TCallback callback) where TCallback : IPropertyGetter<TContainer>;
         }
 
         private struct PropertyProxy<TProperty, TValue> : IPropertyProxy
@@ -18,7 +18,7 @@ namespace Unity.Properties.Reflection
             public void Accept<TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor =>
                 visitor.VisitProperty<TProperty, TContainer, TValue>(Property, ref container, ref changeTracker);
 
-            public void FindProperty<TCallback>(ref TContainer container, ref ChangeTracker changeTracker, ref TCallback callback) where TCallback : IPropertyQuery<TContainer>
+            public void FindProperty<TCallback>(ref TContainer container, ref ChangeTracker changeTracker, ref TCallback callback) where TCallback : IPropertyGetter<TContainer>
                 => callback.VisitProperty<TProperty, TValue>(Property, ref container, ref changeTracker);
         }
 
@@ -30,7 +30,7 @@ namespace Unity.Properties.Reflection
             public void Accept<TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor =>
                 visitor.VisitCollectionProperty<TProperty, TContainer, TValue>(Property, ref container, ref changeTracker);
 
-            public void FindProperty<TCallback>(ref TContainer container, ref ChangeTracker changeTracker, ref TCallback callback) where TCallback : IPropertyQuery<TContainer>
+            public void FindProperty<TCallback>(ref TContainer container, ref ChangeTracker changeTracker, ref TCallback callback) where TCallback : IPropertyGetter<TContainer>
                 => callback.VisitCollectionProperty<TProperty, TValue>(Property, ref container, ref changeTracker);
         }
 

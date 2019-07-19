@@ -1,3 +1,5 @@
+using System;
+
 namespace Unity.Properties
 {
     public static partial class PropertyContainer
@@ -14,28 +16,49 @@ namespace Unity.Properties
         }
 
         public static void Transfer<TDestination, TSource>(TDestination destination, TSource source, IVersionStorage versionStorage = null)
+            where TDestination : class
         {
+            if (destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+
             var changeTracker = new ChangeTracker(versionStorage);
-            Transfer(ref destination, ref source, ref changeTracker);
+            DoTransfer(ref destination, ref source, ref changeTracker);
         }
 
         public static void Transfer<TDestination, TSource>(ref TDestination destination, ref TSource source, IVersionStorage versionStorage = null)
         {
+            if (!RuntimeTypeInfoCache<TDestination>.IsValueType() && destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+
             var changeTracker = new ChangeTracker(versionStorage);
-            Transfer(ref destination, ref source, ref changeTracker);
+            DoTransfer(ref destination, ref source, ref changeTracker);
         }
 
         public static void Transfer<TDestination, TSource>(ref TDestination destination, ref TSource source, ref ChangeTracker changeTracker)
         {
-            if (RuntimeTypeInfoCache<TSource>.IsAbstractOrInterface())
+            if (!RuntimeTypeInfoCache<TDestination>.IsValueType() && destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+
+            DoTransfer(ref destination, ref source, ref changeTracker);
+        }
+
+        private static void DoTransfer<TDestination, TSource>(ref TDestination destination, ref TSource source, ref ChangeTracker changeTracker)
+        {
+            if (RuntimeTypeInfoCache<TSource>.IsAbstractOrInterface() || typeof(TSource) != source.GetType())
             {
                 var propertyBag = PropertyBagResolver.Resolve(source.GetType());
                 var action = new TransferAbstractType<TDestination>
                 {
                     Destination = destination,
-                    SourceContainer = (object) source
+                    SourceContainer = source
                 };
-                propertyBag.Cast(action);
+                propertyBag.Cast(ref action);
                 destination = action.Destination;
             }
             else

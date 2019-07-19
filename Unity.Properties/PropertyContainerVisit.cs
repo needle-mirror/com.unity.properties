@@ -1,3 +1,5 @@
+using System;
+
 namespace Unity.Properties
 {
     public static partial class PropertyContainer
@@ -18,7 +20,12 @@ namespace Unity.Properties
         public static void Visit<TContainer, TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker)
             where TVisitor : IPropertyVisitor
         {
-            if (RuntimeTypeInfoCache<TContainer>.IsAbstractOrInterface())
+            if (!RuntimeTypeInfoCache<TContainer>.IsValueType() && container == null)
+            {
+                throw new ArgumentNullException(nameof(container));
+            }
+            
+            if (RuntimeTypeInfoCache<TContainer>.IsAbstractOrInterface() || typeof(TContainer) != container.GetType())
             {
                 PropertyBagResolver.Resolve(container.GetType())?.Accept(container, visitor, ref changeTracker);
             }

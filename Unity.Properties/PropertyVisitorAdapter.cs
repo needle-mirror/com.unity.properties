@@ -257,18 +257,19 @@ namespace Unity.Properties
             return VisitStatus.Unhandled;
         }
 
-        private static void VisitCollectionElements<TProperty, TContainer, TValue>(IPropertyVisitor visitor, TProperty property, ref TContainer container, ChangeTracker propertyChangeTracker)
+        private static void VisitCollectionElements<TProperty, TContainer, TValue>(IPropertyVisitor visitor, TProperty property, ref TContainer container, ChangeTracker changeTracker)
             where TProperty : ICollectionProperty<TContainer, TValue>
         {
             for (int i = 0, count = property.GetCount(ref container); i < count; i++)
             {
-                var callback = new VisitCollectionElementCallback<TContainer>(visitor, propertyChangeTracker.VersionStorage);
+                var elementChangeTracker = new ChangeTracker(changeTracker.VersionStorage);
+                var callback = new VisitCollectionElementCallback<TContainer>(visitor);
 
-                property.GetPropertyAtIndex(ref container, i, ref propertyChangeTracker, callback);
+                property.GetPropertyAtIndex(ref container, i, ref elementChangeTracker, callback);
 
-                if (callback.IsChanged())
+                if (elementChangeTracker.IsChanged())
                 {
-                    propertyChangeTracker.IncrementVersion<TProperty, TContainer, TValue>(property, ref container);
+                    changeTracker.IncrementVersion<TProperty, TContainer, TValue>(property, ref container);
                 }
             }
         }

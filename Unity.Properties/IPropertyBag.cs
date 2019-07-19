@@ -10,7 +10,7 @@ namespace Unity.Properties
         void Accept<TVisitor>(object container, TVisitor visitor, ref ChangeTracker changeTracker)
             where TVisitor : IPropertyVisitor;
 
-        void Cast<TCallback>(TCallback callback)
+        void Cast<TCallback>(ref TCallback callback)
             where TCallback : IContainerTypeCallback;
     }
 
@@ -20,7 +20,7 @@ namespace Unity.Properties
             where TVisitor : IPropertyVisitor;
 
         bool FindProperty<TAction>(string name, ref TContainer container, ref ChangeTracker changeTracker, ref TAction action)
-            where TAction : IPropertyQuery<TContainer>;
+            where TAction : IPropertyGetter<TContainer>;
     }
 
     public abstract class PropertyBag<TContainer> : IPropertyBag<TContainer>
@@ -32,12 +32,12 @@ namespace Unity.Properties
             Accept(ref typed, visitor, ref changeTracker);
         }
 
-        public void Cast<TCallback>(TCallback callback) where TCallback : IContainerTypeCallback
+        public void Cast<TCallback>(ref TCallback callback) where TCallback : IContainerTypeCallback
         {
             callback.Invoke<TContainer>();
         }
 
         public abstract void Accept<TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor;
-        public abstract bool FindProperty<TAction>(string name, ref TContainer container, ref ChangeTracker changeTracker, ref TAction action) where TAction : IPropertyQuery<TContainer>;
+        public abstract bool FindProperty<TAction>(string name, ref TContainer container, ref ChangeTracker changeTracker, ref TAction action) where TAction : IPropertyGetter<TContainer>;
     }
 }

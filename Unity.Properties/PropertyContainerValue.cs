@@ -6,8 +6,9 @@ namespace Unity.Properties
     {
         private const int k_ResultSuccess = 0;
         private const int k_ResultErrorConvert = -1;
+        private const int k_ResultErrorReadOnly = -2;
 
-        private struct GetValueAction<TContainer, TDestinationValue> : IPropertyQuery<TContainer>
+        private struct GetValueAction<TContainer, TDestinationValue> : IPropertyGetter<TContainer>
         {
             public TDestinationValue DstValue;
             public int Result;
@@ -28,7 +29,7 @@ namespace Unity.Properties
             }
         }
 
-        private struct SetValueAction<TContainer, TSourceValue> : IPropertyQuery<TContainer>
+        private struct SetValueAction<TContainer, TSourceValue> : IPropertyGetter<TContainer>
         {
             public TSourceValue SrcValue;
             public int Result;
@@ -36,6 +37,12 @@ namespace Unity.Properties
             public void VisitProperty<TProperty, TDestinationValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker)
                 where TProperty : IProperty<TContainer, TDestinationValue>
             {
+                if (property.IsReadOnly)
+                {
+                    Result = k_ResultErrorReadOnly;
+                    return;
+                }
+                
                 if (!TypeConversion.TryConvert<TSourceValue, TDestinationValue>(SrcValue, out var dstValue))
                 {
                     Result = k_ResultErrorConvert;
@@ -55,6 +62,38 @@ namespace Unity.Properties
                 where TProperty : ICollectionProperty<TContainer, TDestinationValue>
             {
                 VisitProperty<TProperty, TDestinationValue>(property, ref container, ref changeTracker);
+            }
+        }
+
+        private struct GetCountAction<TContainer> : IPropertyGetter<TContainer>
+        {
+            public int Count;
+            
+            public void VisitProperty<TProperty, TValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker) where TProperty : IProperty<TContainer, TValue>
+            {
+                throw new NotImplementedException($"Failed to {nameof(GetCount)}. Property is not a collection");
+            }
+
+            public void VisitCollectionProperty<TProperty, TValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker) where TProperty : ICollectionProperty<TContainer, TValue>
+            {
+                Count = property.GetCount(ref container);
+            }
+        }
+        
+        private struct SetCountAction<TContainer> : IPropertyGetter<TContainer>
+        {
+            private readonly int m_Count;
+
+            public SetCountAction(int count) => m_Count = count;
+
+            public void VisitProperty<TProperty, TValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker) where TProperty : IProperty<TContainer, TValue>
+            {
+                throw new NotImplementedException($"Failed to {nameof(SetCount)}. Property is not a collection");
+            }
+
+            public void VisitCollectionProperty<TProperty, TValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker) where TProperty : ICollectionProperty<TContainer, TValue>
+            {
+                property.SetCount(ref container, m_Count);
             }
         }
 
@@ -84,19 +123,24 @@ namespace Unity.Properties
 
             if (null == propertyBag)
             {
-                throw new Exception($"Failed to resolve property bag for ContainerType=[{typeof(TContainer)}]");
+                throw new InvalidOperationException($"Failed to resolve property bag for ContainerType=[{typeof(TContainer)}]");
             }
 
             var action = new SetValueAction<TContainer, TValue> {SrcValue = value};
 
             if (!propertyBag.FindProperty(name, ref container, ref changeTracker, ref action))
             {
-                throw new Exception($"Failed to find property Name=[{name}] for ContainerType=[{typeof(TContainer)}]");
+                throw new InvalidOperationException($"Failed to find property Name=[{name}] for ContainerType=[{typeof(TContainer)}]");
             }
 
             if (action.Result == k_ResultErrorConvert)
             {
-                throw new Exception($"Failed assign ValueType=[{typeof(TValue)}] to property Name=[{name}] for ContainerType=[{typeof(TContainer)}]");
+                throw new InvalidOperationException($"Failed assign ValueType=[{typeof(TValue)}] to property Name=[{name}] for ContainerType=[{typeof(TContainer)}]");
+            }
+            
+            if (action.Result == k_ResultErrorReadOnly)
+            {
+                throw new InvalidOperationException("Property is ReadOnly");
             }
         }
 
@@ -112,7 +156,7 @@ namespace Unity.Properties
 
             if (null == propertyBag)
             {
-                throw new Exception($"Failed to resolve property bag for ContainerType=[{typeof(TContainer)}]");
+                throw new InvalidOperationException($"Failed to resolve property bag for ContainerType=[{typeof(TContainer)}]");
             }
 
             var changeTracker = new ChangeTracker();
@@ -120,12 +164,12 @@ namespace Unity.Properties
 
             if (!PropertyBagResolver.Resolve<TContainer>().FindProperty(name, ref container, ref changeTracker, ref action))
             {
-                throw new Exception($"Failed to find property Name=[{name}] for ContainerType=[{typeof(TContainer)}]");
+                throw new InvalidOperationException($"Failed to find property Name=[{name}] for ContainerType=[{typeof(TContainer)}]");
             }
 
             if (action.Result == k_ResultErrorConvert)
             {
-                throw new Exception($"Failed get ValueType=[{typeof(TValue)}] from property Name=[{name}] for ContainerType=[{typeof(TContainer)}]");
+                throw new InvalidOperationException($"Failed get ValueType=[{typeof(TValue)}] from property Name=[{name}] for ContainerType=[{typeof(TContainer)}]");
             }
 
             return action.DstValue;
@@ -160,6 +204,101 @@ namespace Unity.Properties
 
             value = action.DstValue;
             return action.Result == k_ResultSuccess;
+        }
+
+        /// <summary>
+        /// Sets the value of the property with the given name for the given container.
+        /// </summary>
+        /// <param name="container">The container hosting the data.</param>
+        /// <param name="name">The property name to set.</param>
+        /// <param name="value">The value to assign to the property.</param>
+        /// <param name="versionStorage">The version storage to increment if the value is changed.</param>
+        /// <returns>True if the property was found and the value was set.</returns>
+        public static bool TrySetValue<TContainer, TValue>(ref TContainer container, string name, TValue value, IVersionStorage versionStorage = null)
+        {
+            var changeTracker = new ChangeTracker(versionStorage);
+            return TrySetValue(ref container, name, value, ref changeTracker);
+        }
+
+
+        /// <summary>
+        /// Sets the value of the property with the given name for the given container.
+        /// </summary>
+        /// <param name="container">The container hosting the data.</param>
+        /// <param name="name">The property name to set.</param>
+        /// <param name="value">The value to assign to the property.</param>
+        /// <param name="changeTracker">The change tracker to increment if the value changes.</param>
+        /// <returns>True if the property was found and the value was set.</returns>
+        public static bool TrySetValue<TContainer, TValue>(ref TContainer container, string name, TValue value, ref ChangeTracker changeTracker)
+        {
+            var propertyBag = PropertyBagResolver.Resolve<TContainer>();
+
+            if (null == propertyBag)
+            {
+                value = default;
+                return false;
+            }
+
+            var action = new SetValueAction<TContainer, TValue>
+            {
+                SrcValue = value
+            };
+
+            if (!PropertyBagResolver.Resolve<TContainer>().FindProperty(name, ref container, ref changeTracker, ref action))
+            {
+                value = default;
+                return false;
+            }
+            
+            return action.Result == k_ResultSuccess;
+        }
+
+        /// <summary>
+        /// Gets the collection count for the given property.
+        /// </summary>
+        /// <param name="container">The container hosting the data.</param>
+        /// <param name="name">The property name for the collection.</param>
+        internal static int GetCount<TContainer>(ref TContainer container, string name)
+        {
+            var propertyBag = PropertyBagResolver.Resolve<TContainer>();
+
+            if (null == propertyBag)
+            {
+                throw new InvalidOperationException($"Failed to resolve property bag for ContainerType=[{typeof(TContainer)}]");
+            }
+
+            var changeTracker = new ChangeTracker();
+            var action = new GetCountAction<TContainer>();
+
+            if (!PropertyBagResolver.Resolve<TContainer>().FindProperty(name, ref container, ref changeTracker, ref action))
+            {
+                throw new InvalidOperationException($"Failed to find property Name=[{name}] for ContainerType=[{typeof(TContainer)}]");
+            }
+
+            return action.Count;
+        }
+        
+        /// <summary>
+        /// Gets the collection count for the given property.
+        /// </summary>
+        /// <param name="container">The container hosting the data.</param>
+        /// <param name="name">The property name for the collection.</param>
+        internal static void SetCount<TContainer>(ref TContainer container, string name, int count)
+        {
+            var propertyBag = PropertyBagResolver.Resolve<TContainer>();
+
+            if (null == propertyBag)
+            {
+                throw new InvalidOperationException($"Failed to resolve property bag for ContainerType=[{typeof(TContainer)}]");
+            }
+
+            var changeTracker = new ChangeTracker();
+            var action = new SetCountAction<TContainer>(count);
+
+            if (!PropertyBagResolver.Resolve<TContainer>().FindProperty(name, ref container, ref changeTracker, ref action))
+            {
+                throw new InvalidOperationException($"Failed to find property Name=[{name}] for ContainerType=[{typeof(TContainer)}]");
+            }
         }
     }
 }

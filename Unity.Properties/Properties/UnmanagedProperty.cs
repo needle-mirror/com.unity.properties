@@ -13,18 +13,20 @@ namespace Unity.Properties
     {
         private readonly string m_Name;
         private readonly int m_Offset;
+        private readonly bool m_ReadOnly;
         private readonly IPropertyAttributeCollection m_Attributes;
 
         public string GetName() => m_Name;
         public int Offset => m_Offset;
-        public bool IsReadOnly => false;
+        public bool IsReadOnly => m_ReadOnly;
         public bool IsContainer => RuntimeTypeInfoCache<TValue>.IsContainerType();
         public IPropertyAttributeCollection Attributes => m_Attributes;
 
-        public UnmanagedProperty(string name, int offset, IPropertyAttributeCollection attributes = null)
+        public UnmanagedProperty(string name, int offset, bool readOnly = false, IPropertyAttributeCollection attributes = null)
         {
             m_Name = name;
             m_Offset = offset;
+            m_ReadOnly = readOnly;
             m_Attributes = attributes;
         }
 

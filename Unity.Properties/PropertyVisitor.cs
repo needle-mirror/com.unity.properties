@@ -2,29 +2,25 @@ using System.Collections.Generic;
 
 namespace Unity.Properties
 {
-    internal struct VisitCollectionElementCallback<TContainer> : ICollectionElementGetter<TContainer>
+    internal struct VisitCollectionElementCallback<TContainer> : ICollectionElementPropertyGetter<TContainer>
     {
         private readonly IPropertyVisitor m_Visitor;
-        private ChangeTracker m_ChangeTracker;
-
-        public bool IsChanged() => m_ChangeTracker.IsChanged();
-
-        public VisitCollectionElementCallback(IPropertyVisitor visitor, IVersionStorage versionStorage)
+        
+        public VisitCollectionElementCallback(IPropertyVisitor visitor)
         {
             m_Visitor = visitor;
-            m_ChangeTracker = new ChangeTracker(versionStorage);
         }
 
-        public void VisitProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container)
+        public void VisitProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container, ref ChangeTracker changeTracker)
             where TElementProperty : ICollectionElementProperty<TContainer, TElement>
         {
-            m_Visitor.VisitProperty<TElementProperty, TContainer, TElement>(property, ref container, ref m_ChangeTracker);
+            m_Visitor.VisitProperty<TElementProperty, TContainer, TElement>(property, ref container, ref changeTracker);
         }
 
-        public void VisitCollectionProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container)
+        public void VisitCollectionProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container, ref ChangeTracker changeTracker)
             where TElementProperty : ICollectionProperty<TContainer, TElement>, ICollectionElementProperty<TContainer, TElement>
         {
-            m_Visitor.VisitCollectionProperty<TElementProperty, TContainer, TElement>(property, ref container, ref m_ChangeTracker);
+            m_Visitor.VisitCollectionProperty<TElementProperty, TContainer, TElement>(property, ref container, ref changeTracker);
         }
     }
 
@@ -46,7 +42,7 @@ namespace Unity.Properties
             m_Adapters.Add(adapter);
         }
 
-        public VisitStatus VisitProperty<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref ChangeTracker propertyChangeTracker)
+        public VisitStatus VisitProperty<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker)
             where TProperty : IProperty<TContainer, TValue>
         {
             // Give users a chance to filter based on the data.
@@ -55,12 +51,10 @@ namespace Unity.Properties
                 return VisitStatus.Handled;
             }
 
-            VisitStatus status;
-
             var value = property.GetValue(ref container);
-            var valueChangeTracker = new ChangeTracker(propertyChangeTracker.VersionStorage);
+            var valueChangeTracker = new ChangeTracker(changeTracker.VersionStorage);
 
-            status = property.IsContainer
+            var status = property.IsContainer
                 ? TryVisitContainerWithAdapters(property, ref container, ref value, ref valueChangeTracker)
                 : TryVisitValueWithAdapters(property, ref container, ref value, ref valueChangeTracker);
 
@@ -73,13 +67,13 @@ namespace Unity.Properties
 
             if (valueChangeTracker.IsChanged())
             {
-                propertyChangeTracker.IncrementVersion<TProperty, TContainer, TValue>(property, ref container);
+                changeTracker.IncrementVersion<TProperty, TContainer, TValue>(property, ref container);
             }
 
             return status;
         }
 
-        public VisitStatus VisitCollectionProperty<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref ChangeTracker propertyChangeTracker)
+        public VisitStatus VisitCollectionProperty<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker)
             where TProperty : ICollectionProperty<TContainer, TValue>
         {
             // Give users a chance to filter based on the data.
@@ -90,7 +84,7 @@ namespace Unity.Properties
 
             var value = property.GetValue(ref container);
 
-            return TryVisitCollectionWithAdapters(property, ref container, ref value, ref propertyChangeTracker);
+            return TryVisitCollectionWithAdapters(property, ref container, ref value, ref changeTracker);
         }
 
         private VisitStatus TryVisitValueWithAdapters<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
@@ -159,11 +153,12 @@ namespace Unity.Properties
                 {
                     for (int i = 0, count = property.GetCount(ref container); i < count; i++)
                     {
-                        var callback = new VisitCollectionElementCallback<TContainer>(this, changeTracker.VersionStorage);
+                        var callback = new VisitCollectionElementCallback<TContainer>(this);
+                        var elementChangeTracker = new ChangeTracker(changeTracker.VersionStorage);
 
-                        property.GetPropertyAtIndex(ref container, i, ref changeTracker, callback);
+                        property.GetPropertyAtIndex(ref container, i, ref elementChangeTracker, callback);
 
-                        if (callback.IsChanged())
+                        if (elementChangeTracker.IsChanged())
                         {
                             changeTracker.IncrementVersion<TProperty, TContainer, TValue>(property, ref container);
                         }

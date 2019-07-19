@@ -1,14 +1,5 @@
 namespace Unity.Properties
 {
-    public interface ICollectionElementGetter<TContainer>
-    {
-        void VisitProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container)
-            where TElementProperty : ICollectionElementProperty<TContainer, TElement>;
-
-        void VisitCollectionProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container)
-            where TElementProperty : ICollectionProperty<TContainer, TElement>, ICollectionElementProperty<TContainer, TElement>;
-    }
-
     public interface ICollectionElementProperty : IProperty
     {
         int Index { get; }
@@ -39,6 +30,6 @@ namespace Unity.Properties
         /// Gets the strongly typed element at the specified index.
         /// </summary>
         void GetPropertyAtIndex<TGetter>(ref TContainer container, int index, ref ChangeTracker changeTracker, TGetter getter)
-            where TGetter : ICollectionElementGetter<TContainer>;
+            where TGetter : ICollectionElementPropertyGetter<TContainer>;
     }
 }

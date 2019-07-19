@@ -78,7 +78,32 @@ namespace Unity.Properties
 
         public void SetCount(ref TContainer container, int count)
         {
-            throw new NotImplementedException();
+            var list = m_Getter(ref container);
+
+            if (null == list)
+            {
+                return;
+            }
+
+            if (list.Count == count)
+            {
+                return;
+            }
+
+            if (list.Count < count)
+            {
+                for (var i = list.Count; i < count; i++)
+                {
+                    list.Add(default);
+                }
+            }
+            else
+            {
+                for (var i = list.Count - 1; i >= count; i--)
+                {
+                    list.RemoveAt(i);
+                }
+            }
         }
 
         public void Clear(ref TContainer container)
@@ -92,9 +117,9 @@ namespace Unity.Properties
         }
 
         public void GetPropertyAtIndex<TGetter>(ref TContainer container, int index, ref ChangeTracker changeTracker, TGetter getter)
-            where TGetter : ICollectionElementGetter<TContainer>
+            where TGetter : ICollectionElementPropertyGetter<TContainer>
         {
-            getter.VisitProperty<CollectionElementProperty, TElement>(new CollectionElementProperty(this, index), ref container);
+            getter.VisitProperty<CollectionElementProperty, TElement>(new CollectionElementProperty(this, index), ref container, ref changeTracker);
         }
     }
 }

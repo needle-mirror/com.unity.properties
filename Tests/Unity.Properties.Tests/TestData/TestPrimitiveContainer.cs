@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 
 namespace Unity.Properties.Tests
@@ -31,6 +32,29 @@ namespace Unity.Properties.Tests
         [FieldOffset(32)] public float Float32Value;
 
         [FieldOffset(36)] public double Float64Value;
+
+        [FieldOffset(44)] public FlagsEnum FlagsEnum;
+
+        [FieldOffset(48)] public UnorderedIntEnum UnorderedIntEnum;
+    }
+
+    [Flags]
+    public enum FlagsEnum
+    {
+        None =   0,
+        Value1 = 1,
+        Value2 = 2,
+        Value3 = 4,
+        Value4 = 8
+    }
+
+    public enum UnorderedIntEnum : int
+    {
+        None = 0,
+        Value1 = 1,
+        Value4 = 4,
+        Value2 = 2,
+        Value3 = 3
     }
 
     /// <summary>
@@ -82,6 +106,14 @@ namespace Unity.Properties.Tests
             nameof(TestPrimitiveContainer.Float64Value),
             36);
 
+        private readonly UnmanagedProperty<TestPrimitiveContainer, FlagsEnum> m_FlagsEnum = new UnmanagedProperty<TestPrimitiveContainer, FlagsEnum>(
+            nameof(TestPrimitiveContainer.FlagsEnum),
+            44);
+
+        private readonly UnmanagedProperty<TestPrimitiveContainer, UnorderedIntEnum> m_UnorderedIntEnum = new UnmanagedProperty<TestPrimitiveContainer, UnorderedIntEnum>(
+            nameof(TestPrimitiveContainer.UnorderedIntEnum),
+            48);
+
         public override void Accept<TVisitor>(ref TestPrimitiveContainer container, TVisitor visitor, ref ChangeTracker changeTracker)
         {
             VisitUnmanagedValueProperty(visitor, m_BoolValue, ref container, ref changeTracker);
@@ -95,6 +127,8 @@ namespace Unity.Properties.Tests
             VisitUnmanagedValueProperty(visitor, m_UInt64Value, ref container, ref changeTracker);
             VisitUnmanagedValueProperty(visitor, m_Float32Value, ref container, ref changeTracker);
             VisitUnmanagedValueProperty(visitor, m_Float64Value, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(visitor, m_FlagsEnum, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(visitor, m_UnorderedIntEnum, ref container, ref changeTracker);
         }
 
         private void VisitUnmanagedValueProperty<TVisitor, TValue>(TVisitor visitor, UnmanagedProperty<TestPrimitiveContainer, TValue> property, ref TestPrimitiveContainer container,
@@ -117,12 +151,14 @@ namespace Unity.Properties.Tests
                    TryFindProperty(name, m_UInt32Value, ref container, ref changeTracker, ref action) ||
                    TryFindProperty(name, m_UInt64Value, ref container, ref changeTracker, ref action) ||
                    TryFindProperty(name, m_Float32Value, ref container, ref changeTracker, ref action) ||
-                   TryFindProperty(name, m_Float64Value, ref container, ref changeTracker, ref action);
+                   TryFindProperty(name, m_Float64Value, ref container, ref changeTracker, ref action) ||
+                   TryFindProperty(name, m_FlagsEnum, ref container, ref changeTracker, ref action) ||
+                   TryFindProperty(name, m_UnorderedIntEnum, ref container, ref changeTracker, ref action);
         }
 
         private bool TryFindProperty<TCallback, TValue>(string name, UnmanagedProperty<TestPrimitiveContainer, TValue> property, ref TestPrimitiveContainer container, ref ChangeTracker changeTracker,
             ref TCallback callback)
-            where TCallback : IPropertyQuery<TestPrimitiveContainer>
+            where TCallback : IPropertyGetter<TestPrimitiveContainer>
             where TValue : unmanaged
         {
             if (string.Equals(name, property.GetName()))
