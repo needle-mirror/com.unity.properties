@@ -1,7 +1,7 @@
 {
   "name": "com.unity.properties",
   "displayName": "Properties",
-  "version": "0.6.2-preview",
+  "version": "0.6.3-preview",
   "unity": "2019.1",
   "unityRelease": "0b9",
   "description": "Interfaces and utilities to describe and visit data containers.",
@@ -16,6 +16,6 @@
   "repository": {
     "type": "git",
     "url": "git@github.cds.internal.unity3d.com:unity/com.unity.properties.git",
-    "revision": "d5e716c2e68741f62a4f7c3f8b9de4299ffd4761"
+    "revision": "a59d4be73e6981277fce892d15b36cff2c3a6cc2"
   }
 }

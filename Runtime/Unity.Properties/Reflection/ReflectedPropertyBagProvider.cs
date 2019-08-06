@@ -37,8 +37,8 @@ namespace Unity.Properties.Reflection
             }
 
             var propertyBag = new ReflectedPropertyBag<TContainer>();
-            var fields = typeof(TContainer).GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
 
+            var fields = typeof(TContainer).GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
             foreach (var field in fields)
             {
                 if (field.IsPrivate && field.GetCustomAttribute<PropertyAttribute>() == null)
@@ -50,8 +50,7 @@ namespace Unity.Properties.Reflection
                 method.Invoke(this, new object[] {field, propertyBag});
             }
             
-            var properties = typeof(TContainer).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
+            var properties = typeof(TContainer).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
             foreach (var property in properties)
             {
                 if (property.GetCustomAttribute<PropertyAttribute>() == null)
@@ -61,6 +60,23 @@ namespace Unity.Properties.Reflection
                 
                 var method = m_CreatePropertyFromPropertyInfoMethod.MakeGenericMethod(typeof(TContainer), property.PropertyType);
                 method.Invoke(this, new object[] {property, propertyBag});
+            }
+
+            var baseType = typeof(TContainer).BaseType;
+            while (baseType != null)
+            {
+                fields = baseType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+                foreach (var field in fields)
+                {
+                    if (field.GetCustomAttribute<PropertyAttribute>() == null)
+                    {
+                        continue;
+                    }
+
+                    var method = m_CreatePropertyFromFieldInfoMethod.MakeGenericMethod(typeof(TContainer), field.FieldType);
+                    method.Invoke(this, new object[] { field, propertyBag });
+                }
+                baseType = baseType.BaseType;
             }
 
             return propertyBag;

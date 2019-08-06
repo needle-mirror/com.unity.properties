@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [0.6.3-preview] - 2019-08-06
+
+### Fixed
+* Fixed `System.Guid` properties `IsContainer` value to return `false`.
+* Fixed property bag reflection for base class with private fields.
+* Fixed property bag reflection for private properties.
+
 ## [0.6.2-preview] - 2019-07-29
 
 ### Fixed

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Unity.Properties.Reflection
@@ -40,6 +41,10 @@ namespace Unity.Properties.Reflection
         public void AddProperty<TProperty, TValue>(TProperty property) where TProperty : IProperty<TContainer, TValue>
         {
             var proxy = new PropertyProxy<TProperty, TValue> {Property = property};
+            if (m_PropertiesDictionary.ContainsKey(property.GetName()))
+            {
+                throw new InvalidOperationException($"A property with name '{property.GetName()}' already exist in property bag for type '{typeof(TContainer).FullName}'. This can be caused by class inheritance.");
+            }
             m_PropertiesDictionary.Add(property.GetName(), proxy);
             m_PropertiesList.Add(proxy);
         }

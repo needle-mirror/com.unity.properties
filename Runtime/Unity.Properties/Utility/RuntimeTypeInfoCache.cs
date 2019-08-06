@@ -4,7 +4,7 @@ namespace Unity.Properties
 {
     struct RuntimeTypeInfoCache
     {
-        public static bool IsContainerType(Type type) => !(type.IsPrimitive || type.IsEnum || type == typeof(string));
+        public static bool IsContainerType(Type type) => !(type.IsPrimitive || type.IsEnum || type == typeof(string) || type == typeof(Guid));
     }
 
     /// <summary>
@@ -21,6 +21,7 @@ namespace Unity.Properties
         static readonly bool s_IsEnum;
         static readonly bool s_IsArray;
         static readonly bool s_IsString;
+        static readonly bool s_IsGuid;
 
         static RuntimeTypeInfoCache()
         {
@@ -32,6 +33,7 @@ namespace Unity.Properties
             s_IsArray = type.IsArray;
             s_IsEnum = type.IsEnum;
             s_IsString = typeof(T) == typeof(string);
+            s_IsGuid = typeof(T) == typeof(Guid);
         }
 
         public static bool IsValueType() => s_IsValueType;
@@ -42,7 +44,7 @@ namespace Unity.Properties
 
         public static bool IsArray() => s_IsArray;
 
-        public static bool IsContainerType() => !(s_IsPrimitive || s_IsEnum || s_IsString);
+        public static bool IsContainerType() => !(s_IsPrimitive || s_IsEnum || s_IsString || s_IsGuid);
 
         public static bool IsAbstractOrInterface() => s_IsAbstract || s_IsInterface;
     }
