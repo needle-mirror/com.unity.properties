@@ -78,6 +78,8 @@ namespace Unity.Properties.Reflection
             }
             else
             {
+                if (memberInfo.PropertyType.IsPointer)
+                    return false;
                 propertyBag.AddProperty<ReflectedMemberProperty<TContainer, TValue>, TValue>(new ReflectedMemberProperty<TContainer, TValue>(memberInfo));
             }
 

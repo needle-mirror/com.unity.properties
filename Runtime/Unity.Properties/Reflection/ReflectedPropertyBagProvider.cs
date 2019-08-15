@@ -76,6 +76,19 @@ namespace Unity.Properties.Reflection
                     var method = m_CreatePropertyFromFieldInfoMethod.MakeGenericMethod(typeof(TContainer), field.FieldType);
                     method.Invoke(this, new object[] { field, propertyBag });
                 }
+
+                properties = baseType.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance);
+                foreach (var property in properties)
+                {
+                    if (property.GetCustomAttribute<PropertyAttribute>() == null)
+                    {
+                        continue;
+                    }
+
+                    var method = m_CreatePropertyFromPropertyInfoMethod.MakeGenericMethod(typeof(TContainer), property.PropertyType);
+                    method.Invoke(this, new object[] { property, propertyBag });
+                }
+
                 baseType = baseType.BaseType;
             }
 

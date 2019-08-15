@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [0.6.4-preview] - 2019-08-15
+
+### Fixed
+* Fixed property bag reflection for base class with private properties.
+* Disabled generation of properties for reflected pointer fields in order to avoid casting errors.
+
 ## [0.6.3-preview] - 2019-08-06
 
 ### Fixed

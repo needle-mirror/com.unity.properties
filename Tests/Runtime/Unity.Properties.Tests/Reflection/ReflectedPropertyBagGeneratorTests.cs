@@ -27,7 +27,13 @@ namespace Unity.Properties.Reflection.Tests
             public int HiddenInt32Property { get; }
         }
 
-        class ClassContainerWithBaseClass : BaseClassContainerWithPrivateFields
+        struct ContainerWithPrivateProperties
+        {
+            [Property] int IntProperty { get; }
+            int HiddenInt32Property { get; }
+        }
+
+        class ClassContainerWithBaseClassAndPrivateFields : BaseClassContainerWithPrivateFields
         {
 #pragma warning disable 649
             public bool m_BoolValue;
@@ -50,11 +56,42 @@ namespace Unity.Properties.Reflection.Tests
 #pragma warning restore 649
         }
 
+        class ClassContainerWithBaseClassAndPrivateProperties : BaseClassContainerWithPrivateProperties
+        {
+#pragma warning disable 649
+            [Property] public bool BoolProperty { get; }
+#pragma warning restore 649
+        }
+
+        class BaseClassContainerWithPrivateProperties : AnotherBaseClassContainerWithPrivateProperties
+        {
+#pragma warning disable 649
+            [Property] float FloatProperty { get; }
+            float HiddenFloatProperty { get; }
+#pragma warning restore 649
+        }
+
+        class AnotherBaseClassContainerWithPrivateProperties
+        {
+#pragma warning disable 649
+            [Property] int Int32Property { get; }
+            int HiddenInt32Property { get; }
+#pragma warning restore 649
+        }
+
         class ClassContainerWithDuplicateFields : BaseClassContainerWithPrivateFields
         {
 #pragma warning disable 649
             [Property] float m_FloatValue;
             float m_HiddenFloatValue;
+#pragma warning restore 649
+        }
+
+        class ClassContainerWithDuplicateProperties : BaseClassContainerWithPrivateProperties
+        {
+#pragma warning disable 649
+            [Property] float FloatProperty { get; }
+            float HiddenFloatProperty { get; }
 #pragma warning restore 649
         }
 
@@ -88,12 +125,37 @@ namespace Unity.Properties.Reflection.Tests
         [Test]
         public void ReflectedPropertyBagGenerator_BaseClassPrivateFields()
         {
-            var propertyBag = new ReflectedPropertyBagProvider().Generate<ClassContainerWithBaseClass>();
+            var propertyBag = new ReflectedPropertyBagProvider().Generate<ClassContainerWithBaseClassAndPrivateFields>();
             Assert.That(propertyBag.HasProperty("m_BoolValue"), Is.True);
             Assert.That(propertyBag.HasProperty("m_FloatValue"), Is.True);
             Assert.That(propertyBag.HasProperty("m_HiddenFloatValue"), Is.False);
             Assert.That(propertyBag.HasProperty("m_Int32Value"), Is.True);
             Assert.That(propertyBag.HasProperty("m_HiddenInt32Value"), Is.False);
+        }
+
+        /// <summary>
+        /// Tests that the <see cref="ReflectedPropertyBagProvider"/> correctly generates properties for private <see cref="PropertyAttribute"/> properties.
+        /// </summary>
+        [Test]
+        public void ReflectedPropertyBagGenerator_PrivateProperties()
+        {
+            var propertyBag = new ReflectedPropertyBagProvider().Generate<ContainerWithPrivateProperties>();
+            Assert.That(propertyBag.HasProperty("IntProperty"), Is.True);
+            Assert.That(propertyBag.HasProperty("HiddenInt32Property"), Is.False);
+        }
+
+        /// <summary>
+        /// Tests that the <see cref="ReflectedPropertyBagProvider"/> correctly generates properties for base class private <see cref="PropertyAttribute"/> properties.
+        /// </summary>
+        [Test]
+        public void ReflectedPropertyBagGenerator_BaseClassPrivateProperties()
+        {
+            var propertyBag = new ReflectedPropertyBagProvider().Generate<ClassContainerWithBaseClassAndPrivateProperties>();
+            Assert.That(propertyBag.HasProperty("BoolProperty"), Is.True);
+            Assert.That(propertyBag.HasProperty("FloatProperty"), Is.True);
+            Assert.That(propertyBag.HasProperty("HiddenFloatProperty"), Is.False);
+            Assert.That(propertyBag.HasProperty("Int32Property"), Is.True);
+            Assert.That(propertyBag.HasProperty("HiddenInt32Property"), Is.False);
         }
 
         /// <summary>
@@ -105,6 +167,19 @@ namespace Unity.Properties.Reflection.Tests
             var e = Assert.Throws<System.Reflection.TargetInvocationException>(() =>
             {
                 new ReflectedPropertyBagProvider().Generate<ClassContainerWithDuplicateFields>();
+            });
+            Assert.That(e.InnerException, Is.TypeOf<InvalidOperationException>());
+        }
+
+        /// <summary>
+        /// Tests that the <see cref="ReflectedPropertyBagProvider"/> correctly throws for duplicate <see cref="PropertyAttribute"/> properties.
+        /// </summary>
+        [Test]
+        public void ReflectedPropertyBagGenerator_DuplicateProperties()
+        {
+            var e = Assert.Throws<System.Reflection.TargetInvocationException>(() =>
+            {
+                new ReflectedPropertyBagProvider().Generate<ClassContainerWithDuplicateProperties>();
             });
             Assert.That(e.InnerException, Is.TypeOf<InvalidOperationException>());
         }
