@@ -36,6 +36,8 @@ namespace Unity.Properties.Tests
         [FieldOffset(44)] public FlagsEnum FlagsEnum;
 
         [FieldOffset(48)] public UnorderedIntEnum UnorderedIntEnum;
+        
+        [FieldOffset(52)] public SmallEnum SmallEnum;
     }
 
     [Flags]
@@ -57,6 +59,13 @@ namespace Unity.Properties.Tests
         Value3 = 3
     }
 
+    public enum SmallEnum : byte
+    {
+        None = 0,
+        Value1 = 1,
+        Value2 = 2,
+    }
+    
     /// <summary>
     /// Manually written property bag. 
     /// </summary>
@@ -113,6 +122,10 @@ namespace Unity.Properties.Tests
         readonly UnmanagedProperty<TestPrimitiveContainer, UnorderedIntEnum> m_UnorderedIntEnum = new UnmanagedProperty<TestPrimitiveContainer, UnorderedIntEnum>(
             nameof(TestPrimitiveContainer.UnorderedIntEnum),
             48);
+        
+        readonly UnmanagedProperty<TestPrimitiveContainer, SmallEnum> m_SmallEnum = new UnmanagedProperty<TestPrimitiveContainer, SmallEnum>(
+            nameof(TestPrimitiveContainer.SmallEnum),
+            52);
 
         public override void Accept<TVisitor>(ref TestPrimitiveContainer container, TVisitor visitor, ref ChangeTracker changeTracker)
         {
@@ -129,6 +142,7 @@ namespace Unity.Properties.Tests
             VisitUnmanagedValueProperty(visitor, m_Float64Value, ref container, ref changeTracker);
             VisitUnmanagedValueProperty(visitor, m_FlagsEnum, ref container, ref changeTracker);
             VisitUnmanagedValueProperty(visitor, m_UnorderedIntEnum, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(visitor, m_SmallEnum, ref container, ref changeTracker);
         }
 
         void VisitUnmanagedValueProperty<TVisitor, TValue>(TVisitor visitor, UnmanagedProperty<TestPrimitiveContainer, TValue> property, ref TestPrimitiveContainer container,
@@ -153,7 +167,8 @@ namespace Unity.Properties.Tests
                    TryFindProperty(name, m_Float32Value, ref container, ref changeTracker, ref action) ||
                    TryFindProperty(name, m_Float64Value, ref container, ref changeTracker, ref action) ||
                    TryFindProperty(name, m_FlagsEnum, ref container, ref changeTracker, ref action) ||
-                   TryFindProperty(name, m_UnorderedIntEnum, ref container, ref changeTracker, ref action);
+                   TryFindProperty(name, m_UnorderedIntEnum, ref container, ref changeTracker, ref action) ||
+                   TryFindProperty(name, m_SmallEnum, ref container, ref changeTracker, ref action);
         }
 
         bool TryFindProperty<TCallback, TValue>(string name, UnmanagedProperty<TestPrimitiveContainer, TValue> property, ref TestPrimitiveContainer container, ref ChangeTracker changeTracker,

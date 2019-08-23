@@ -76,7 +76,7 @@ namespace Unity.Properties.Reflection
 
         public void Clear(ref TContainer container) => SetValue(ref container, new TElement[0]);
 
-        public void GetPropertyAtIndex<TGetter>(ref TContainer container, int index, ref ChangeTracker changeTracker, TGetter getter) 
+        public void GetPropertyAtIndex<TGetter>(ref TContainer container, int index, ref ChangeTracker changeTracker, ref TGetter getter) 
             where TGetter : ICollectionElementPropertyGetter<TContainer>
         {
             getter.VisitProperty<ReflectedListElementProperty, TElement>(new ReflectedListElementProperty(this, index), ref container, ref changeTracker);

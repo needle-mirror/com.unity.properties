@@ -49,6 +49,16 @@ namespace Unity.Properties.Tests
             Assert.AreEqual(FlagsEnum.Value1 | FlagsEnum.Value4, container.FlagsEnum);
             Assert.AreEqual(UnorderedIntEnum.Value4, container.UnorderedIntEnum);
         }
+        
+        [Test]
+        public void PropertyContainer_SetValue_Enums_As_Byte()
+        {
+            var container = new TestPrimitiveContainer();
+
+            PropertyContainer.SetValue(ref container, nameof(TestPrimitiveContainer.SmallEnum), (byte)(SmallEnum.Value1 | SmallEnum.Value2));
+
+            Assert.AreEqual(SmallEnum.Value1 | SmallEnum.Value2, container.SmallEnum);
+        }
 
         [Test]
         public void PropertyContainer_SetValue_Enums_As_String()

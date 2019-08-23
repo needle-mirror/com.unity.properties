@@ -75,7 +75,7 @@ namespace Unity.Properties
                         SrcElementValue = srcElementProperty.GetValue(ref srcContainer)
                     };
 
-                    DstProperty.GetPropertyAtIndex(ref DstContainer, Index, ref propertyChangeTracker, assignment);
+                    DstProperty.GetPropertyAtIndex(ref DstContainer, Index, ref propertyChangeTracker, ref assignment);
                 }
 
                 public void VisitCollectionProperty<TElementProperty, TElement>(TElementProperty property, ref TSourceContainer container, ref ChangeTracker propertyChangeTracker)
@@ -157,7 +157,7 @@ namespace Unity.Properties
                         Index = i
                     };
 
-                    srcProperty.GetPropertyAtIndex(ref srcContainer, i, ref changeTracker, transfer);
+                    srcProperty.GetPropertyAtIndex(ref srcContainer, i, ref changeTracker, ref transfer);
                     DstContainer = transfer.DstContainer;
                 }
             }

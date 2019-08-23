@@ -1,6 +1,18 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [0.7.0-preview] - 2019-08-23
+### Fixed
+* Conversion to all supported underlying type of enums should now be supported.
+* Type conversion should now work on derived types.
+
+### Added
+* Added `PropertyContainer.GetValueAtPath` and `PropertyContainer.SetValueAtPath`, which will set a value for a given `PropertyPath`.
+* Added construction of a `PropertyPath` from a string (i.e. `Path.To.The.List[1].Value`).
+
+### Changed
+* ***Breaking change*** `IPropertyGetter` and `ICollectionPropertyGetter` are now passed by ref during visitation.
+
 ## [0.6.4-preview] - 2019-08-15
 
 ### Fixed

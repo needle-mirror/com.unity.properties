@@ -29,7 +29,7 @@ namespace Unity.Properties
         /// <summary>
         /// Gets the strongly typed element at the specified index.
         /// </summary>
-        void GetPropertyAtIndex<TGetter>(ref TContainer container, int index, ref ChangeTracker changeTracker, TGetter getter)
+        void GetPropertyAtIndex<TGetter>(ref TContainer container, int index, ref ChangeTracker changeTracker, ref TGetter getter)
             where TGetter : ICollectionElementPropertyGetter<TContainer>;
     }
 }

@@ -116,7 +116,7 @@ namespace Unity.Properties
             m_Setter(ref container, new TElement[0]);
         }
 
-        public void GetPropertyAtIndex<TGetter>(ref TContainer container, int index, ref ChangeTracker changeTracker, TGetter getter)
+        public void GetPropertyAtIndex<TGetter>(ref TContainer container, int index, ref ChangeTracker changeTracker, ref TGetter getter)
             where TGetter : ICollectionElementPropertyGetter<TContainer>
         {
             getter.VisitProperty<CollectionElementProperty, TElement>(new CollectionElementProperty(this, index), ref container, ref changeTracker);

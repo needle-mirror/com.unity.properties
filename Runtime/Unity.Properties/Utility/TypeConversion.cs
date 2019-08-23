@@ -65,8 +65,66 @@ namespace Unity.Properties
                         return true;
                     }
 
+                    if (typeof(TSource).IsAssignableFrom(typeof(TDestination)))
+                    {
+                        // Boxing :(
+                        destination = (TDestination) Enum.ToObject(typeof(TDestination), source);
+                        return true;
+                    }
+                    
                     // Boxing :(
-                    destination = (TDestination) (object)Convert<TSource, int>(source);
+                    var type = typeof(TSource);
+                    switch (Type.GetTypeCode(type))
+                    {
+                        case TypeCode.Boolean:
+                            destination = (TDestination) (object)Convert<TSource, bool>(source);
+                            break;
+                        case TypeCode.Char:
+                            destination = (TDestination) (object)Convert<TSource, char>(source);
+                            break;
+                        case TypeCode.SByte:
+                            destination = (TDestination) (object)Convert<TSource, sbyte>(source);
+                            break;
+                        case TypeCode.Byte:
+                            destination = (TDestination) (object)Convert<TSource, byte>(source);
+                            break;
+                        case TypeCode.Int16:
+                            destination = (TDestination) (object)Convert<TSource, short>(source);
+                            break;
+                        case TypeCode.UInt16:
+                            destination = (TDestination) (object)Convert<TSource, ushort>(source);
+                            break;
+                        case TypeCode.Int32:
+                            destination = (TDestination) (object)Convert<TSource, int>(source);
+                            break;
+                        case TypeCode.UInt32:
+                            destination = (TDestination) (object)Convert<TSource, uint>(source);
+                            break;
+                        case TypeCode.Int64:
+                            destination = (TDestination) (object)Convert<TSource, long>(source);
+                            break;
+                        case TypeCode.UInt64:
+                            destination = (TDestination) (object)Convert<TSource, ulong>(source);
+                            break;
+                        case TypeCode.DateTime:
+                        case TypeCode.DBNull:
+                        case TypeCode.Decimal:
+                        case TypeCode.Double:
+                        case TypeCode.Empty:
+                        case TypeCode.Object:
+                        case TypeCode.Single:
+                        case TypeCode.String:
+                            throw new InvalidCastException();
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                    return true;
+                }
+
+                // Could be boxing :(
+                if (source is TDestination assignable)
+                {
+                    destination = assignable;
                     return true;
                 }
 

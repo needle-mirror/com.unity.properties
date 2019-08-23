@@ -156,7 +156,7 @@ namespace Unity.Properties
                         var callback = new VisitCollectionElementCallback<TContainer>(this);
                         var elementChangeTracker = new ChangeTracker(changeTracker.VersionStorage);
 
-                        property.GetPropertyAtIndex(ref container, i, ref elementChangeTracker, callback);
+                        property.GetPropertyAtIndex(ref container, i, ref elementChangeTracker, ref callback);
 
                         if (elementChangeTracker.IsChanged())
                         {

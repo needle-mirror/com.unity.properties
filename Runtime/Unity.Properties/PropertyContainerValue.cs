@@ -145,6 +145,30 @@ namespace Unity.Properties
         }
 
         /// <summary>
+        /// Sets the value of the property with the given path for the given container.
+        /// </summary>
+        /// <param name="container">The container whose data will be set.</param>
+        /// <param name="propertyPath">The property path to set.</param>
+        /// <param name="value">The value to assign at the property path.</param>
+        public static void SetValueAtPath<TContainer, TValue>(ref TContainer container, PropertyPath propertyPath, TValue value)
+        {
+            var changeTracker = new ChangeTracker();
+            SetValueAtPath(ref container, propertyPath, value, ref changeTracker);
+        }
+        
+        /// <summary>
+        /// Sets the value of the property with the given path for the given container.
+        /// </summary>
+        /// <param name="container">The container whose data will be set.</param>
+        /// <param name="propertyPath">The property path to set.</param>
+        /// <param name="value">The value to assign at the property path.</param>
+        /// <param name="changeTracker">The change tracker to increment if the value changes.</param>
+        public static void SetValueAtPath<TContainer, TValue>(ref TContainer container, PropertyPath propertyPath, TValue value, ref ChangeTracker changeTracker)
+        {
+            Actions.SetValue(ref container, propertyPath, 0, value, ref changeTracker);
+        }
+
+        /// <summary>
         /// Gets the value of the property with the given name for the given container.
         /// </summary>
         /// <param name="container">The container hosting the data.</param>
@@ -174,7 +198,18 @@ namespace Unity.Properties
 
             return action.DstValue;
         }
-
+        
+        /// <summary>
+        /// Gets the value of the property with the given path for the given container.
+        /// </summary>
+        /// <param name="container">The container hosting the data.</param>
+        /// <param name="propertyPath">The property path to get.</param>
+        /// <returns>The value of the property converted to the given type.</returns>
+        public static TValue GetValueAtPath<TContainer, TValue>(ref TContainer container, PropertyPath propertyPath)
+        {
+            var changeTracker = new ChangeTracker();
+            return Actions.GetValue<TContainer, TValue>(ref container, propertyPath, 0, ref changeTracker);
+        }
 
         /// <summary>
         /// Gets the value of the property with the given name for the given container.
