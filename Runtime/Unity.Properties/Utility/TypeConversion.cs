@@ -73,50 +73,262 @@ namespace Unity.Properties
                     }
                     
                     // Boxing :(
-                    var type = typeof(TSource);
-                    switch (Type.GetTypeCode(type))
+                    var sourceTypeCode = Type.GetTypeCode(typeof(TSource));
+                    var destinationTypeCode = Type.GetTypeCode(typeof(TDestination));
+                    // Enums are tricky, and we need to handle narrowing conversion manually. Might as well do all possible
+                    // valid use-cases.
+                    switch (sourceTypeCode)
                     {
-                        case TypeCode.Boolean:
-                            destination = (TDestination) (object)Convert<TSource, bool>(source);
-                            break;
-                        case TypeCode.Char:
-                            destination = (TDestination) (object)Convert<TSource, char>(source);
-                            break;
-                        case TypeCode.SByte:
-                            destination = (TDestination) (object)Convert<TSource, sbyte>(source);
-                            break;
-                        case TypeCode.Byte:
-                            destination = (TDestination) (object)Convert<TSource, byte>(source);
-                            break;
-                        case TypeCode.Int16:
-                            destination = (TDestination) (object)Convert<TSource, short>(source);
-                            break;
-                        case TypeCode.UInt16:
-                            destination = (TDestination) (object)Convert<TSource, ushort>(source);
+                        case TypeCode.UInt64:
+                            switch (destinationTypeCode)
+                                {
+                                    case TypeCode.Int32:
+                                        destination = (TDestination)(object)Convert<ulong, int>(Convert<TSource, ulong>(source));
+                                        break;
+                                    case TypeCode.Byte:
+                                        destination = (TDestination)(object)Convert<ulong, byte>(Convert<TSource, ulong>(source));
+                                        break;
+                                    case TypeCode.Int16:
+                                        destination = (TDestination)(object)Convert<ulong, short>(Convert<TSource, ulong>(source));
+                                        break;
+                                    case TypeCode.Int64:
+                                        destination = (TDestination)(object)Convert<ulong, long>(Convert<TSource, ulong>(source));
+                                        break;
+                                    case TypeCode.SByte:
+                                        destination = (TDestination)(object)Convert<ulong, sbyte>(Convert<TSource, ulong>(source));
+                                        break;
+                                    case TypeCode.UInt16:
+                                        destination = (TDestination)(object)Convert<ulong, ushort>(Convert<TSource, ulong>(source));
+                                        break;
+                                    case TypeCode.UInt32:
+                                        destination = (TDestination)(object)Convert<ulong, uint>(Convert<TSource, ulong>(source));
+                                        break;
+                                    case TypeCode.UInt64:
+                                        destination = (TDestination)(object)Convert<TSource, ulong>(source);
+                                        break;
+                                    default:
+                                        throw new InvalidCastException();
+                                }
                             break;
                         case TypeCode.Int32:
-                            destination = (TDestination) (object)Convert<TSource, int>(source);
+                            switch (destinationTypeCode)
+                            {
+                                case TypeCode.Int32:
+                                    destination = (TDestination)(object)Convert<TSource, int>(source);
+                                    break;
+                                case TypeCode.Byte:
+                                    destination = (TDestination)(object)Convert<int, byte>(Convert<TSource, int>(source));
+                                    break;
+                                case TypeCode.Int16:
+                                    destination = (TDestination)(object)Convert<int, short>(Convert<TSource, int>(source));
+                                    break;
+                                case TypeCode.Int64:
+                                    destination = (TDestination)(object)Convert<int, long>(Convert<TSource, int>(source));
+                                    break;
+                                case TypeCode.SByte:
+                                    destination = (TDestination)(object)Convert<int, sbyte>(Convert<TSource, int>(source));
+                                    break;
+                                case TypeCode.UInt16:
+                                    destination = (TDestination)(object)Convert<int, ushort>(Convert<TSource, int>(source));
+                                    break;
+                                case TypeCode.UInt32:
+                                    destination = (TDestination)(object)Convert<int, uint>(Convert<TSource, int>(source));
+                                    break;
+                                case TypeCode.UInt64:
+                                    destination = (TDestination)(object)Convert<int, ulong>(Convert<TSource, int>(source));
+                                    break;
+                                default:
+                                    throw new InvalidCastException();
+                            }
+                            break;
+                        case TypeCode.Byte:
+                            switch (destinationTypeCode)
+                            {
+                                case TypeCode.Byte:
+                                    destination = (TDestination)(object)Convert<TSource, byte>(source);
+                                    break;
+                                case TypeCode.Int16:
+                                    destination = (TDestination)(object)Convert<byte, short>(Convert<TSource, byte>(source));
+                                    break;
+                                case TypeCode.Int32:
+                                    destination = (TDestination)(object)Convert<byte, int>(Convert<TSource, byte>(source));
+                                    break;
+                                case TypeCode.Int64:
+                                    destination = (TDestination)(object)Convert<byte, long>(Convert<TSource, byte>(source));
+                                    break;
+                                case TypeCode.SByte:
+                                    destination = (TDestination)(object)Convert<byte, sbyte>(Convert<TSource, byte>(source));
+                                    break;
+                                case TypeCode.UInt16:
+                                    destination = (TDestination)(object)Convert<byte, ushort>(Convert<TSource, byte>(source));
+                                    break;
+                                case TypeCode.UInt32:
+                                    destination = (TDestination)(object)Convert<byte, uint>(Convert<TSource, byte>(source));
+                                    break;
+                                case TypeCode.UInt64:
+                                    destination = (TDestination)(object)Convert<byte, ulong>(Convert<TSource, byte>(source));
+                                    break;
+                                default:
+                                    throw new InvalidCastException();
+                            }
+                            break;
+                        case TypeCode.SByte:
+                            switch (destinationTypeCode)
+                            {
+                                case TypeCode.Byte:
+                                    destination = (TDestination)(object)Convert<sbyte, byte>(Convert<TSource, sbyte>(source));
+                                    break;
+                                case TypeCode.Int16:
+                                    destination = (TDestination)(object)Convert<sbyte, short>(Convert<TSource, sbyte>(source));
+                                    break;
+                                case TypeCode.Int32:
+                                    destination = (TDestination)(object)Convert<sbyte, int>(Convert<TSource, sbyte>(source));
+                                    break;
+                                case TypeCode.Int64:
+                                    destination = (TDestination)(object)Convert<sbyte, long>(Convert<TSource, sbyte>(source));
+                                    break;
+                                case TypeCode.SByte:
+                                    destination = (TDestination)(object)Convert<TSource, sbyte>(source);
+                                    break;
+                                case TypeCode.UInt16:
+                                    destination = (TDestination)(object)Convert<sbyte, ushort>(Convert<TSource, sbyte>(source));
+                                    break;
+                                case TypeCode.UInt32:
+                                    destination = (TDestination)(object)Convert<sbyte, uint>(Convert<TSource, sbyte>(source));
+                                    break;
+                                case TypeCode.UInt64:
+                                    destination = (TDestination)(object)Convert<sbyte, ulong>(Convert<TSource, sbyte>(source));
+                                    break;
+                                default:
+                                    throw new InvalidCastException();
+                            }
+                            break;
+                        case TypeCode.Int16:
+                            switch (destinationTypeCode)
+                            {
+                                case TypeCode.Byte:
+                                    destination = (TDestination)(object)Convert<short, byte>(Convert<TSource, short>(source));
+                                    break;
+                                case TypeCode.Int16:
+                                    destination = (TDestination)(object)Convert<TSource, short>(source);
+                                    break;
+                                case TypeCode.Int32:
+                                    destination = (TDestination)(object)Convert<short, int>(Convert<TSource, short>(source));
+                                    break;
+                                case TypeCode.Int64:
+                                    destination = (TDestination)(object)Convert<short, long>(Convert<TSource, short>(source));
+                                    break;
+                                case TypeCode.SByte:
+                                    destination = (TDestination)(object)Convert<short, sbyte>(Convert<TSource, short>(source));
+                                    break;
+                                case TypeCode.UInt16:
+                                    destination = (TDestination)(object)Convert<short, ushort>(Convert<TSource, short>(source));
+                                    break;
+                                case TypeCode.UInt32:
+                                    destination = (TDestination)(object)Convert<short, uint>(Convert<TSource, short>(source));
+                                    break;
+                                case TypeCode.UInt64:
+                                    destination = (TDestination)(object)Convert<short, ulong>(Convert<TSource, short>(source));
+                                    break;
+                                default:
+                                    throw new InvalidCastException();
+                            }
+                            break;
+                        case TypeCode.UInt16:
+                            switch (destinationTypeCode)
+                            {
+                                case TypeCode.Byte:
+                                    destination = (TDestination)(object)Convert<ushort, byte>(Convert<TSource, ushort>(source));
+                                    break;
+                                case TypeCode.Int16:
+                                    destination = (TDestination)(object)Convert<ushort, short>(Convert<TSource, ushort>(source));
+                                    break;
+                                case TypeCode.Int32:
+                                    destination = (TDestination)(object)Convert<ushort, int>(Convert<TSource, ushort>(source));
+                                    break;
+                                case TypeCode.Int64:
+                                    destination = (TDestination)(object)Convert<ushort, long>(Convert<TSource, ushort>(source));
+                                    break;
+                                case TypeCode.SByte:
+                                    destination = (TDestination)(object)Convert<ushort, sbyte>(Convert<TSource, ushort>(source));
+                                    break;
+                                case TypeCode.UInt16:
+                                    destination = (TDestination)(object)Convert<TSource, ushort>(source);
+                                    break;
+                                case TypeCode.UInt32:
+                                    destination = (TDestination)(object)Convert<ushort, uint>(Convert<TSource, ushort>(source));
+                                    break;
+                                case TypeCode.UInt64:
+                                    destination = (TDestination)(object)Convert<ushort, ulong>(Convert<TSource, ushort>(source));
+                                    break;
+                                default:
+                                    throw new InvalidCastException();
+                            }
                             break;
                         case TypeCode.UInt32:
-                            destination = (TDestination) (object)Convert<TSource, uint>(source);
+                            switch (destinationTypeCode)
+                            {
+                                case TypeCode.Byte:
+                                    destination = (TDestination)(object)Convert<uint, byte>(Convert<TSource, uint>(source));
+                                    break;
+                                case TypeCode.Int16:
+                                    destination = (TDestination)(object)Convert<uint, short>(Convert<TSource, uint>(source));
+                                    break;
+                                case TypeCode.Int32:
+                                    destination = (TDestination)(object)Convert<uint, int>(Convert<TSource, uint>(source));
+                                    break;
+                                case TypeCode.Int64:
+                                    destination = (TDestination)(object)Convert<uint, long>(Convert<TSource, uint>(source));
+                                    break;
+                                case TypeCode.SByte:
+                                    destination = (TDestination)(object)Convert<uint, sbyte>(Convert<TSource, uint>(source));
+                                    break;
+                                case TypeCode.UInt16:
+                                    destination = (TDestination)(object)Convert<uint, ushort>(Convert<TSource, uint>(source));
+                                    break;
+                                case TypeCode.UInt32:
+                                    destination = (TDestination)(object)Convert<TSource, uint>(source);
+                                    break;
+                                case TypeCode.UInt64:
+                                    destination = (TDestination)(object)Convert<uint, ulong>(Convert<TSource, uint>(source));
+                                    break;
+                                default:
+                                    throw new InvalidCastException();
+                            }
                             break;
                         case TypeCode.Int64:
-                            destination = (TDestination) (object)Convert<TSource, long>(source);
+                            switch (destinationTypeCode)
+                            {
+                                case TypeCode.Byte:
+                                    destination = (TDestination)(object)Convert<long, byte>(Convert<TSource, long>(source));
+                                    break;
+                                case TypeCode.Int16:
+                                    destination = (TDestination)(object)Convert<long, short>(Convert<TSource, long>(source));
+                                    break;
+                                case TypeCode.Int32:
+                                    destination = (TDestination)(object)Convert<long, int>(Convert<TSource, long>(source));
+                                    break;
+                                case TypeCode.Int64:
+                                    destination = (TDestination)(object)Convert<long, long>(Convert<TSource, long>(source));
+                                    break;
+                                case TypeCode.SByte:
+                                    destination = (TDestination)(object)Convert<TSource, sbyte>(source);
+                                    break;
+                                case TypeCode.UInt16:
+                                    destination = (TDestination)(object)Convert<long, ushort>(Convert<TSource, long>(source));
+                                    break;
+                                case TypeCode.UInt32:
+                                    destination = (TDestination)(object)Convert<long, uint>(Convert<TSource, long>(source));
+                                    break;
+                                case TypeCode.UInt64:
+                                    destination = (TDestination)(object)Convert<long, ulong>(Convert<TSource, long>(source));
+                                    break;
+                                default:
+                                    throw new InvalidCastException();
+                            }
                             break;
-                        case TypeCode.UInt64:
-                            destination = (TDestination) (object)Convert<TSource, ulong>(source);
-                            break;
-                        case TypeCode.DateTime:
-                        case TypeCode.DBNull:
-                        case TypeCode.Decimal:
-                        case TypeCode.Double:
-                        case TypeCode.Empty:
-                        case TypeCode.Object:
-                        case TypeCode.Single:
-                        case TypeCode.String:
-                            throw new InvalidCastException();
                         default:
-                            throw new ArgumentOutOfRangeException();
+                            throw new InvalidCastException();
                     }
                     return true;
                 }

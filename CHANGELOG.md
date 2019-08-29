@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [0.7.1-preview] - 2019-08-29
+### Fixed
+* Narrowing conversions between supported enum types will not throw an `InvalidCastException` anymore. 
+
 ## [0.7.0-preview] - 2019-08-23
 ### Fixed
 * Conversion to all supported underlying type of enums should now be supported.
