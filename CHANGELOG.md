@@ -1,6 +1,25 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [0.8.0-preview] - 2019-09-24
+### Added
+* Added a `TypeConstruction` utility to allow the creation of new instances.
+* Minimal unity version has been updated to 2019.3.
+* Added `PropertyElement` to help with generic, property-backed UI inspectors
+
+### Fixed
+* Fixed all `PropertyContainer.Try[...]` methods to not throw exceptions when visiting nested types.
+* Fixed property bag reflection duplicates when base class contains an internal field or property.
+
+## [0.7.2-preview] - 2019-09-12
+### Changed
+* Exposed a default way to manually visit collection items, through `VisitCollectionElementCallback<TContainer>`
+
+### Added
+* Added `PropertyContainer.TryGetValueAtPath` and `PropertyContainer.TrySetValueAtPath`, which will try to set a value for a given `PropertyPath`.
+* Added `PropertyContainer.TryGetCountAtPath` and `PropertyContainer.TrySetCountAtPath`, which will try to set the count of a collection for a given `PropertyPath`.
+* Added `PropertyContainer.VisitAtPath` and `PropertyContainer.TryVisitAtPath`, which will do a partial visitation for a given `PropertyPath`.
+
 ## [0.7.1-preview] - 2019-08-29
 ### Fixed
 * Narrowing conversions between supported enum types will not throw an `InvalidCastException` anymore. 

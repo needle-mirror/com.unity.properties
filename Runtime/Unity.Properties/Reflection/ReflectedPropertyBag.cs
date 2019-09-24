@@ -52,6 +52,10 @@ namespace Unity.Properties.Reflection
         public void AddCollectionProperty<TProperty, TValue>(TProperty property) where TProperty : ICollectionProperty<TContainer, TValue>
         {
             var proxy = new CollectionPropertyProxy<TProperty, TValue> {Property = property};
+            if (m_PropertiesDictionary.ContainsKey(property.GetName()))
+            {
+                throw new InvalidOperationException($"A property with name '{property.GetName()}' already exist in property bag for type '{typeof(TContainer).FullName}'. This can be caused by class inheritance.");
+            }
             m_PropertiesDictionary.Add(property.GetName(), proxy);
             m_PropertiesList.Add(proxy);
         }

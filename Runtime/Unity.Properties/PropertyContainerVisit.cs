@@ -29,5 +29,17 @@ namespace Unity.Properties
                 PropertyBagResolver.Resolve<TContainer>()?.Accept(ref container, visitor, ref changeTracker);
             }
         }
+        
+        public static void VisitAtPath<TContainer, TVisitor>(ref TContainer container, PropertyPath path, TVisitor visitor, ref ChangeTracker changeTracker)
+            where TVisitor : IPropertyVisitor
+        {
+            Actions.VisitAtPath(ref container, path, 0, visitor, ref changeTracker);
+        }
+        
+        public static bool TryVisitAtPath<TContainer, TVisitor>(ref TContainer container, PropertyPath path, TVisitor visitor, ref ChangeTracker changeTracker)
+            where TVisitor : IPropertyVisitor
+        {
+            return Actions.TryVisitAtPath(ref container, path, 0, visitor, ref changeTracker);
+        }
     }
 }

@@ -2,7 +2,11 @@ using System.Collections.Generic;
 
 namespace Unity.Properties
 {
-    struct VisitCollectionElementCallback<TContainer> : ICollectionElementPropertyGetter<TContainer>
+    /// <summary>
+    /// Default visit collection item getter 
+    /// </summary>
+    /// <typeparam name="TContainer">Type of the container to visit.</typeparam>
+    public struct VisitCollectionElementCallback<TContainer> : ICollectionElementPropertyGetter<TContainer>
     {
         readonly IPropertyVisitor m_Visitor;
         
@@ -11,17 +15,11 @@ namespace Unity.Properties
             m_Visitor = visitor;
         }
 
-        public void VisitProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container, ref ChangeTracker changeTracker)
-            where TElementProperty : ICollectionElementProperty<TContainer, TElement>
-        {
-            m_Visitor.VisitProperty<TElementProperty, TContainer, TElement>(property, ref container, ref changeTracker);
-        }
+        void ICollectionElementPropertyGetter<TContainer>.VisitProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container, ref ChangeTracker changeTracker)
+            => m_Visitor.VisitProperty<TElementProperty, TContainer, TElement>(property, ref container, ref changeTracker);
 
-        public void VisitCollectionProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container, ref ChangeTracker changeTracker)
-            where TElementProperty : ICollectionProperty<TContainer, TElement>, ICollectionElementProperty<TContainer, TElement>
-        {
-            m_Visitor.VisitCollectionProperty<TElementProperty, TContainer, TElement>(property, ref container, ref changeTracker);
-        }
+        void ICollectionElementPropertyGetter<TContainer>.VisitCollectionProperty<TElementProperty, TElement>(TElementProperty property, ref TContainer container, ref ChangeTracker changeTracker)
+            => m_Visitor.VisitCollectionProperty<TElementProperty, TContainer, TElement>(property, ref container, ref changeTracker);
     }
 
     /// <inheritdoc />

@@ -45,6 +45,15 @@ namespace Unity.Properties
             });
         }
 
+        public void Append(PropertyPath path)
+        {
+            for (var i = 0; i < path.PartsCount; ++i)
+            {
+                var part = path[i];
+                Push(part.Name, part.Index);
+            }
+        }
+
         public void Pop()
         {
             m_Parts.RemoveAt(m_Parts.Count - 1);

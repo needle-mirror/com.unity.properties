@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Threading;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -97,6 +99,45 @@ namespace Unity.Properties.Tests
                 CustomData = new CustomDataFoo()
             };
             PropertyContainer.Visit(ref container, new DebugLogVisitor());
+        }
+
+        [Test]
+        public void PropertyVisitor_Visit_MultiThread()
+        {
+            // Simple test to ensure we can visit a handful of types on many threads.
+            Assert.DoesNotThrow(() =>
+            {
+                const int kThreads = 8;
+                ThreadStart func = MultiVisitWorker;
+                List<Thread> threads = new List<Thread>(kThreads);
+                for (int i = 0; i < kThreads; ++i)
+                    threads.Add(new Thread(func));
+
+                foreach (var t in threads)
+                    t.Start();
+                foreach (var t in threads)
+                    t.Join();
+            });
+        }
+
+        static void MultiVisitWorker()
+        {
+            // Many types to make sure our thread has enough work
+            var containers = new object[]
+            {
+                new TestPrimitiveContainer(),
+                new int(),
+                new TestInterfaceContainer(),
+                new char(),
+                new bool(),
+                new CustomDataFoo(),
+                "",
+                new TestNestedContainer(),
+                new TestArrayContainer()
+            };
+
+            for(int i = 0; i < containers.Length; ++i)
+                PropertyContainer.Visit(ref containers[i], new DebugLogVisitor());
         }
     }
 }

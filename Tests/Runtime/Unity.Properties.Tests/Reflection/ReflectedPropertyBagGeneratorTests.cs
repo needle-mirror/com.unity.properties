@@ -95,6 +95,34 @@ namespace Unity.Properties.Reflection.Tests
 #pragma warning restore 649
         }
 
+        class ClassContainerWithoutFields : BaseClassContainerWithInternalField
+        {
+        }
+
+        class BaseClassContainerWithInternalField
+        {
+#pragma warning disable 649
+            [Property] internal int m_IntValue;
+            internal float m_HiddenFloatValue;
+#pragma warning restore 649
+        }
+
+        class ClassContainerWithVirtualField
+        {
+#pragma warning disable 649
+            public int m_IntValue;
+#pragma warning restore 649
+            [Property] public virtual float m_FloatValue => 5.0f;
+        }
+
+        class ClassContainerWithOverrideField : ClassContainerWithVirtualField
+        {
+#pragma warning disable 649
+            public new int m_IntValue;
+#pragma warning restore 649
+            [Property] public override float m_FloatValue => 10.0f;
+        }
+
         struct AssertThatPropertyIsOfType<TContainer, TExpected> : IPropertyGetter<TContainer>
         {
             public void VisitProperty<TProperty, TValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker) 
@@ -105,6 +133,21 @@ namespace Unity.Properties.Reflection.Tests
 
             public void VisitCollectionProperty<TProperty, TValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker) 
                 where TProperty : ICollectionProperty<TContainer, TValue> => 
+                throw new System.NotImplementedException();
+        }
+
+        struct AssertThatPropertyValueIsEqualTo<TContainer, TExpected> : IPropertyGetter<TContainer>
+        {
+            public TExpected ExpectedValue;
+
+            public void VisitProperty<TProperty, TValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker)
+                where TProperty : IProperty<TContainer, TValue>
+            {
+                Assert.That(property.GetValue(ref container), Is.EqualTo(ExpectedValue));
+            }
+
+            public void VisitCollectionProperty<TProperty, TValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker)
+                where TProperty : ICollectionProperty<TContainer, TValue> =>
                 throw new System.NotImplementedException();
         }
 
@@ -194,7 +237,7 @@ namespace Unity.Properties.Reflection.Tests
             var container = default(ContainerWithCharField);
             var changeTracker = default(ChangeTracker);
             var action = new AssertThatPropertyIsOfType<ContainerWithCharField, UnmanagedProperty<ContainerWithCharField, char>>();
-            propertyBag.FindProperty("c", ref container, ref changeTracker, ref action);
+            Assert.That(propertyBag.FindProperty("c", ref container, ref changeTracker, ref action), Is.True);
         }
         
         /// <summary>
@@ -206,6 +249,54 @@ namespace Unity.Properties.Reflection.Tests
             var propertyBag = new ReflectedPropertyBagProvider().Generate<ContainerWithProperties>();
             Assert.That(propertyBag.HasProperty("IntProperty"), Is.True);
             Assert.That(propertyBag.HasProperty("HiddenInt32Property"), Is.False);
+        }
+
+        /// <summary>
+        /// Tests that the <see cref="ReflectedPropertyBagProvider"/> correctly generates from internal property fields in base class.
+        /// </summary>
+        [Test]
+        public void ReflectedPropertyBagGenerator_BaseClassInternalFields()
+        {
+            var propertyBag = new ReflectedPropertyBagProvider().Generate<ClassContainerWithoutFields>();
+            Assert.That(propertyBag.HasProperty("m_IntValue"), Is.True);
+            Assert.That(propertyBag.HasProperty("m_HiddenFloatValue"), Is.False);
+        }
+
+        /// <summary>
+        /// Tests that the <see cref="ReflectedPropertyBagProvider"/> correctly generates from new and virtual/override fields.
+        /// </summary>
+        [Test]
+        public void ReflectedPropertyBagGenerator_ClassOverrideFields()
+        {
+            var propertyBag = new ReflectedPropertyBagProvider().Generate<ClassContainerWithOverrideField>();
+            Assert.That(propertyBag.HasProperty("m_IntValue"), Is.True);
+            Assert.That(propertyBag.HasProperty("m_FloatValue"), Is.True);
+        }
+
+        /// <summary>
+        /// Tests that the<see cref="ReflectedPropertyBagProvider"/> stores the correct property from virtual field.
+        /// </summary>
+        [Test]
+        public void ReflectedPropertyBagGenerator_ClassVirtualFieldValue()
+        {
+            var propertyBag = new ReflectedPropertyBagProvider().Generate<ClassContainerWithVirtualField>();
+            var container = new ClassContainerWithVirtualField();
+            var changeTracker = default(ChangeTracker);
+            var action = new AssertThatPropertyValueIsEqualTo<ClassContainerWithVirtualField, float> { ExpectedValue = 5.0f };
+            Assert.That(propertyBag.FindProperty("m_FloatValue", ref container, ref changeTracker, ref action), Is.True);
+        }
+
+        /// <summary>
+        /// Tests that the<see cref="ReflectedPropertyBagProvider"/> stores the correct property from overridden field.
+        /// </summary>
+        [Test]
+        public void ReflectedPropertyBagGenerator_ClassOverriddenFieldValue()
+        {
+            var propertyBag = new ReflectedPropertyBagProvider().Generate<ClassContainerWithOverrideField>();
+            var container = new ClassContainerWithOverrideField();
+            var changeTracker = default(ChangeTracker);
+            var action = new AssertThatPropertyValueIsEqualTo<ClassContainerWithOverrideField, float> { ExpectedValue = 10.0f };
+            Assert.That(propertyBag.FindProperty("m_FloatValue", ref container, ref changeTracker, ref action), Is.True);
         }
     }
 }

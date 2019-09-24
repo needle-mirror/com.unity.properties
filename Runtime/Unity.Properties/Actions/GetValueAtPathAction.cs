@@ -4,81 +4,172 @@ namespace Unity.Properties
 {
     static partial class Actions
     {
-        public static TTargetValue GetValue<TContainer, TTargetValue>(ref TContainer target, PropertyPath propertyPath, int index, ref ChangeTracker changeTracker)
+        public static bool TryGetValue<TContainer, TTargetValue>(ref TContainer container, PropertyPath propertyPath,
+            int propertyPathIndex, ref ChangeTracker changeTracker, out TTargetValue value)
         {
-            var action = new GetValueAtPathAction<TContainer, TTargetValue>(propertyPath, index);
-            PropertyBagResolver.Resolve<TContainer>()
-                .FindProperty(propertyPath[index].Name, ref target, ref changeTracker, ref action);
-            return action.Value;
+            return TryGetValueImpl(ref container, propertyPath, propertyPathIndex, ref changeTracker, out value) == VisitErrorCode.Ok;
         }
         
-        public static TTargetValue VisitProperty<TContainer, TProperty, TValue, TTargetValue>(TProperty property, ref TContainer container, PropertyPath path, int index, ref ChangeTracker changeTracker)
+        public static TTargetValue GetValue<TContainer, TTargetValue>(ref TContainer container, PropertyPath propertyPath,
+            int propertyPathIndex, ref ChangeTracker changeTracker)
+        {
+            var status = TryGetValueImpl(ref container, propertyPath, propertyPathIndex, ref changeTracker, out TTargetValue value);
+            switch (status)
+            {
+                case VisitErrorCode.InvalidPath:
+                    throw new ArgumentException($"Cannot get collection count at `{propertyPath}`");
+                case VisitErrorCode.InvalidCast:
+                    throw new InvalidCastException($"Could not get value of type {typeof(TTargetValue).Name} at `{propertyPath}`");
+            }
+
+            return value;
+        }
+
+        static VisitErrorCode TryGetValueImpl<TContainer, TTargetValue>(ref TContainer container, PropertyPath propertyPath,
+            int propertyPathIndex, ref ChangeTracker changeTracker, out TTargetValue value)
+        {
+            var action = new GetValueAtPathAction<TContainer, TTargetValue>(propertyPath, propertyPathIndex);
+            if (PropertyBagResolver.Resolve<TContainer>()
+                .FindProperty(propertyPath[propertyPathIndex].Name, ref container, ref changeTracker, ref action))
+            {
+                value = action.Value;
+                return action.ErrorCode;
+            }
+
+            if (typeof(TContainer) != container.GetType())
+            {
+                return GetValueFromActualTypeCallback<TTargetValue>.TryExecute(container, propertyPath, propertyPathIndex, ref changeTracker, out value);
+            }
+
+            value = default;
+            return VisitErrorCode.InvalidPath;
+        }
+        
+        static VisitErrorCode VisitGetValueProperty<TContainer, TProperty, TValue, TTargetValue>(TProperty property,
+            ref TContainer container, PropertyPath propertyPath, int propertyPathIndex, ref ChangeTracker changeTracker, out TTargetValue value)
             where TProperty : IProperty<TContainer, TValue>
         {
-            if (index < path.PartsCount - 1)
+            if (propertyPathIndex < propertyPath.PartsCount - 1)
             {
                 var sub = property.GetValue(ref container);
-                return GetValue<TValue, TTargetValue>(ref sub, path, index + 1, ref changeTracker);
+                return TryGetValueImpl(ref sub, propertyPath, propertyPathIndex + 1, ref changeTracker, out value);
             }
-            
-            if (TypeConversion.TryConvert(property.GetValue(ref container), out TTargetValue value))
+
+            if (TypeConversion.TryConvert(property.GetValue(ref container), out value))
             {
-                return value;
+                return VisitErrorCode.Ok;
             }
-            else
-            {
-                throw new InvalidCastException($"Could not get value of type {typeof(TTargetValue).Name} at `{path}`");
-            }
+
+            return VisitErrorCode.InvalidCast;
         }
 
-        public static TTargetValue VisitCollectionProperty<TContainer, TProperty, TValue, TTargetValue>(TProperty property, ref TContainer container, PropertyPath path, int index, ref ChangeTracker changeTracker)
+        static VisitErrorCode VisitCollectionGetValueProperty<TContainer, TProperty, TValue, TTargetValue>(
+            TProperty property, ref TContainer container, PropertyPath propertyPath, int propertyPathIndex,
+            ref ChangeTracker changeTracker, out TTargetValue value)
             where TProperty : ICollectionProperty<TContainer, TValue>
         {
-            var callback = new GetCollectionItemGetter<TContainer, TTargetValue>(path, index);
-            property.GetPropertyAtIndex(ref container, path[index].Index, ref changeTracker, ref callback);
-            return callback.Value;
+            if (propertyPathIndex < propertyPath.PartsCount - 1 || propertyPath[propertyPathIndex].IsListItem)
+            {
+                var callback = new GetCollectionItemGetter<TContainer, TTargetValue>(propertyPath, propertyPathIndex);
+                property.GetPropertyAtIndex(ref container, propertyPath[propertyPathIndex].Index, ref changeTracker,
+                    ref callback);
+                value = callback.Value;
+                return callback.ErrorCode;
+            }
+
+            if (TypeConversion.TryConvert(property.GetValue(ref container), out value))
+            {
+                return VisitErrorCode.Ok;
+            }
+
+            return VisitErrorCode.InvalidCast;
         }
-    }
-    
-    struct GetValueAtPathAction<TContainer, TTargetValue> : IPropertyGetter<TContainer>
-    {
-        private PropertyPath m_Path;
-        private int m_Index;
 
-        public TTargetValue Value { get; private set; }
-
-        internal GetValueAtPathAction(PropertyPath propertyMPath, int mIndex)
+        struct GetValueAtPathAction<TContainer, TTargetValue> : IPropertyGetter<TContainer>
         {
-            m_Path = propertyMPath;
-            m_Index = mIndex;
-            Value = default;
+            readonly PropertyPath m_PropertyPath;
+            readonly int m_PropertyPathIndex;
+            public VisitErrorCode ErrorCode;
+
+            public TTargetValue Value;
+
+            internal GetValueAtPathAction(PropertyPath propertyPath, int propertyPathIndex)
+            {
+                m_PropertyPath = propertyPath;
+                m_PropertyPathIndex = propertyPathIndex;
+                Value = default;
+                ErrorCode = VisitErrorCode.Ok;
+            }
+
+            void IPropertyGetter<TContainer>.VisitProperty<TProperty, TPropertyValue>(TProperty property,
+                ref TContainer container, ref ChangeTracker changeTracker) =>
+                ErrorCode = VisitGetValueProperty<TContainer, TProperty, TPropertyValue, TTargetValue>(property,
+                    ref container, m_PropertyPath, m_PropertyPathIndex, ref changeTracker, out Value);
+
+            void IPropertyGetter<TContainer>.VisitCollectionProperty<TProperty, TPropertyValue>(TProperty property,
+                ref TContainer container, ref ChangeTracker changeTracker) =>
+                ErrorCode = VisitCollectionGetValueProperty<TContainer, TProperty, TPropertyValue, TTargetValue>(property,
+                    ref container, m_PropertyPath, m_PropertyPathIndex, ref changeTracker, out Value);
         }
 
-        void IPropertyGetter<TContainer>.VisitProperty<TProperty, TPropertyValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker) =>
-            Value = Actions.VisitProperty<TContainer, TProperty, TPropertyValue, TTargetValue>(property, ref container, m_Path, m_Index, ref changeTracker);
-
-        void IPropertyGetter<TContainer>.VisitCollectionProperty<TProperty, TPropertyValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker) =>
-            Value = Actions.VisitCollectionProperty<TContainer, TProperty, TPropertyValue, TTargetValue>(property, ref container, m_Path, m_Index, ref changeTracker);
-    }
-    
-    struct GetCollectionItemGetter<TContainer, TTargetValue> : ICollectionElementPropertyGetter<TContainer>
-    {
-        private PropertyPath m_Path;
-        private int m_Index;
-                
-        public TTargetValue Value { get; private set; }
-
-        internal GetCollectionItemGetter(PropertyPath propertyMPath, int mIndex)
+        struct GetCollectionItemGetter<TContainer, TTargetValue> : ICollectionElementPropertyGetter<TContainer>
         {
-            m_Path = propertyMPath;
-            m_Index = mIndex;
-            Value = default;
-        }
-                
-        void ICollectionElementPropertyGetter<TContainer>.VisitProperty<TProperty, TPropertyValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker) => 
-            Value = Actions.VisitProperty<TContainer, TProperty, TPropertyValue, TTargetValue>(property, ref container, m_Path, m_Index, ref changeTracker);
+            readonly PropertyPath m_PropertyPath;
+            readonly int m_PropertyPathIndex;
+            public VisitErrorCode ErrorCode;
+            public TTargetValue Value;
 
-        void ICollectionElementPropertyGetter<TContainer>.VisitCollectionProperty<TProperty, TPropertyValue>(TProperty property, ref TContainer container, ref ChangeTracker changeTracker) =>
-            Value = Actions.VisitCollectionProperty<TContainer, TProperty, TPropertyValue, TTargetValue>(property, ref container, m_Path, m_Index, ref changeTracker);
+            internal GetCollectionItemGetter(PropertyPath propertyPath, int propertyPathIndex)
+            {
+                m_PropertyPath = propertyPath;
+                m_PropertyPathIndex = propertyPathIndex;
+                Value = default;
+                ErrorCode = VisitErrorCode.Ok;
+            }
+
+            void ICollectionElementPropertyGetter<TContainer>.VisitProperty<TProperty, TPropertyValue>(
+                TProperty property, ref TContainer container, ref ChangeTracker changeTracker) =>
+                ErrorCode = VisitGetValueProperty<TContainer, TProperty, TPropertyValue, TTargetValue>(property,
+                    ref container, m_PropertyPath, m_PropertyPathIndex, ref changeTracker, out Value);
+
+            void ICollectionElementPropertyGetter<TContainer>.VisitCollectionProperty<TProperty, TPropertyValue>(
+                TProperty property, ref TContainer container, ref ChangeTracker changeTracker) =>
+                ErrorCode = VisitCollectionGetValueProperty<TContainer, TProperty, TPropertyValue, TTargetValue>(property,
+                    ref container, m_PropertyPath, m_PropertyPathIndex, ref changeTracker, out Value);
+        }
+
+        struct GetValueFromActualTypeCallback<TValue> : IContainerTypeCallback
+        {
+            readonly object m_Container;
+            readonly PropertyPath m_PropertyPath;
+            readonly int m_PropertyPathIndex;
+            ChangeTracker m_ChangeTracker;
+            TValue m_Value;
+            VisitErrorCode m_ErrorCode;
+
+            private GetValueFromActualTypeCallback(object container, PropertyPath propertyPath, int propertyPathIndex, ref ChangeTracker changeTracker)
+            {
+                m_Container = container;
+                m_PropertyPath = propertyPath;
+                m_PropertyPathIndex = propertyPathIndex;
+                m_ChangeTracker = changeTracker;
+                m_Value = default;
+                m_ErrorCode = VisitErrorCode.Ok;
+            }
+
+            public static VisitErrorCode TryExecute(object target, PropertyPath propertyName, int index, ref ChangeTracker changeTracker, out TValue value)
+            {
+                var action = new GetValueFromActualTypeCallback<TValue>(target, propertyName, index, ref changeTracker);
+                PropertyBagResolver.Resolve(target.GetType()).Cast(ref action);
+                value = action.m_Value;
+                return action.m_ErrorCode;
+            }
+
+            public void Invoke<T>()
+            {
+                var t = (T) m_Container;
+                m_ErrorCode = TryGetValueImpl<T, TValue>(ref t, m_PropertyPath, m_PropertyPathIndex, ref m_ChangeTracker, out m_Value); 
+            }
+        }
     }
 }

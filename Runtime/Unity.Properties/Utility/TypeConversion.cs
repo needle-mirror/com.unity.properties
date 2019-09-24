@@ -57,11 +57,42 @@ namespace Unity.Properties
                     return true;
                 }
 
+#if UNITY_EDITOR
+                if (typeof(UnityEngine.Object).IsAssignableFrom(typeof(TDestination)))
+                {
+                    var sourceType = typeof(TSource);
+                    if ((sourceType.IsClass && null != source) || sourceType.IsValueType)
+                    {
+                        var sourceAsStr = source.ToString();
+                        if (UnityEditor.GlobalObjectId.TryParse(sourceAsStr, out var id))
+                        {
+                            var obj = UnityEditor.GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id);
+                            destination = (TDestination) (object) obj;
+                            return true;
+                        }
+
+                        if (sourceAsStr == new UnityEditor.GlobalObjectId().ToString())
+                        {
+                            destination = (TDestination)(object)null;
+                            return true;
+                        }
+                    }
+                }
+#endif
+
                 if (typeof(TDestination).IsEnum)
                 {
                     if (typeof(TSource) == typeof(string))
                     {
-                        destination = (TDestination) Enum.Parse(typeof(TDestination), (string) (object) source);
+                        try
+                        {
+                            destination = (TDestination) Enum.Parse(typeof(TDestination), (string) (object) source);
+                        }
+                        catch (ArgumentException)
+                        {
+                            destination = default;
+                            return false;
+                        }
                         return true;
                     }
 
@@ -107,7 +138,8 @@ namespace Unity.Properties
                                         destination = (TDestination)(object)Convert<TSource, ulong>(source);
                                         break;
                                     default:
-                                        throw new InvalidCastException();
+                                        destination = default;
+                                        return false;
                                 }
                             break;
                         case TypeCode.Int32:
@@ -138,7 +170,8 @@ namespace Unity.Properties
                                     destination = (TDestination)(object)Convert<int, ulong>(Convert<TSource, int>(source));
                                     break;
                                 default:
-                                    throw new InvalidCastException();
+                                    destination = default;
+                                    return false;
                             }
                             break;
                         case TypeCode.Byte:
@@ -169,7 +202,8 @@ namespace Unity.Properties
                                     destination = (TDestination)(object)Convert<byte, ulong>(Convert<TSource, byte>(source));
                                     break;
                                 default:
-                                    throw new InvalidCastException();
+                                    destination = default;
+                                    return false;
                             }
                             break;
                         case TypeCode.SByte:
@@ -200,7 +234,8 @@ namespace Unity.Properties
                                     destination = (TDestination)(object)Convert<sbyte, ulong>(Convert<TSource, sbyte>(source));
                                     break;
                                 default:
-                                    throw new InvalidCastException();
+                                    destination = default;
+                                    return false;
                             }
                             break;
                         case TypeCode.Int16:
@@ -231,7 +266,8 @@ namespace Unity.Properties
                                     destination = (TDestination)(object)Convert<short, ulong>(Convert<TSource, short>(source));
                                     break;
                                 default:
-                                    throw new InvalidCastException();
+                                    destination = default;
+                                    return false;
                             }
                             break;
                         case TypeCode.UInt16:
@@ -262,7 +298,8 @@ namespace Unity.Properties
                                     destination = (TDestination)(object)Convert<ushort, ulong>(Convert<TSource, ushort>(source));
                                     break;
                                 default:
-                                    throw new InvalidCastException();
+                                    destination = default;
+                                    return false;
                             }
                             break;
                         case TypeCode.UInt32:
@@ -293,7 +330,8 @@ namespace Unity.Properties
                                     destination = (TDestination)(object)Convert<uint, ulong>(Convert<TSource, uint>(source));
                                     break;
                                 default:
-                                    throw new InvalidCastException();
+                                    destination = default;
+                                    return false;
                             }
                             break;
                         case TypeCode.Int64:
@@ -324,11 +362,13 @@ namespace Unity.Properties
                                     destination = (TDestination)(object)Convert<long, ulong>(Convert<TSource, long>(source));
                                     break;
                                 default:
-                                    throw new InvalidCastException();
+                                    destination = default;
+                                    return false;
                             }
                             break;
                         default:
-                            throw new InvalidCastException();
+                            destination = default;
+                            return false;
                     }
                     return true;
                 }
@@ -337,6 +377,20 @@ namespace Unity.Properties
                 if (source is TDestination assignable)
                 {
                     destination = assignable;
+                    return true;
+                }
+
+                // Special case if source is null and we are trying to set the data.
+                if (typeof(TSource).IsAssignableFrom(typeof(TDestination)))
+                {
+                    destination = (TDestination) (object) source;
+                    return true;
+                }
+                
+                // Special case if source is null and we are trying to get the data.
+                if (typeof(TDestination).IsAssignableFrom(typeof(TSource)))
+                {
+                    destination = (TDestination) (object) source;
                     return true;
                 }
 

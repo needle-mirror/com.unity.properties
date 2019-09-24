@@ -41,6 +41,11 @@ namespace Unity.Properties.Reflection
             var fields = typeof(TContainer).GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
             foreach (var field in fields)
             {
+                if (field.DeclaringType != typeof(TContainer))
+                {
+                    continue;
+                }
+
                 if (field.IsPrivate && field.GetCustomAttribute<PropertyAttribute>() == null)
                 {
                     continue;
@@ -53,6 +58,11 @@ namespace Unity.Properties.Reflection
             var properties = typeof(TContainer).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
             foreach (var property in properties)
             {
+                if (property.DeclaringType != typeof(TContainer))
+                {
+                    continue;
+                }
+
                 if (property.GetCustomAttribute<PropertyAttribute>() == null)
                 {
                     continue;
@@ -63,11 +73,16 @@ namespace Unity.Properties.Reflection
             }
 
             var baseType = typeof(TContainer).BaseType;
-            while (baseType != null)
+            while (baseType != null && baseType != typeof(object))
             {
                 fields = baseType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
                 foreach (var field in fields)
                 {
+                    if (field.DeclaringType != baseType)
+                    {
+                        continue;
+                    }
+
                     if (field.GetCustomAttribute<PropertyAttribute>() == null)
                     {
                         continue;
@@ -80,6 +95,11 @@ namespace Unity.Properties.Reflection
                 properties = baseType.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance);
                 foreach (var property in properties)
                 {
+                    if (property.DeclaringType != baseType)
+                    {
+                        continue;
+                    }
+
                     if (property.GetCustomAttribute<PropertyAttribute>() == null)
                     {
                         continue;

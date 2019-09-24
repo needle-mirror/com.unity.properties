@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 
 namespace Unity.Properties
 {
@@ -19,9 +20,11 @@ namespace Unity.Properties
         static readonly bool s_IsInterface;
         static readonly bool s_IsAbstract;
         static readonly bool s_IsEnum;
+        static readonly bool s_IsEnumFlags;
         static readonly bool s_IsArray;
         static readonly bool s_IsString;
         static readonly bool s_IsGuid;
+        
 
         static RuntimeTypeInfoCache()
         {
@@ -32,6 +35,7 @@ namespace Unity.Properties
             s_IsAbstract = type.IsAbstract;
             s_IsArray = type.IsArray;
             s_IsEnum = type.IsEnum;
+            s_IsEnumFlags = s_IsEnum && null != type.GetCustomAttribute<FlagsAttribute>();
             s_IsString = typeof(T) == typeof(string);
             s_IsGuid = typeof(T) == typeof(Guid);
         }
@@ -47,5 +51,7 @@ namespace Unity.Properties
         public static bool IsContainerType() => !(s_IsPrimitive || s_IsEnum || s_IsString || s_IsGuid);
 
         public static bool IsAbstractOrInterface() => s_IsAbstract || s_IsInterface;
+
+        public static bool IsFlagsEnum() => s_IsEnumFlags;
     }
 }

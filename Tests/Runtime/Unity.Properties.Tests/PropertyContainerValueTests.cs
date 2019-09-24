@@ -89,7 +89,7 @@ namespace Unity.Properties.Tests
         {
             var container = new TestPrimitiveContainer();
 
-            Assert.Throws<ArgumentException>(() => PropertyContainer.SetValue(ref container, nameof(TestPrimitiveContainer.FlagsEnum), "NotAValidValue"));
+            Assert.Throws<InvalidOperationException>(() => PropertyContainer.SetValue(ref container, nameof(TestPrimitiveContainer.FlagsEnum), "NotAValidValue"));
 
             Assert.AreEqual(FlagsEnum.None, container.FlagsEnum);
         }

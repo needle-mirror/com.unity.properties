@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Unity.Properties.Reflection;
 
@@ -18,8 +19,8 @@ namespace Unity.Properties
         /// <summary>
         /// Dynamic lookup by <see cref="System.Type"/> for property bags.
         /// </summary>
-        static readonly Dictionary<Type, IPropertyBag> s_PropertyBagByType = new Dictionary<Type, IPropertyBag>();
-        
+        static readonly ConcurrentDictionary<Type, IPropertyBag> s_PropertyBagByType = new ConcurrentDictionary<Type, IPropertyBag>();
+
         public static ReflectedPropertyBagProvider ReflectedPropertyBagProvider { get; } = new ReflectedPropertyBagProvider();
 
         public static void Register<TContainer>(IPropertyBag<TContainer> propertyBag)
@@ -42,16 +43,20 @@ namespace Unity.Properties
                 return propertyBag;
             }
 
-            s_PropertyBagByType.TryGetValue(typeof(TContainer), out var untypedPropertyBag);
-
-            if (null != untypedPropertyBag)
-            {
-                return (IPropertyBag<TContainer>) untypedPropertyBag;
-            }
-
             if (TryGeneratePropertyBag(out propertyBag))
             {
                 Register(propertyBag);
+            }
+
+            var untypedPropertyBag = s_PropertyBagByType.GetOrAdd(typeof(TContainer), (key) =>
+            {
+                Lookup<TContainer>.PropertyBag = propertyBag;
+                return propertyBag;
+            });
+
+            if (null != untypedPropertyBag)
+            {
+                return (IPropertyBag<TContainer>)untypedPropertyBag;
             }
 
             return propertyBag;
@@ -59,15 +64,11 @@ namespace Unity.Properties
 
         public static IPropertyBag Resolve(Type type)
         {
-            s_PropertyBagByType.TryGetValue(type, out var propertyBag);
-
-            if (null == propertyBag)
+            var propertyBag = s_PropertyBagByType.GetOrAdd(type, (key) =>
             {
-                if (TryGeneratePropertyBag(type, out propertyBag))
-                {
-                    s_PropertyBagByType.Add(type, propertyBag);
-                }
-            }
+                TryGeneratePropertyBag(type, out var p);
+                return p;
+            });
 
             return propertyBag;
         }
