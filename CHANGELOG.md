@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [0.8.1-preview] - 2019-09-25
+### Fixed
+* Public fields and properties from base class will now again be reflected correctly.
+
 ## [0.8.0-preview] - 2019-09-24
 ### Added
 * Added a `TypeConstruction` utility to allow the creation of new instances.

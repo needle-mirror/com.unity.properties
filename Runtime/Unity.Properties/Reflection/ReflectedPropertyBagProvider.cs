@@ -75,7 +75,7 @@ namespace Unity.Properties.Reflection
             var baseType = typeof(TContainer).BaseType;
             while (baseType != null && baseType != typeof(object))
             {
-                fields = baseType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+                fields = baseType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 foreach (var field in fields)
                 {
                     if (field.DeclaringType != baseType)
@@ -83,7 +83,7 @@ namespace Unity.Properties.Reflection
                         continue;
                     }
 
-                    if (field.GetCustomAttribute<PropertyAttribute>() == null)
+                    if (field.IsPrivate && field.GetCustomAttribute<PropertyAttribute>() == null)
                     {
                         continue;
                     }
@@ -92,7 +92,7 @@ namespace Unity.Properties.Reflection
                     method.Invoke(this, new object[] { field, propertyBag });
                 }
 
-                properties = baseType.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance);
+                properties = baseType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 foreach (var property in properties)
                 {
                     if (property.DeclaringType != baseType)

@@ -40,22 +40,32 @@ namespace Unity.Properties.Reflection
 
         public void AddProperty<TProperty, TValue>(TProperty property) where TProperty : IProperty<TContainer, TValue>
         {
-            var proxy = new PropertyProxy<TProperty, TValue> {Property = property};
-            if (m_PropertiesDictionary.ContainsKey(property.GetName()))
+            if (m_PropertiesDictionary.TryGetValue(property.GetName(), out var proxy))
             {
+                if (proxy is PropertyProxy<TProperty, TValue> typedProxy && typedProxy.Property.GetType() == property.GetType())
+                {
+                    return; // Same property name and type, skip it
+                }
                 throw new InvalidOperationException($"A property with name '{property.GetName()}' already exist in property bag for type '{typeof(TContainer).FullName}'. This can be caused by class inheritance.");
             }
+
+            proxy = new PropertyProxy<TProperty, TValue> { Property = property };
             m_PropertiesDictionary.Add(property.GetName(), proxy);
             m_PropertiesList.Add(proxy);
         }
 
         public void AddCollectionProperty<TProperty, TValue>(TProperty property) where TProperty : ICollectionProperty<TContainer, TValue>
         {
-            var proxy = new CollectionPropertyProxy<TProperty, TValue> {Property = property};
-            if (m_PropertiesDictionary.ContainsKey(property.GetName()))
+            if (m_PropertiesDictionary.TryGetValue(property.GetName(), out var proxy))
             {
+                if (proxy is PropertyProxy<TProperty, TValue> typedProxy && typedProxy.Property.GetType() == property.GetType())
+                {
+                    return; // Same property name and type, skip it
+                }
                 throw new InvalidOperationException($"A property with name '{property.GetName()}' already exist in property bag for type '{typeof(TContainer).FullName}'. This can be caused by class inheritance.");
             }
+
+            proxy = new CollectionPropertyProxy<TProperty, TValue> { Property = property };
             m_PropertiesDictionary.Add(property.GetName(), proxy);
             m_PropertiesList.Add(proxy);
         }
