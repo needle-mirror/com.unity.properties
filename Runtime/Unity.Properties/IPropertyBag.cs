@@ -7,7 +7,7 @@ namespace Unity.Properties
 
     public interface IPropertyBag
     {
-        void Accept<TVisitor>(ref object container, TVisitor visitor, ref ChangeTracker changeTracker)
+        void Accept<TVisitor>(ref object container, ref TVisitor visitor, ref ChangeTracker changeTracker)
             where TVisitor : IPropertyVisitor;
 
         void Cast<TCallback>(ref TCallback callback)
@@ -16,7 +16,7 @@ namespace Unity.Properties
 
     public interface IPropertyBag<TContainer> : IPropertyBag
     {
-        void Accept<TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker)
+        void Accept<TVisitor>(ref TContainer container, ref TVisitor visitor, ref ChangeTracker changeTracker)
             where TVisitor : IPropertyVisitor;
 
         bool FindProperty<TAction>(string name, ref TContainer container, ref ChangeTracker changeTracker, ref TAction action)
@@ -25,11 +25,11 @@ namespace Unity.Properties
 
     public abstract class PropertyBag<TContainer> : IPropertyBag<TContainer>
     {
-        public void Accept<TVisitor>(ref object container, TVisitor visitor, ref ChangeTracker changeTracker)
+        public void Accept<TVisitor>(ref object container, ref TVisitor visitor, ref ChangeTracker changeTracker)
             where TVisitor : IPropertyVisitor
         {
             var unboxed = (TContainer) container;
-            Accept(ref unboxed, visitor, ref changeTracker);
+            Accept(ref unboxed, ref visitor, ref changeTracker);
             container = unboxed;
         }
 
@@ -38,7 +38,7 @@ namespace Unity.Properties
             callback.Invoke<TContainer>();
         }
 
-        public abstract void Accept<TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor;
+        public abstract void Accept<TVisitor>(ref TContainer container, ref TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor;
         public abstract bool FindProperty<TAction>(string name, ref TContainer container, ref ChangeTracker changeTracker, ref TAction action) where TAction : IPropertyGetter<TContainer>;
     }
 }

@@ -36,7 +36,7 @@ namespace Unity.Properties.Tests
             (ref CustomDataFoo container, int value) => container.Foo = value
         );
         
-        public override void Accept<TVisitor>(ref CustomDataFoo container, TVisitor visitor, ref ChangeTracker changeTracker) 
+        public override void Accept<TVisitor>(ref CustomDataFoo container, ref TVisitor visitor, ref ChangeTracker changeTracker) 
         {
             visitor.VisitProperty<ValueProperty<CustomDataFoo, int>, CustomDataFoo, int>(s_Test, ref container, ref changeTracker);
             visitor.VisitProperty<ValueProperty<CustomDataFoo, int>, CustomDataFoo, int>(s_Foo, ref container, ref changeTracker);
@@ -74,7 +74,7 @@ namespace Unity.Properties.Tests
             (ref CustomDataBar container, int value) => container.Bar = value
         );
         
-        public override void Accept<TVisitor>(ref CustomDataBar container, TVisitor visitor, ref ChangeTracker changeTracker) 
+        public override void Accept<TVisitor>(ref CustomDataBar container, ref TVisitor visitor, ref ChangeTracker changeTracker) 
         {
             visitor.VisitProperty<ValueProperty<CustomDataBar, int>, CustomDataBar, int>(s_Test, ref container, ref changeTracker);
             visitor.VisitProperty<ValueProperty<CustomDataBar, int>, CustomDataBar, int>(s_Bar, ref container, ref changeTracker);
@@ -106,7 +106,7 @@ namespace Unity.Properties.Tests
             (ref TestInterfaceContainer container, ICustomData value) => container.CustomData = value
         );
 
-        public override void Accept<TVisitor>(ref TestInterfaceContainer container, TVisitor visitor, ref ChangeTracker changeTracker)
+        public override void Accept<TVisitor>(ref TestInterfaceContainer container, ref TVisitor visitor, ref ChangeTracker changeTracker)
         {
             visitor.VisitProperty<ValueProperty<TestInterfaceContainer, ICustomData>, TestInterfaceContainer, ICustomData>(s_CustomData, ref container, ref changeTracker);
         }

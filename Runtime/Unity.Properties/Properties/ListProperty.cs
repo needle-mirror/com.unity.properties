@@ -106,7 +106,7 @@ namespace Unity.Properties
             }
         }
 
-        public void Clear(ref TContainer container)
+        public void Clear(ref TContainer container) 
         {
             if (null == m_Getter(ref container))
             {
@@ -119,7 +119,7 @@ namespace Unity.Properties
         public void GetPropertyAtIndex<TGetter>(ref TContainer container, int index, ref ChangeTracker changeTracker, ref TGetter getter)
             where TGetter : ICollectionElementPropertyGetter<TContainer>
         {
-            getter.VisitProperty<CollectionElementProperty, TElement>(new CollectionElementProperty(this, index), ref container, ref changeTracker);
+            getter.VisitProperty<CollectionElementProperty, TElement>(new CollectionElementProperty(this, index, m_Attributes), ref container, ref changeTracker);
         }
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using UnityEngine.UIElements;
 
 namespace Unity.Properties.Editor
@@ -8,18 +7,40 @@ namespace Unity.Properties.Editor
     {
         protected TField m_Field;
         
-        protected abstract Connector<TFieldValue, TValue> Converter { get; }
+        protected abstract Connector<TFieldValue, TValue> Connector { get; }
 
-        public VisualElement Build(InspectorContext<TValue> context)
+        public virtual VisualElement Build(InspectorContext<TValue> context)
         {
-            m_Field = new TField {label = context.Name};
-            m_Field.RegisterValueChangedCallback(evt => { context.Data = Converter.ToValue(evt.newValue); });
+            m_Field = new TField
+            {
+                label = context.PrettyName,
+                tooltip = context.Tooltip
+            };
+            m_Field.RegisterValueChangedCallback(evt =>
+            {
+                var input = m_Field as TextInputBaseField<TFieldValue>;
+                if (null != input)
+                {
+                    input.isDelayed = false;
+                }
+                OnChanged(evt, context);
+                Update(context);
+                if (null != input)
+                {
+                    input.isDelayed = context.IsDelayed;
+                }
+            });
             return m_Field;
         }
 
-        public void Update(InspectorContext<TValue> context)
+        public virtual void Update(InspectorContext<TValue> context)
         {
-            m_Field.SetValueWithoutNotify(Converter.ToField(context.Data));
+            m_Field.SetValueWithoutNotify(Connector.ToField(context.Data));
+        }
+
+        protected virtual void OnChanged(ChangeEvent<TFieldValue> evt, InspectorContext<TValue> context)
+        {
+            context.Data = Connector.ToValue(evt.newValue);
         }
     }
     
@@ -28,16 +49,38 @@ namespace Unity.Properties.Editor
     {
         protected TField m_Field;
 
-        public VisualElement Build(InspectorContext<TValue> context)
+        public virtual VisualElement Build(InspectorContext<TValue> context)
         {
-            m_Field = new TField {label = context.Name};
-            m_Field.RegisterValueChangedCallback(evt => { context.Data = evt.newValue; });
+            m_Field = new TField
+            {
+                label = context.PrettyName,
+                tooltip = context.Tooltip
+            };
+            m_Field.RegisterValueChangedCallback(evt =>
+            {
+                var input = m_Field as TextInputBaseField<TValue>;
+                if (null != input)
+                {
+                    input.isDelayed = false;
+                }
+                OnChanged(evt, context);
+                Update(context);
+                if (null != input)
+                {
+                    input.isDelayed = context.IsDelayed;
+                }
+            });
             return m_Field;
         }
 
-        public void Update(InspectorContext<TValue> context)
+        public virtual void Update(InspectorContext<TValue> context)
         {
             m_Field.SetValueWithoutNotify(context.Data);
+        }
+        
+        protected virtual void OnChanged(ChangeEvent<TValue> evt, InspectorContext<TValue> context)
+        {
+            context.Data = evt.newValue;
         }
     }
 }

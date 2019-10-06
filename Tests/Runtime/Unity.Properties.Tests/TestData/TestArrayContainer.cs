@@ -20,7 +20,7 @@ namespace Unity.Properties.Tests
             (ref TestArrayContainer container, TestPrimitiveContainer[] value) => container.TestContainerArray = value
         );
 
-        public override void Accept<TVisitor>(ref TestArrayContainer container, TVisitor visitor, ref ChangeTracker changeTracker)
+        public override void Accept<TVisitor>(ref TestArrayContainer container, ref TVisitor visitor, ref ChangeTracker changeTracker)
         {
             visitor.VisitCollectionProperty<ArrayProperty<TestArrayContainer, int>, TestArrayContainer, int[]>(m_Int32Array, ref container, ref changeTracker);
             visitor.VisitCollectionProperty<ArrayProperty<TestArrayContainer, TestPrimitiveContainer>, TestArrayContainer, TestPrimitiveContainer[]>(m_TestStructArray, ref container, ref changeTracker);

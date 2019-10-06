@@ -5,6 +5,41 @@ namespace Unity.Properties.Editor
         , IVisitAdapter<string>
         , IVisitAdapter
     {
+        struct GetPropertyDrawerCallback : IContainerTypeCallback
+        {
+            readonly InspectorVisitor<T> m_Visitor;
+            readonly PropertyPath m_PropertyPath;
+            readonly string m_PropertyName;
+            readonly InspectorVisitLevel m_VisitLevel;
+            readonly IProperty m_Property;
+            
+            bool Visited { get; set; }
+
+            GetPropertyDrawerCallback(InspectorVisitor<T> visitor, IProperty property, PropertyPath propertyPath, string propertyName,
+                InspectorVisitLevel visitLevel)
+            {
+                m_Visitor = visitor;
+                Visited = false;
+                m_PropertyPath = propertyPath;
+                m_PropertyName = propertyName;
+                m_VisitLevel = visitLevel;
+                m_Property = property;
+            }
+
+            public static bool Execute(object container, InspectorVisitor<T> visitor, IProperty property, PropertyPath path,
+                string propertyName, InspectorVisitLevel visitLevel)
+            {
+                var action = new GetPropertyDrawerCallback(visitor, property, path, propertyName, visitLevel);
+                PropertyBagResolver.Resolve(container.GetType()).Cast(ref action);
+                return action.Visited;
+            }
+
+            public void Invoke<TValueType>()
+            {
+                Visited = TryGetDrawer<TValueType>(m_Visitor, m_Property, m_PropertyPath, m_PropertyName, m_VisitLevel);;
+            }
+        }
+        
         public PrimitivesAdapter(InspectorVisitor<T> visitor) : base(visitor)
         {
         }
@@ -142,7 +177,7 @@ namespace Unity.Properties.Editor
             ref string value,
             ref ChangeTracker changeTracker)
             => VisitPrimitive(property, ref container, ref value, GuiFactory.TextField);
-        
+
         VisitStatus VisitPrimitive<TProperty, TContainer, TValue, TElement>(
             TProperty property,
             ref TContainer container,
@@ -151,8 +186,46 @@ namespace Unity.Properties.Editor
         )
             where TProperty : IProperty<TContainer, TValue>
         {
+            // Regular value
+            var propName = property.GetName();
+            var path = Visitor.GetCurrentPath();
+            path.Push(propName);
+            if (TryGetDrawer(ref value, property, path, propName,
+                InspectorVisitLevel.Field))
+            {
+                return VisitStatus.Override;
+            }
+
             handler(property, ref container, ref value, VisitorContext);
             return VisitStatus.Handled;
+        }
+
+        bool TryGetDrawer<TValue>(
+            ref TValue value,
+            IProperty property,
+            PropertyPath path,
+            string name,
+            InspectorVisitLevel visitLevel)
+            => GetPropertyDrawerCallback.Execute(value, Visitor, property, path, name, visitLevel)
+               || TryGetDrawer<TValue>(Visitor, property, path, name, visitLevel);
+        
+        static bool TryGetDrawer<TValue>(
+            InspectorVisitor<T> visitor,
+            IProperty property,
+            PropertyPath propertyPath,
+            string propertyName,
+            InspectorVisitLevel visitLevel)
+        {
+            var inspector = CustomInspectorDatabase.GetPropertyDrawer<TValue>(property);
+            if (null == inspector)
+            {
+                return false;
+            }
+            var proxy = new InspectorContext<TValue>(visitor.VisitorContext.Binding, property, propertyPath, propertyName, visitLevel);
+            var customInspector = new CustomInspectorElement<TValue>(inspector, proxy);
+            visitor.VisitorContext.Parent.contentContainer.Add(customInspector);
+            inspector.Update(proxy);
+            return true;
         }
     }
 }

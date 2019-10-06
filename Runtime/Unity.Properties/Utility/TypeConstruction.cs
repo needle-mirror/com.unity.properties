@@ -65,6 +65,11 @@ namespace Unity.Properties
             return TypeConstructionCache<TType>.Construct();
         }
 
+        public static bool TryConstruct<TType>(out TType value)
+        {
+            return TypeConstructionCache<TType>.TryConstruct(out value);
+        }
+
         public static TType Construct<TType>(Type derivedType)
         {
             if (typeof(TType).IsAssignableFrom(derivedType))
@@ -73,6 +78,17 @@ namespace Unity.Properties
             }
 
             throw new ArgumentException($"Could not create instance of type `{derivedType.Name}` and convert to `{typeof(TType).Name}`: given type is not assignable to target type.");
+        }
+
+        public static bool TryConstruct<TType>(Type derivedType, out TType value)
+        {
+            if (typeof(TType).IsAssignableFrom(derivedType))
+            {
+                return TypeConstructionCache<TType>.TryConstruct(derivedType, out value);
+            }
+
+            value = default;
+            return false;
         }
 
         public static void SetExplicitConstructionMethod<TType>(Func<TType> constructor)
@@ -174,6 +190,40 @@ namespace Unity.Properties
                 throw new InvalidOperationException($"Type `{typeof(TType).Name}` could not be constructed. A parameter-less constructor or an explicit construction method is required.");
             }
 
+            public static bool TryConstruct(out TType value)
+            {
+                if (null != ExplicitConstruction)
+                {
+                    try
+                    {
+                        value = ExplicitConstruction();
+                    }
+                    catch
+                    {
+                        value = default;
+                        return false;
+                    }
+                    return true;
+                }
+
+                if (HasParameterLessConstructor)
+                {
+                    try
+                    {
+                        value = Activator.CreateInstance<TType>();
+                    }
+                    catch
+                    {
+                        value = default;
+                        return false;
+                    }
+                    return true;
+                }
+
+                value = default;
+                return false;
+            }
+
             public static TType Construct(Type type)
             {
                 var info = k_PotentialConstructibleTypes.FirstOrDefault(ci => ci.Type == type);
@@ -182,6 +232,27 @@ namespace Unity.Properties
                     throw new ArgumentException($"Type `{type.Name}` could not be constructed and converted to type `{typeof(TType).Name}`. A parameter-less constructor or an explicit construction method is required.");
                 }
                 return info.Construct();
+            }
+
+            public static bool TryConstruct(Type type, out TType value)
+            {
+                try
+                {
+                    var info = k_PotentialConstructibleTypes.FirstOrDefault(ci => ci.Type == type);
+                    if (null == info || !info.Constructible())
+                    {
+                        value = default;
+                        return false;
+                    }
+                    value = info.Construct();
+                }
+                catch
+                {
+                    value = default;
+                    return false;
+                }
+
+                return true;
             }
         }
     }

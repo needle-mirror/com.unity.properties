@@ -51,6 +51,31 @@ namespace Unity.Properties.Tests
             }
         }
 
+        struct StructVisitorWithState : IPropertyVisitor
+        {
+            public int VisitCount;
+
+            public VisitStatus VisitProperty<TProperty, TContainer, TValue>(
+                TProperty property, 
+                ref TContainer container, 
+                ref ChangeTracker changeTracker) 
+                where TProperty : IProperty<TContainer, TValue>
+            {
+                VisitCount++;
+                return VisitStatus.Handled;
+            }
+
+            public VisitStatus VisitCollectionProperty<TProperty, TContainer, TValue>(
+                TProperty property, 
+                ref TContainer container, 
+                ref ChangeTracker changeTracker) 
+                where TProperty : ICollectionProperty<TContainer, TValue>
+            {
+                VisitCount++;
+                return VisitStatus.Handled;
+            }
+        }
+
         [SetUp]
         public void SetUp()
         {
@@ -120,6 +145,15 @@ namespace Unity.Properties.Tests
             });
         }
 
+        [Test]
+        public void PropertyVisitor_Visit_StructVisitorWithState()
+        {
+            var container = new TestPrimitiveContainer();
+            var visitor = new StructVisitorWithState();
+            PropertyContainer.Visit(ref container, ref visitor);
+            Assert.That(visitor.VisitCount, Is.EqualTo(14));
+        }
+        
         static void MultiVisitWorker()
         {
             // Many types to make sure our thread has enough work

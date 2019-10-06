@@ -12,18 +12,25 @@ namespace Unity.Properties.Editor
             TProperty property,
             ref TContainer container,
             ref TValue value,
-            InspectorVisitorContext visitorContext,
-            string name = null)
+            InspectorVisitorContext visitorContext)
             where TProperty : IProperty<TContainer, TValue>
         {
             var propertyName = property.GetName();
             var foldout = new Foldout
             {
                 name = propertyName,
-                text = name ?? propertyName,
                 bindingPath = propertyName,
             };
-            SetTooltip(property, foldout);
+            if (property.Attributes?.HasAttribute<InspectorNameAttribute>() ?? false)
+            {
+                foldout.text = property.Attributes.GetAttribute<InspectorNameAttribute>().displayName;
+            }
+            else
+            {
+                foldout.text = propertyName;
+            }
+            
+            SetTooltip(property.Attributes, foldout);
             visitorContext.Parent.contentContainer.Add(foldout);
             return foldout;
         }
@@ -83,7 +90,6 @@ namespace Unity.Properties.Editor
             InspectorVisitorContext visitorContext)
             where TProperty : ICollectionProperty<TContainer, TValue>
         {
-            var hasTooltip = property.Attributes?.HasAttribute<TooltipAttribute>() ?? false;
             var field = new IntegerField
             {
                 name = "CollectionSize",
@@ -91,11 +97,9 @@ namespace Unity.Properties.Editor
                 bindingPath = string.Empty,
                 isDelayed = true
             };
-            SetTooltip(property, field);
 
             field.SetValueWithoutNotify(property.GetCount(ref container));
-
-            SetTooltip(property, field);
+            SetTooltip(property.Attributes, field);
             var parent = visitorContext.Parent; 
             visitorContext.Parent.contentContainer.Add(field);
             field.RegisterValueChangedCallback(evt =>
@@ -176,7 +180,7 @@ namespace Unity.Properties.Editor
             var name = property.GetName();
             var element = new EnumFlagsField(value as Enum) {bindingPath = name};
             SetNames(property, element);
-            SetTooltip(property, element);
+            SetTooltip(property.Attributes, element);
             visitorContext.Parent.contentContainer.Add(element);
             return element;
         }
@@ -195,7 +199,7 @@ namespace Unity.Properties.Editor
             var name = property.GetName();
             var element = new EnumField(value as Enum) {bindingPath = name};
             SetNames(property, element);
-            SetTooltip(property, element);
+            SetTooltip(property.Attributes, element);
             visitorContext.Parent.contentContainer.Add(element);
             return element;
         }
@@ -207,7 +211,8 @@ namespace Unity.Properties.Editor
         {
             var element = new TElement();
             SetNames(property, element);
-            SetTooltip(property, element);
+            SetTooltip(property.Attributes, element);
+            SetDelayed<TFieldValue>(property.Attributes, element);
 
             if (property.IsReadOnly)
             {
@@ -221,20 +226,54 @@ namespace Unity.Properties.Editor
         {
             var name = property.GetName();
             element.name = name;
-            element.label = ObjectNames.NicifyVariableName(name);
+
+            var label = name;
+            if (property.Attributes?.HasAttribute<InspectorNameAttribute>() ?? false)
+            {
+                label = property.Attributes.GetAttribute<InspectorNameAttribute>().displayName;
+            }
+            
+            element.label = ObjectNames.NicifyVariableName(label);
             element.bindingPath = name;
             element.AddToClassList(name);
         }
 
-        public static void SetTooltip<TProperty>(TProperty property, VisualElement element)
-            where TProperty : IProperty
+        public static void SetLabel<TValue>(IPropertyAttributeCollection attributes, BaseField<TValue> element, string prettyName)
         {
-            if(property.Attributes?.HasAttribute<TooltipAttribute>() ?? false)
+            var label = prettyName;
+            if (null != attributes && attributes.HasAttribute<InspectorNameAttribute>())
             {
-                element.tooltip = property.Attributes.GetAttribute<TooltipAttribute>().tooltip;
+                label = attributes.GetAttribute<InspectorNameAttribute>().displayName;
+            }
+            element.label = label;
+        }
+        
+        public static void SetLabel(IPropertyAttributeCollection attributes, Foldout element, string prettyName)
+        {
+            var label = prettyName;
+            if (null != attributes && attributes.HasAttribute<InspectorNameAttribute>())
+            {
+                label = attributes.GetAttribute<InspectorNameAttribute>().displayName;
+            }
+            element.text = label;
+        }
+        
+        public static void SetTooltip(IPropertyAttributeCollection attributes, VisualElement element)
+        {
+            if(null != attributes && attributes.HasAttribute<TooltipAttribute>())
+            {
+                element.tooltip = attributes.GetAttribute<TooltipAttribute>().tooltip;
             }
         }
 
+        public static void SetDelayed<TFieldValue>(IPropertyAttributeCollection attributes, BaseField<TFieldValue> element)
+        {
+            if(null != attributes && attributes.HasAttribute<DelayedAttribute>() && element is TextInputBaseField<TFieldValue> textInput)
+            {
+                textInput.isDelayed = true;
+            }
+        }
+        
         public static TElement Construct<TProperty, TElement, TContainer, TValue>(
             TProperty property,
             ref TContainer container,

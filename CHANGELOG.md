@@ -1,6 +1,19 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [0.9.0-preview] - 2019-10-06
+### Added
+* Added `TypeConstruction.TryConstruct[...]` variants for instantiating types without throwing exceptions.
+* Support for property drawers.
+
+### Fixed
+* Attributes on a collection will now be correctly propagated to its elements.
+
+### Changed
+* Connectors are now registered on the `BaseField<T>` directly instead of the explicit types (i.e. `IntegerField`), which will help with user defined types.
+* Added `PropertyContainer.Visit` overload with `ref TVisitor`.
+* ***Breaking change*** Changed all `IPropertyBag{T}.Accept` methods to pass the `TVisitor` by ref.
+
 ## [0.8.1-preview] - 2019-09-25
 ### Fixed
 * Public fields and properties from base class will now again be reflected correctly.

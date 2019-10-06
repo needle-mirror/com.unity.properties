@@ -7,7 +7,7 @@ namespace Unity.Properties.Reflection
     {
         interface IPropertyProxy
         {
-            void Accept<TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor;
+            void Accept<TVisitor>(ref TContainer container, ref TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor;
             void FindProperty<TCallback>(ref TContainer container, ref ChangeTracker changeTracker, ref TCallback callback) where TCallback : IPropertyGetter<TContainer>;
         }
 
@@ -16,7 +16,7 @@ namespace Unity.Properties.Reflection
         {
             public TProperty Property;
 
-            public void Accept<TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor =>
+            public void Accept<TVisitor>(ref TContainer container, ref TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor =>
                 visitor.VisitProperty<TProperty, TContainer, TValue>(Property, ref container, ref changeTracker);
 
             public void FindProperty<TCallback>(ref TContainer container, ref ChangeTracker changeTracker, ref TCallback callback) where TCallback : IPropertyGetter<TContainer>
@@ -28,7 +28,7 @@ namespace Unity.Properties.Reflection
         {
             public TProperty Property;
 
-            public void Accept<TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor =>
+            public void Accept<TVisitor>(ref TContainer container, ref TVisitor visitor, ref ChangeTracker changeTracker) where TVisitor : IPropertyVisitor =>
                 visitor.VisitCollectionProperty<TProperty, TContainer, TValue>(Property, ref container, ref changeTracker);
 
             public void FindProperty<TCallback>(ref TContainer container, ref ChangeTracker changeTracker, ref TCallback callback) where TCallback : IPropertyGetter<TContainer>
@@ -70,11 +70,11 @@ namespace Unity.Properties.Reflection
             m_PropertiesList.Add(proxy);
         }
 
-        public override void Accept<TVisitor>(ref TContainer container, TVisitor visitor, ref ChangeTracker changeTracker)
+        public override void Accept<TVisitor>(ref TContainer container, ref TVisitor visitor, ref ChangeTracker changeTracker)
         {
             for (var i = 0; i < m_PropertiesList.Count; i++)
             {
-                m_PropertiesList[i].Accept(ref container, visitor, ref changeTracker);
+                m_PropertiesList[i].Accept(ref container, ref visitor, ref changeTracker);
             }
         }
 

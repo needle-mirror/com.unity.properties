@@ -103,7 +103,7 @@ namespace Unity.Properties
         public void GetPropertyAtIndex<TGetter>(ref TContainer container, int index, ref ChangeTracker changeTracker, ref TGetter getter)
             where TGetter : ICollectionElementPropertyGetter<TContainer>
         {
-            getter.VisitProperty<CollectionElementProperty, TElement>(new CollectionElementProperty(this, index), ref container, ref changeTracker);
+            getter.VisitProperty<CollectionElementProperty, TElement>(new CollectionElementProperty(this, index, Attributes), ref container, ref changeTracker);
         }
     }
 }

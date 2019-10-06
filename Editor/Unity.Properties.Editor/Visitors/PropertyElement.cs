@@ -7,10 +7,10 @@ namespace Unity.Properties.Editor
     {
         interface IBindingTarget
         {
-            void Visit(PropertyElement context);
-            bool Visit(PropertyElement context, VisualElement parent, PropertyPath path);
-            void RegisterBindings(PropertyElement context);
-            void UnregisterBindings(PropertyElement context);
+            void Bind();
+            bool Visit(VisualElement parent, PropertyPath path);
+            void RegisterBindings();
+            void UnregisterBindings();
             void SetValue<TValue>(PropertyPath path, TValue value);
             TValue GetValue<TValue>(PropertyPath path);
             T GetTarget<T>();
@@ -21,27 +21,26 @@ namespace Unity.Properties.Editor
         class BindingTarget<TTarget> : IBindingTarget
         {
             TTarget m_Target;
-            PropertyElement m_Element;
+            readonly PropertyElement m_Element;
 
-            public BindingTarget(TTarget target)
+            public BindingTarget(PropertyElement element, TTarget target)
             {
+                m_Element = element;
                 m_Target = target;
             }
 
-            public void Visit(PropertyElement context)
+            public void Bind()
             {
-                m_Element = context;
                 if (null != m_Target)
                 {
-                    var visitor = new BindingVisitor(context);
+                    var visitor = new BindingVisitor(m_Element);
                     PropertyContainer.Visit(m_Target, visitor);
-                    visitor.GetElementToFullPathMappings(context.m_LastBindingsFound);
+                    visitor.GetElementToFullPathMappings(m_Element.m_LastBindingsFound);
                 }
             }
 
-            public bool Visit(PropertyElement context, VisualElement parent, PropertyPath path)
+            public bool Visit(VisualElement parent, PropertyPath path)
             {
-                m_Element = context;
                 var visitor = new InspectorVisitor<TTarget>(m_Element, m_Target);
                 visitor.AddAdapter(new UnityObjectAdapter<TTarget>(visitor));
                 visitor.AddAdapter(new NullAdapter<TTarget>(visitor));
@@ -53,23 +52,19 @@ namespace Unity.Properties.Editor
                 }
             }
 
-            public void RegisterBindings(PropertyElement context)
+            public void RegisterBindings()
             {
-                m_Element = context;
                 if (null != m_Target)
                 {
-                    PropertyContainer.Visit(m_Target,
-                        new BindingVisitor(context, BindingVisitor.BindingRegistration.Register));
+                    PropertyContainer.Visit(m_Target, new BindingVisitor(m_Element, BindingVisitor.BindingRegistration.Register));
                 }
             }
 
-            public void UnregisterBindings(PropertyElement context)
+            public void UnregisterBindings()
             {
-                m_Element = context;
                 if (null != m_Target)
                 {
-                    PropertyContainer.Visit(m_Target,
-                        new BindingVisitor(context, BindingVisitor.BindingRegistration.Unregister));
+                    PropertyContainer.Visit(m_Target, new BindingVisitor(m_Element, BindingVisitor.BindingRegistration.Unregister));
                 }
             }
             
@@ -118,13 +113,13 @@ namespace Unity.Properties.Editor
             return null == m_BindingTarget ? default : m_BindingTarget.GetTarget<T>();
         }
 
-        private void SetTargetImpl<T>(T target)
+        void SetTargetImpl<T>(T target)
         {
             Clear();
             if (null != target)
             {
-                m_BindingTarget?.UnregisterBindings(this);
-                m_BindingTarget = new BindingTarget<T>(target);
+                m_BindingTarget?.UnregisterBindings();
+                m_BindingTarget = new BindingTarget<T>(this, target);
                 var visitor = new InspectorVisitor<T>(this, target);
                 visitor.AddAdapter(new UnityObjectAdapter<T>(visitor));
                 visitor.AddAdapter(new NullAdapter<T>(visitor));
@@ -134,12 +129,12 @@ namespace Unity.Properties.Editor
                     PropertyContainer.Visit(new PropertyWrapper<T>(target), visitor);
                 }
 
-                m_BindingTarget.RegisterBindings(this);
+                m_BindingTarget.RegisterBindings();
                 OnUpdate();
             }
             else
             {
-                m_BindingTarget?.UnregisterBindings(this);
+                m_BindingTarget?.UnregisterBindings();
                 m_BindingTarget = null;
             }
         }
@@ -156,7 +151,7 @@ namespace Unity.Properties.Editor
                 var current = m_BindingTarget.GetTarget<T>();
                 if ((null != target && target.Equals(current)) || StructureValidation.SameStructure(ref target, ref current))
                 {
-                    m_BindingTarget = new BindingTarget<T>(target);
+                    m_BindingTarget = new BindingTarget<T>(this, target);
                     OnUpdate();
                     return;
                 }
@@ -167,7 +162,7 @@ namespace Unity.Properties.Editor
 
         internal bool TryVisitAtPath(VisualElement root, PropertyPath path)
         {
-            return m_BindingTarget.Visit(this, root, path);
+            return m_BindingTarget.Visit(root, path);
         }
 
         public PropertyElement()
@@ -232,7 +227,7 @@ namespace Unity.Properties.Editor
 
         void OnUpdate()
         {
-            m_BindingTarget?.Visit(this);
+            m_BindingTarget?.Bind();
         }
 
         public void Refresh(bool force = false)

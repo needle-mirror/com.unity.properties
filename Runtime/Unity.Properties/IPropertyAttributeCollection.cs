@@ -23,7 +23,7 @@ namespace Unity.Properties
         /// <summary>
         /// Returns all attribute of the given type.
         /// </summary>
-        IEnumerator<TAttribute> GetAttributes<TAttribute>()
+        IEnumerable<TAttribute> GetAttributes<TAttribute>()
             where TAttribute : Attribute;
     }
 
@@ -69,7 +69,7 @@ namespace Unity.Properties
         }
 
         /// <inheritdoc />
-        public IEnumerator<TAttribute> GetAttributes<TAttribute>() where TAttribute : Attribute
+        public IEnumerable<TAttribute> GetAttributes<TAttribute>() where TAttribute : Attribute
         {
             for (var i = 0; i < m_Attributes?.Length; i++)
             {

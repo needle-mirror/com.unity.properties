@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using UnityEngine;
 
@@ -11,9 +13,11 @@ namespace Unity.Properties.Editor
             readonly PropertyPath m_PropertyPath;
             readonly string m_PropertyName;
             readonly InspectorVisitLevel m_VisitLevel;
+            readonly IProperty m_Property;
+            
             bool Visited { get; set; }
 
-            GetCustomInspectorCallback(InspectorVisitor<T> visitor, PropertyPath propertyPath, string propertyName,
+            GetCustomInspectorCallback(InspectorVisitor<T> visitor, IProperty property, PropertyPath propertyPath, string propertyName,
                 InspectorVisitLevel visitLevel)
             {
                 m_Visitor = visitor;
@@ -21,25 +25,31 @@ namespace Unity.Properties.Editor
                 m_PropertyPath = propertyPath;
                 m_PropertyName = propertyName;
                 m_VisitLevel = visitLevel;
+                m_Property = property;
             }
 
-            public static bool Execute(object container, InspectorVisitor<T> visitor, PropertyPath path,
+            public static bool Execute(object container, InspectorVisitor<T> visitor, IProperty property, PropertyPath path,
                 string propertyName, InspectorVisitLevel visitLevel)
             {
-                var action = new GetCustomInspectorCallback(visitor, path, propertyName, visitLevel);
+                var action = new GetCustomInspectorCallback(visitor, property, path, propertyName, visitLevel);
                 PropertyBagResolver.Resolve(container.GetType()).Cast(ref action);
                 return action.Visited;
             }
 
             public void Invoke<TValueType>()
             {
-                Visited = TryGetInspector<TValueType>(m_Visitor, m_PropertyPath, m_PropertyName, m_VisitLevel);;
+                Visited = TryGetInspector<TValueType>(m_Visitor, m_Property, m_PropertyPath, m_PropertyName, m_VisitLevel);;
             }
         }
 
         public readonly T Target;
         readonly StringBuilder m_Path = new StringBuilder(64, 1024);
 
+        internal PropertyPath GetCurrentPath()
+        {
+            return new PropertyPath(m_Path.ToString());    
+        }
+        
         public InspectorVisitorContext VisitorContext { get; }
 
         public InspectorVisitor(PropertyElement bindingElement, T target)
@@ -83,20 +93,23 @@ namespace Unity.Properties.Editor
             }
         }
 
-        protected override VisitStatus BeginContainer<TProperty, TContainer, TValue>(TProperty property,
+        protected override VisitStatus BeginContainer<TProperty, TContainer, TValue>(
+            TProperty property,
             ref TContainer container,
-            ref TValue value, ref ChangeTracker changeTracker)
+            ref TValue value,
+            ref ChangeTracker changeTracker)
         {
             // Root value 
             if (container is PropertyWrapper<TValue> || value is PropertyWrapper<TValue>)
             {
-                if (TryGetInspector(ref value, new PropertyPath(string.Empty), string.Empty,
+                if (TryGetInspector(ref value, property, new PropertyPath(string.Empty), string.Empty,
                     InspectorVisitLevel.Target))
                 {
                     return VisitStatus.Override;
                 }
 
                 PropertyContainer.Visit(ref value, this);
+
                 return VisitStatus.Override;
             }
 
@@ -105,7 +118,7 @@ namespace Unity.Properties.Editor
             AddToPath(propName);
             try
             {
-                if (TryGetInspector(ref value, new PropertyPath(m_Path.ToString()), propName,
+                if (TryGetInspector(ref value, property, new PropertyPath(m_Path.ToString()), propName,
                     InspectorVisitLevel.Field))
                 {
                     return VisitStatus.Override;
@@ -125,7 +138,8 @@ namespace Unity.Properties.Editor
             }
         }
 
-        protected override VisitStatus BeginCollection<TProperty, TContainer, TValue>(TProperty property,
+        protected override VisitStatus BeginCollection<TProperty, TContainer, TValue>(
+            TProperty property,
             ref TContainer container,
             ref TValue value, ref ChangeTracker changeTracker)
         {
@@ -164,7 +178,13 @@ namespace Unity.Properties.Editor
 
                 using (VisitorContext.MakeParentScope(foldout))
                 {
+                    if (TryGetInspector(ref value, property, new PropertyPath(m_Path.ToString()), propName,
+                        InspectorVisitLevel.Field))
+                    {
+                        return VisitStatus.Override;
+                    }
                     GuiFactory.CollectionSizeField(property, ref container, ref value, VisitorContext);
+                    
                     for (int i = 0, count = property.GetCount(ref container); i < count; i++)
                     {
                         var callback = new VisitCollectionElementCallback<TContainer>(this);
@@ -187,19 +207,28 @@ namespace Unity.Properties.Editor
             }
         }
 
-        private bool TryGetInspector<TValue>(ref TValue value, PropertyPath path, string name,
+        private bool TryGetInspector<TValue>(
+            ref TValue value,
+            IProperty property,
+            PropertyPath path,
+            string name,
             InspectorVisitLevel visitLevel)
-            => GetCustomInspectorCallback.Execute(value, this, path, name, visitLevel)
-               || TryGetInspector<TValue>(this, path, name, visitLevel);
+            => GetCustomInspectorCallback.Execute(value, this, property, path, name, visitLevel)
+               || TryGetInspector<TValue>(this, property, path, name, visitLevel);
 
-        private static bool TryGetInspector<TValue>(InspectorVisitor<T> visitor, PropertyPath propertyPath, string propertyName, InspectorVisitLevel visitLevel)
+        private static bool TryGetInspector<TValue>(
+            InspectorVisitor<T> visitor,
+            IProperty property,
+            PropertyPath propertyPath,
+            string propertyName,
+            InspectorVisitLevel visitLevel)
         {
-            var inspector = CustomInspectorDatabase.GetInspector<TValue>();
+            var inspector = CustomInspectorDatabase.GetInspector<TValue>(property);
             if (null == inspector)
             {
                 return false;
             }
-            var proxy = new InspectorContext<TValue>(visitor.VisitorContext.Binding, propertyPath, propertyName, visitLevel);
+            var proxy = new InspectorContext<TValue>(visitor.VisitorContext.Binding, property, propertyPath, propertyName, visitLevel);
             var customInspector = new CustomInspectorElement<TValue>(inspector, proxy);
             visitor.VisitorContext.Parent.contentContainer.Add(customInspector);
             inspector.Update(proxy);

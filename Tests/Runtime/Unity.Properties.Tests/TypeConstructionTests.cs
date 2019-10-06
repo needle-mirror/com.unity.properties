@@ -113,6 +113,20 @@ namespace Unity.Properties.Tests
             Assert.That(TypeConstruction.CanBeConstructed<ParameterConstructorType>(), Is.EqualTo(false));
         }
 
+        [Test]
+        public void TryConstruct_DoesNotThrow()
+        {
+            Assert.That(TypeConstruction.TryConstruct<ParameterLessConstructorType>(out var _), Is.True);
+            Assert.That(TypeConstruction.TryConstruct<ParameterConstructorType>(out var _), Is.False);
+        }
+
+        [Test]
+        public void TryConstruct_DerivedType_DoesNotThrow()
+        {
+            Assert.That(TypeConstruction.TryConstruct<ConstructibleBaseType>(typeof(ConstructibleDerivedType), out var _), Is.True);
+            Assert.That(TypeConstruction.TryConstruct<ConstructibleBaseType>(typeof(NonConstructibleDerivedType), out var _), Is.False);
+        }
+
         private static ParameterConstructorType ExplicitConstruction()
         {
             return new ParameterConstructorType(10.0f);

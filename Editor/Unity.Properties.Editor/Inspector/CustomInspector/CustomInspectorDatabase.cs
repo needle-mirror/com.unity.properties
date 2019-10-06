@@ -11,7 +11,8 @@ namespace Unity.Properties.Editor
         public class UxmlPostProcessor : AssetPostprocessor
         {
             private const string k_UxmlExtension = ".uxml";
-            private static void OnPostprocessAllAssets(
+
+            static void OnPostprocessAllAssets(
                 string[] importedAssets,
                 string[] deletedAssets,
                 string[] movedAssets,
@@ -22,7 +23,7 @@ namespace Unity.Properties.Editor
                 if (Process(movedAssets)) return;
             }
 
-            private static bool Process(string[] paths)
+            static bool Process(string[] paths)
             {
                 if (!paths.Any(path => path.EndsWith(k_UxmlExtension, StringComparison.InvariantCultureIgnoreCase)))
                     return false;
@@ -38,26 +39,46 @@ namespace Unity.Properties.Editor
             s_InspectorsPerType = new Dictionary<Type, List<Type>>();
             RegisterCustomInspectors();
         }
-
-        public static IInspector<TValue> GetInspector<TValue>()
+        
+        public static IInspector<TValue> GetInspector<TValue>(IProperty property)
         {
-            return GetInspectorInstance<TValue>(s_InspectorsPerType);
+            var inspector = GetPropertyDrawer<TValue>(property);
+            return inspector ?? GetInspectorInstance<TValue>(s_InspectorsPerType, new NoPropertyDrawers());
         }
-       
-        private static IInspector<TValue> GetInspectorInstance<TValue>(Dictionary<Type, List<Type>> typeMap)
+        
+        public static IInspector<TValue> GetPropertyDrawer<TValue>(IProperty property)
+        {
+            foreach(var drawerAttribute in property.Attributes?.GetAttributes<UnityEngine.PropertyAttribute>() ?? Array.Empty<UnityEngine.PropertyAttribute>())
+            {
+                var drawer = GetInspectorInstance<TValue>(s_InspectorsPerType, new WithPropertyDrawers(drawerAttribute.GetType()));
+                if (null != drawer)
+                {
+                    return drawer;
+                }
+            }
+
+            return null;
+        }
+        
+        static IInspector<TValue> GetInspectorInstance<TValue>(Dictionary<Type, List<Type>> typeMap, IInspectorResolver resolver)
         {
             var type = typeof(TValue);
-            if (typeMap.TryGetValue(type, out var inspector))
+            if (!typeMap.TryGetValue(type, out var inspectors))
             {
-                // TODO: Multiple inspectors can be created for any specific type. We need a way to resolve which one is going
-                // to be used. Right now, it is dependent on compilation order.
-                // We also need to support the equivalent of "inspector of child classes" as well.
-                return (IInspector<TValue>) Activator.CreateInstance(inspector[0]);
+                return null;
+            }
+            
+            foreach (var inspector in inspectors)
+            {
+                if (resolver.Resolve(inspector))
+                {
+                    return (IInspector<TValue>) Activator.CreateInstance(inspector);
+                }
             }
             return null;
         }
 
-        private static void RegisterCustomInspectors()
+        static void RegisterCustomInspectors()
         {
             foreach (var type in TypeCache.GetTypesDerivedFrom(typeof(IInspector<>)))
             {
@@ -65,7 +86,7 @@ namespace Unity.Properties.Editor
             }
         }
 
-        private static void RegisterInspectorType(Dictionary<Type, List<Type>> typeMap, Type interfaceType, Type inspectorType)
+        static void RegisterInspectorType(Dictionary<Type, List<Type>> typeMap, Type interfaceType, Type inspectorType)
         {
             var inspectorInterface = inspectorType.GetInterface(interfaceType.FullName);
             if (null == inspectorInterface || inspectorType.IsAbstract || inspectorType.ContainsGenericParameters)
@@ -80,7 +101,7 @@ namespace Unity.Properties.Editor
             {
                 Debug.LogError($"Could not create a custom inspector for type `{inspectorType.Name}`: no default or empty constructor found.");
             }
-            
+
             if (!typeMap.TryGetValue(componentType, out var list))
             {
                 typeMap[componentType] = list = new List<Type>();

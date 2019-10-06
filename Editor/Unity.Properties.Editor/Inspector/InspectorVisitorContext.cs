@@ -25,7 +25,7 @@ namespace Unity.Properties.Editor
             }
         }
         
-        private readonly Stack<VisualElement> m_ParentStack;
+        readonly Stack<VisualElement> m_ParentStack;
         public readonly PropertyElement Binding;
         
         internal InspectorVisitorContext(PropertyElement binding)

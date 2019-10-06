@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -18,6 +19,7 @@ namespace Unity.Properties.Editor
     
     interface IDataConnector
     {
+        bool MatchesExactly<T>(VisualElement element, T value);
         bool MatchesUpdaterType<T>(VisualElement element, T value);
         void SetData<T>(VisualElement element, T value);
         void RegisterCallback<T>(VisualElement element, T value);
@@ -46,15 +48,7 @@ namespace Unity.Properties.Editor
 
         public static void SetData<TValueType>(VisualElement element, TValueType value)
         {
-            // TODO: Do proper resolving on the connector to use.
-            foreach (var entry in s_Entries)
-            {
-                if (entry.m_Connector.MatchesUpdaterType(element, value))
-                {
-                    entry.m_Connector.SetData(element, value);
-                    break;
-                }
-            }
+            GetConnector(element, value)?.m_Connector.SetData(element, value);
         }
 
         public static void SetCollectionSize(IntegerField element, int size)
@@ -69,28 +63,26 @@ namespace Unity.Properties.Editor
         
         public static void RegisterCallback<TValueType>(VisualElement element, TValueType value)
         {
-            // TODO: Do proper resolving on the connector to use.
-            foreach (var entry in s_Entries)
-            {
-                if (entry.m_Connector.MatchesUpdaterType(element, value))
-                {
-                    entry.m_Connector.RegisterCallback(element, value);
-                    break;
-                }
-            }
+            GetConnector(element, value)?.m_Connector.RegisterCallback(element, value);
         }
 
         public static void UnregisterCallback<TValueType>(VisualElement element, TValueType value)
         {
-            // TODO: Do proper resolving on the connector to use.
-            foreach (var entry in s_Entries)
+            GetConnector(element, value)?.m_Connector.UnregisterCallback(element, value);
+        }
+
+        static Entry GetConnector<TValueType>(VisualElement element, TValueType value)
+        {
+            var candidates = s_Entries.Where(e => e.m_Connector.MatchesUpdaterType(element, value)).ToArray();
+            var bestCandidate = candidates.FirstOrDefault(e => e.m_Connector.MatchesExactly(element, value));
+            if (null != bestCandidate)
             {
-                if (entry.m_Connector.MatchesUpdaterType(element, value))
-                {
-                    entry.m_Connector.UnregisterCallback(element, value);
-                    break;
-                }
+                return bestCandidate;
             }
+
+            return candidates.Length > 0 
+                ? candidates[0] 
+                : null;
         }
     }
 
@@ -101,16 +93,22 @@ namespace Unity.Properties.Editor
         class DataConnector<TElement, TFieldType> : IDataConnector
             where TElement : BaseField<TFieldType>, INotifyValueChanged<TFieldType>
         {
-            readonly Connector<TFieldType, TValue> m_Connector;
+            internal readonly Connector<TFieldType, TValue> m_Connector;
 
             public DataConnector(Connector<TFieldType, TValue> connector)
             {
                 m_Connector = connector;
             }
 
-            bool IDataConnector.MatchesUpdaterType<T>(VisualElement element, T value)
+            public bool MatchesExactly<T>(VisualElement element, T value)
             {
-                if (element is BaseField<TFieldType> field || (value?.GetType()?.IsAssignableFrom(typeof(TFieldType)) ?? false))
+                // We use `TValue` here because we want to match the underlying data.
+                return element.GetType() == typeof(TElement) && typeof(T) == typeof(TValue);
+            }
+
+            public bool MatchesUpdaterType<T>(VisualElement element, T value)
+            {
+                if (element is BaseField<TFieldType> || (value?.GetType()?.IsAssignableFrom(typeof(TFieldType)) ?? false))
                 {
                     return true;
                 }
@@ -119,7 +117,7 @@ namespace Unity.Properties.Editor
                        value is TValue;
             }
 
-            void IDataConnector.SetData<T>(VisualElement element, T value)
+            public void SetData<T>(VisualElement element, T value)
             {
                 if (!(element is BaseField<TFieldType> field))
                 {
@@ -133,7 +131,7 @@ namespace Unity.Properties.Editor
                 SetDataGeneric(field, data);
             }
 
-            void IDataConnector.RegisterCallback<T>(VisualElement element, T value)
+            public void RegisterCallback<T>(VisualElement element, T value)
             {
                 if (!(element is BaseField<TFieldType> field))
                 {
@@ -146,7 +144,7 @@ namespace Unity.Properties.Editor
                 RegisterGenericCallback(field, data);
             }
 
-            void IDataConnector.UnregisterCallback<T>(VisualElement element, T value)
+            public void UnregisterCallback<T>(VisualElement element, T value)
             {
                 if (!(element is BaseField<TFieldType> field))
                 {
@@ -212,8 +210,9 @@ namespace Unity.Properties.Editor
                 {
                     return;
                 }
-                var newValue = context.SetValue(field, value);
-                Connectors.SetData(field, newValue);
+
+                var newValue = context.SetValue(field, m_Connector.ToValue(value));
+                field.SetValueWithoutNotify(m_Connector.ToField(newValue));
             }
         }
         
@@ -236,6 +235,14 @@ namespace Unity.Properties.Editor
             m_AvailableTranslators.Add(updater);
             Connectors.Register(typeof(TValue), updater);
         }
+        
+        internal static Connector<TFieldType, TValue> GetExact<TElement, TFieldType>()
+            where TElement : BaseField<TFieldType>, INotifyValueChanged<TFieldType>
+        {
+            return m_AvailableTranslators
+                .OfType<DataConnector<TElement, TFieldType>>()
+                .FirstOrDefault()?.m_Connector ?? default;
+        }
     }
 
     [InitializeOnLoad]
@@ -243,67 +250,65 @@ namespace Unity.Properties.Editor
     {
         static ConnectorFactory()
         {
-            ConnectorFactory<string>.Register<TextField>();
-            ConnectorFactory<bool>.Register<Toggle>();
+            ConnectorFactory<string>.Register<BaseField<string>>();
+            ConnectorFactory<bool>.Register<BaseField<bool>>();
+            ConnectorFactory<int>.Register<BaseField<int>>();
+            ConnectorFactory<long>.Register<BaseField<long>>();
+            ConnectorFactory<float>.Register<BaseField<float>>();
+            ConnectorFactory<double>.Register<BaseField<double>>();
+            ConnectorFactory<UnityEngine.Object>.Register<ObjectField>();
+            ConnectorFactory<Enum>.Register<BaseField<Enum>>();
+            ConnectorFactory<Color>.Register<BaseField<Color>>();
+            ConnectorFactory<Rect>.Register<BaseField<Rect>>();
+            ConnectorFactory<Gradient>.Register<BaseField<Gradient>>();
 
-            ConnectorFactory<sbyte>.Register<IntegerField, int>(new Connector<int, sbyte>()
+            ConnectorFactory<sbyte>.Register<BaseField<int>, int>(new Connector<int, sbyte>
             {
                 ToValue = v => (sbyte) Mathf.Clamp(v, sbyte.MinValue, sbyte.MaxValue),
                 ToField = v => (int) v
             });
 
-            ConnectorFactory<byte>.Register<IntegerField, int>(new Connector<int, byte>()
+            ConnectorFactory<byte>.Register<BaseField<int>, int>(new Connector<int, byte>
             {
                 ToValue = v => (byte) Mathf.Clamp(v, byte.MinValue, byte.MaxValue),
                 ToField = v => (int) v
             });
 
-            ConnectorFactory<ushort>.Register<IntegerField, int>(new Connector<int, ushort>()
+            ConnectorFactory<ushort>.Register<BaseField<int>, int>(new Connector<int, ushort>
             {
                 ToValue = v => (ushort) Mathf.Clamp(v, ushort.MinValue, ushort.MaxValue),
                 ToField = v => (int) v
             });
 
-            ConnectorFactory<short>.Register<IntegerField, int>(new Connector<int, short>()
+            ConnectorFactory<short>.Register<BaseField<int>, int>(new Connector<int, short>
             {
                 ToValue = v => (short) Mathf.Clamp(v, short.MinValue, short.MaxValue),
                 ToField = v => (int) v
             });
 
-            ConnectorFactory<int>.Register<IntegerField>();
-            ConnectorFactory<int>.Register<SliderInt>();
-
-            ConnectorFactory<uint>.Register<LongField, long>(new Connector<long, uint>()
+            ConnectorFactory<uint>.Register<BaseField<long>, long>(new Connector<long, uint>
             {
                 ToValue = v => (uint) Mathf.Clamp(v, uint.MinValue, uint.MaxValue),
                 ToField = v => (long) v
             });
 
-            ConnectorFactory<long>.Register<LongField>();
-
-            ConnectorFactory<ulong>.Register<TextField, string>(new Connector<string, ulong>()
+            ConnectorFactory<ulong>.Register<BaseField<string>, string>(new Connector<string, ulong>
             {
                 ToValue = v =>
                 {
                     ulong.TryParse(v, out var num);
                     return num;
-                },
+                }, 
                 ToField = v => v.ToString()
             });
 
-            ConnectorFactory<float>.Register<FloatField>();
-
-            ConnectorFactory<int>.Register<FloatField, float>(new Connector<float, int>()
+            ConnectorFactory<int>.Register<BaseField<float>, float>(new Connector<float, int>
             {
                 ToValue = v => (int) v,
                 ToField = v => (float) v
             });
 
-            ConnectorFactory<float>.Register<Slider>();
-
-            ConnectorFactory<double>.Register<DoubleField>();
-            
-            ConnectorFactory<char>.Register<TextField, string>(new Connector<string, char>()
+            ConnectorFactory<char>.Register<BaseField<string>, string>(new Connector<string, char>
             {
                 ToValue = v =>
                 {
@@ -316,10 +321,6 @@ namespace Unity.Properties.Editor
                 },
                 ToField = v => v.ToString()
             });
-
-            ConnectorFactory<UnityEngine.Object>.Register<ObjectField>();
-            
-            ConnectorFactory<Enum>.Register<EnumField>();
         }
     }
 }

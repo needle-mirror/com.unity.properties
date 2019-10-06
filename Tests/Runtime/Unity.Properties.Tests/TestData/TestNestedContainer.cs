@@ -11,7 +11,7 @@ namespace Unity.Properties.Tests
             nameof(TestNestedContainer.TestPrimitiveContainer),
             0);
 
-        public override void Accept<TVisitor>(ref TestNestedContainer container, TVisitor visitor, ref ChangeTracker changeTracker)
+        public override void Accept<TVisitor>(ref TestNestedContainer container, ref TVisitor visitor, ref ChangeTracker changeTracker)
         {
             visitor.VisitProperty<UnmanagedProperty<TestNestedContainer, TestPrimitiveContainer>, TestNestedContainer, TestPrimitiveContainer>(m_TestContainer, ref container, ref changeTracker);
         }

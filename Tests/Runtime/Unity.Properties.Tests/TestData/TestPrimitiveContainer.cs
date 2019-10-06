@@ -127,25 +127,25 @@ namespace Unity.Properties.Tests
             nameof(TestPrimitiveContainer.SmallEnum),
             52);
 
-        public override void Accept<TVisitor>(ref TestPrimitiveContainer container, TVisitor visitor, ref ChangeTracker changeTracker)
+        public override void Accept<TVisitor>(ref TestPrimitiveContainer container, ref TVisitor visitor, ref ChangeTracker changeTracker)
         {
-            VisitUnmanagedValueProperty(visitor, m_BoolValue, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_Int8Value, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_Int16Value, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_Int32Value, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_Int64Value, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_UInt8Value, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_UInt16Value, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_UInt32Value, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_UInt64Value, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_Float32Value, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_Float64Value, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_FlagsEnum, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_UnorderedIntEnum, ref container, ref changeTracker);
-            VisitUnmanagedValueProperty(visitor, m_SmallEnum, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_BoolValue, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_Int8Value, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_Int16Value, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_Int32Value, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_Int64Value, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_UInt8Value, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_UInt16Value, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_UInt32Value, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_UInt64Value, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_Float32Value, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_Float64Value, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_FlagsEnum, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_UnorderedIntEnum, ref container, ref changeTracker);
+            VisitUnmanagedValueProperty(ref visitor, m_SmallEnum, ref container, ref changeTracker);
         }
 
-        void VisitUnmanagedValueProperty<TVisitor, TValue>(TVisitor visitor, UnmanagedProperty<TestPrimitiveContainer, TValue> property, ref TestPrimitiveContainer container,
+        void VisitUnmanagedValueProperty<TVisitor, TValue>(ref TVisitor visitor, UnmanagedProperty<TestPrimitiveContainer, TValue> property, ref TestPrimitiveContainer container,
             ref ChangeTracker changeTracker)
             where TVisitor : IPropertyVisitor
             where TValue : unmanaged

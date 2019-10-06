@@ -35,8 +35,9 @@ namespace Unity.Properties.Tests
         {
             var untypedPropertyBag = PropertyBagResolver.Resolve(typeof(TestPrimitiveContainer));
             var boxedContainer = (object) default(TestPrimitiveContainer);
+            var visitor = new SetPropertyVisitor {Name = nameof(TestPrimitiveContainer.Int32Value), Value = 42};
             var changeTracker = default(ChangeTracker);
-            untypedPropertyBag.Accept(ref boxedContainer, new SetPropertyVisitor { Name = nameof(TestPrimitiveContainer.Int32Value), Value = 42}, ref changeTracker);
+            untypedPropertyBag.Accept(ref boxedContainer, ref visitor, ref changeTracker);
             Assert.That(((TestPrimitiveContainer) boxedContainer).Int32Value, Is.EqualTo(42));
         }
     }

@@ -22,7 +22,7 @@ namespace Unity.Properties.Tests
             (ref TestListContainer container, IList<TestPrimitiveContainer> value) => container.TestContainerList = (List<TestPrimitiveContainer>) value
         );
 
-        public override void Accept<TVisitor>(ref TestListContainer container, TVisitor visitor, ref ChangeTracker changeTracker)
+        public override void Accept<TVisitor>(ref TestListContainer container, ref TVisitor visitor, ref ChangeTracker changeTracker)
         {
             visitor.VisitCollectionProperty<ListProperty<TestListContainer, int>, TestListContainer, IList<int>>(m_Int32List, ref container, ref changeTracker);
             visitor.VisitCollectionProperty<ListProperty<TestListContainer, TestPrimitiveContainer>, TestListContainer, IList<TestPrimitiveContainer>>(m_TestStructList, ref container, ref changeTracker);

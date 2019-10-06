@@ -26,7 +26,7 @@ namespace Unity.Properties.Editor
     public interface IInspector<T>
     {
         /// <summary>
-        /// Called whenever the UI needs to be rebuilt.  
+        /// Called whenever the UI needs to be rebuilt.
         /// </summary>
         /// <param name="context">Context object for the inspector.</param>
         /// <returns>The root visual element to use for the inspection.</returns>
@@ -47,19 +47,32 @@ namespace Unity.Properties.Editor
     {
         readonly PropertyElement m_PropertyElement;
         readonly PropertyPath m_PropertyPath;
+        readonly IProperty m_Property;
         
         public readonly string Name;
+        public readonly string PrettyName;
+        public readonly string Tooltip;
+        public readonly bool IsDelayed;
         public readonly InspectorVisitLevel VisitLevel;
 
+        static readonly IPropertyAttributeCollection Empty = new PropertyAttributeCollection();
+ 
+        public IPropertyAttributeCollection Attributes { get; }
+        
         // TODO: Cache the result of ObjectNames.NicifyVariableName
-        public string PrettyName => !string.IsNullOrEmpty(Name) ? ObjectNames.NicifyVariableName(Name) : Name;
 
-        internal InspectorContext(PropertyElement propertyElement, PropertyPath propertyPath, string name, InspectorVisitLevel visitLevel)
+        internal InspectorContext(PropertyElement propertyElement, IProperty property, PropertyPath propertyPath, string name, InspectorVisitLevel visitLevel)
         {
             m_PropertyElement = propertyElement;
             m_PropertyPath = propertyPath;
             Name = name;
             VisitLevel = visitLevel;
+            m_Property = property;
+            Attributes = m_Property.Attributes ?? Empty;
+            Tooltip = Attributes.GetAttribute<TooltipAttribute>()?.tooltip;
+            PrettyName = Attributes.GetAttribute<InspectorNameAttribute>()?.displayName ??
+                         (!string.IsNullOrEmpty(Name) ? ObjectNames.NicifyVariableName(Name) : Name);
+            IsDelayed = Attributes.HasAttribute<DelayedAttribute>();
         }
         
         /// <summary>
@@ -91,12 +104,12 @@ namespace Unity.Properties.Editor
             m_PropertyElement.NotifyChanged();
         }
 
-        private T GetData()
+        T GetData()
         {
             return m_PropertyPath.PartsCount == 0 ? m_PropertyElement.GetTarget<T>() : m_PropertyElement.GetValueAtPath<T>(m_PropertyPath);
         }
 
-        private void SetData(T value)
+        void SetData(T value)
         {
             if (m_PropertyPath.PartsCount == 0)
             {
