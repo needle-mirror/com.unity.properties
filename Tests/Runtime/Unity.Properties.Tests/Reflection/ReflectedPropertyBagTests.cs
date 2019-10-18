@@ -7,33 +7,29 @@ namespace Unity.Properties.Reflection.Tests
     [TestFixture]
     class ReflectedPropertyBagTests
     {
+#pragma warning disable 649
         struct SimpleContainerWithPrivateFields
         {
-#pragma warning disable 649
             [Property] int m_Int32Value;
             int m_HiddenInt32Value;
-#pragma warning restore 649
             
             public int Int32Value => m_Int32Value;
         }
 
         struct ContainerWithProperties
         {
-#pragma warning disable 649
             [Property] public int IntProperty { get; set; }
             public int HiddenInt32Property { get; }
-#pragma warning restore 649
         }
 
         struct ContainerWithSpecialAccess
         {
-#pragma warning disable 649
             public int m_ReadWriteField;
             [ReadOnly] public int m_ExplicitReadOnlyField;
             [Property] public int ReadWriteProperty { get; set; }
             [Property] public int ImplicitReadOnlyProperty { get; }
-#pragma warning restore 649
         }
+#pragma warning restore 649
 
         [Test]
         public void ReflectedPropertyBag_SetValue_PrivateFields()

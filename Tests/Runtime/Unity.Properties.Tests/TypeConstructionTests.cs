@@ -3,32 +3,34 @@ using NUnit.Framework;
 
 namespace Unity.Properties.Tests
 {
-    internal class TypeConstructionTests
+    class TypeConstructionTests
     {
         [Test]
         public void CanBeConstructedTests()
         {
-            Assert.That(TypeConstruction.CanBeConstructed<IConstructInterface>(), Is.EqualTo(false));
-            Assert.That(TypeConstruction.CanBeConstructed<AbstractConstructibleBaseType>(), Is.EqualTo(false));
-            Assert.That(TypeConstruction.CanBeConstructed<ConstructibleBaseType>(), Is.EqualTo(true));
-            Assert.That(TypeConstruction.CanBeConstructed<ConstructibleDerivedType>(), Is.EqualTo(true));
-            Assert.That(TypeConstruction.CanBeConstructed<NonConstructibleDerivedType>(), Is.EqualTo(false));
-            Assert.That(TypeConstruction.CanBeConstructed<NoConstructorType>(), Is.EqualTo(true));
-            Assert.That(TypeConstruction.CanBeConstructed<ParameterLessConstructorType>(), Is.EqualTo(true));
-            Assert.That(TypeConstruction.CanBeConstructed<ParameterConstructorType>(), Is.EqualTo(false));
+            Assert.That(TypeConstruction.CanBeConstructed<IConstructInterface>(), Is.False);
+            Assert.That(TypeConstruction.CanBeConstructed<AbstractConstructibleBaseType>(), Is.False);
+            Assert.That(TypeConstruction.CanBeConstructed<ConstructibleBaseType>(), Is.True);
+            Assert.That(TypeConstruction.CanBeConstructed<ConstructibleDerivedType>(), Is.True);
+            Assert.That(TypeConstruction.CanBeConstructed<NonConstructibleDerivedType>(), Is.False);
+            Assert.That(TypeConstruction.CanBeConstructed<NoConstructorType>(), Is.True);
+            Assert.That(TypeConstruction.CanBeConstructed<ParameterLessConstructorType>(), Is.True);
+            Assert.That(TypeConstruction.CanBeConstructed<ParameterConstructorType>(), Is.False);
+            Assert.That(TypeConstruction.CanBeConstructed<ScriptableObjectType>(), Is.True);
         }
         
         [Test]
         public void CanBeConstructedTestsFromDerivedTypes()
         {
-            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<IConstructInterface>(), Is.EqualTo(true));
-            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<AbstractConstructibleBaseType>(), Is.EqualTo(true));
-            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<ConstructibleBaseType>(), Is.EqualTo(true));
-            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<ConstructibleDerivedType>(), Is.EqualTo(false));
-            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<NonConstructibleDerivedType>(), Is.EqualTo(false));
-            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<NoConstructorType>(), Is.EqualTo(false));
-            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<ParameterLessConstructorType>(), Is.EqualTo(false));
-            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<ParameterConstructorType>(), Is.EqualTo(false));
+            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<IConstructInterface>(), Is.True);
+            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<AbstractConstructibleBaseType>(), Is.True);
+            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<ConstructibleBaseType>(), Is.True);
+            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<ConstructibleDerivedType>(), Is.False);
+            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<NonConstructibleDerivedType>(), Is.False);
+            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<NoConstructorType>(), Is.False);
+            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<ParameterLessConstructorType>(), Is.False);
+            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<ParameterConstructorType>(), Is.False);
+            Assert.That(TypeConstruction.CanBeConstructedFromDerivedType<ScriptableObjectType>(), Is.False);
         }
 
         [Test]
@@ -52,6 +54,12 @@ namespace Unity.Properties.Tests
                 Assert.That(instance, Is.Not.Null);
                 Assert.That(instance.Value, Is.EqualTo(25.0f));
                 Assert.That(instance.SubValue, Is.EqualTo(50.0f));
+            }
+
+            {
+                var instance = TypeConstruction.Construct<ScriptableObjectType>();
+                Assert.That(instance, Is.Not.Null);
+                Assert.That(instance, Is.Not.False);
             }
         }
         
@@ -100,9 +108,9 @@ namespace Unity.Properties.Tests
         [Test]
         public void CanSetExplicitConstruction()
         {
-            Assert.That(TypeConstruction.CanBeConstructed<ParameterConstructorType>(), Is.EqualTo(false));
+            Assert.That(TypeConstruction.CanBeConstructed<ParameterConstructorType>(), Is.False);
             TypeConstruction.SetExplicitConstructionMethod(ExplicitConstruction);
-            Assert.That(TypeConstruction.CanBeConstructed<ParameterConstructorType>(), Is.EqualTo(true));
+            Assert.That(TypeConstruction.CanBeConstructed<ParameterConstructorType>(), Is.True);
             {
                 var instance = TypeConstruction.Construct<ParameterConstructorType>();
                 Assert.That(instance, Is.Not.Null);
@@ -110,7 +118,7 @@ namespace Unity.Properties.Tests
             }
             
             TypeConstruction.UnsetExplicitConstructionMethod(ExplicitConstruction);
-            Assert.That(TypeConstruction.CanBeConstructed<ParameterConstructorType>(), Is.EqualTo(false));
+            Assert.That(TypeConstruction.CanBeConstructed<ParameterConstructorType>(), Is.False);
         }
 
         [Test]

@@ -83,7 +83,7 @@ namespace Unity.Properties.Reflection.Tests
             };
 
             var changeTracker = new ChangeTracker(null);
-            PropertyContainer.Transfer(ref foo, ref source, ref changeTracker);
+            PropertyContainer.Transfer(ref foo, ref source);
             Assert.AreEqual(42, foo.Nested.Int32Value);
         }
 
@@ -107,7 +107,7 @@ namespace Unity.Properties.Reflection.Tests
             };
 
             var changeTracker = new ChangeTracker(null);
-            PropertyContainer.Transfer(ref destination, ref source, ref changeTracker);
+            PropertyContainer.Transfer(ref destination, ref source);
             Assert.That(destination.IListGeneric.Count, Is.EqualTo(3));
             Assert.That(destination.ListGeneric.Count, Is.EqualTo(1));
             Assert.That(destination.Array.Length, Is.EqualTo(4));

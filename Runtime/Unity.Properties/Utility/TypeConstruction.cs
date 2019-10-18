@@ -125,7 +125,7 @@ namespace Unity.Properties
 
             public static bool HasParameterLessConstructor { get; }
             public static bool HasExplicitConstructor => null != ExplicitConstruction;
-            public static bool CanBeConstructed() => HasExplicitConstructor || HasParameterLessConstructor;
+            public static bool CanBeConstructed() => HasExplicitConstructor || typeof(UnityEngine.ScriptableObject).IsAssignableFrom(typeof(TType)) || HasParameterLessConstructor;
             public static IReadOnlyList<Type> ConstructibleTypes
                 => k_PotentialConstructibleTypes.Where(ci => ci.Constructible()).Select(ci => ci.Type).ToList();
 
@@ -182,6 +182,11 @@ namespace Unity.Properties
                     return ExplicitConstruction();
                 }
 
+                if (typeof(UnityEngine.ScriptableObject).IsAssignableFrom(typeof(TType)))
+                {
+                    return (TType)(object)UnityEngine.ScriptableObject.CreateInstance(typeof(TType));
+                }
+
                 if (HasParameterLessConstructor)
                 {
                     return Activator.CreateInstance<TType>();
@@ -204,6 +209,19 @@ namespace Unity.Properties
                         return false;
                     }
                     return true;
+                }
+
+                if (typeof(UnityEngine.ScriptableObject).IsAssignableFrom(typeof(TType)))
+                {
+                    try
+                    {
+                        value = (TType)(object)UnityEngine.ScriptableObject.CreateInstance(typeof(TType));
+                    }
+                    catch
+                    {
+                        value = default;
+                        return false;
+                    }
                 }
 
                 if (HasParameterLessConstructor)

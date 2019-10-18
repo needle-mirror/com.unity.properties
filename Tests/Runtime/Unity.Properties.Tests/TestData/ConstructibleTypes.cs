@@ -61,4 +61,8 @@ namespace Unity.Properties.Tests
             Value = a;
         }
     }
+
+    public class ScriptableObjectType : UnityEngine.ScriptableObject
+    {
+    }
 }

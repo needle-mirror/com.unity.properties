@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [0.9.1-preview] - 2019-10-18
+### Added
+* Added `PropertyContainer.Construct` API call. This method can be used to initialize a tree using the default constructor for any uninitialized types.
+* Added support for instantiating `UnityEngine.ScriptableObject` derived types using the `TypeConstruction` utility.
+
+### Changed
+* `PropertyContainer.Transfer` will now visit the source instead of the destination when transfering.
+
 ## [0.9.0-preview] - 2019-10-06
 ### Added
 * Added `TypeConstruction.TryConstruct[...]` variants for instantiating types without throwing exceptions.
