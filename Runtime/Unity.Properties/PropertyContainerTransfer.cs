@@ -86,11 +86,26 @@ namespace Unity.Properties
                     SrcValue = srcProperty.GetValue(ref srcContainer)
                 };
 
-                m_DstPropertyBag.FindProperty(
-                    srcProperty.GetName(),
+                var sourcePropertyName = srcProperty.GetName();
+                if (m_DstPropertyBag.FindProperty(
+                    sourcePropertyName,
                     ref m_DstContainer,
                     ref changeTracker,
-                    ref action);
+                    ref action))
+                {
+                    return VisitStatus.Handled;
+                }
+
+                var visitor = new FormerlySerializedAsVisitor(sourcePropertyName);
+                Visit(ref m_DstContainer, ref visitor);
+                if (!string.IsNullOrEmpty(visitor.CurrentName))
+                {
+                    m_DstPropertyBag.FindProperty(
+                        visitor.CurrentName,
+                        ref m_DstContainer,
+                        ref changeTracker,
+                        ref action);
+                }
 
                 return VisitStatus.Handled;
             }
@@ -108,11 +123,26 @@ namespace Unity.Properties
                     SrcValue = srcProperty.GetValue(ref srcContainer)
                 };
 
-                m_DstPropertyBag.FindProperty(
-                    srcProperty.GetName(),
+                var sourcePropertyName = srcProperty.GetName();
+                if (m_DstPropertyBag.FindProperty(
+                    sourcePropertyName,
                     ref m_DstContainer,
                     ref changeTracker,
-                    ref action);
+                    ref action))
+                {
+                    return VisitStatus.Handled;
+                }
+                
+                var visitor = new FormerlySerializedAsVisitor(sourcePropertyName);
+                Visit(ref m_DstContainer, ref visitor);
+                if (!string.IsNullOrEmpty(visitor.CurrentName))
+                {
+                    m_DstPropertyBag.FindProperty(
+                        visitor.CurrentName,
+                        ref m_DstContainer,
+                        ref changeTracker,
+                        ref action);
+                }
 
                 return VisitStatus.Handled;
             }
