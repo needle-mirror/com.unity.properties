@@ -20,12 +20,14 @@ namespace Unity.Properties.Tests
             
             var dst = new FormerlySerializedAsData();
 
-            PropertyContainer.Transfer(ref dst, ref src);
-
-            Assert.That(dst.SomeSimpleFloat, Is.EqualTo(src.MyFloat));
-            Assert.That(dst.ListOfInts, Is.EqualTo(src.SomeList));
-            Assert.That(dst.MyVectorRenamed.X, Is.EqualTo(src.MyVector.x));
-            Assert.That(dst.MyVectorRenamed.Y, Is.EqualTo(src.MyVector.y));
+            using (var result = PropertyContainer.Transfer(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst.SomeSimpleFloat, Is.EqualTo(src.MyFloat));
+                Assert.That(dst.ListOfInts, Is.EqualTo(src.SomeList));
+                Assert.That(dst.MyVectorRenamed.X, Is.EqualTo(src.MyVector.x));
+                Assert.That(dst.MyVectorRenamed.Y, Is.EqualTo(src.MyVector.y));
+            }
         }
     }
 }

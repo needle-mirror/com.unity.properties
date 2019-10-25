@@ -14,10 +14,12 @@ namespace Unity.Properties.Tests
 
             var reference = dst.IntList;
 
-            PropertyContainer.Construct(ref dst, ref src);
-
-            Assert.That(ReferenceEquals(reference, dst.IntList));
-            Assert.That(!ReferenceEquals(src.IntList, dst.IntList));
+            using (var result = PropertyContainer.Construct(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(ReferenceEquals(reference, dst.IntList));
+                Assert.That(!ReferenceEquals(src.IntList, dst.IntList));
+            }
         }
         
         [Test]
@@ -26,10 +28,12 @@ namespace Unity.Properties.Tests
             var src = new ClassContainerWithLists {IntList = new List<int>()};
             var dst = new ClassContainerWithLists {IntList = null};
 
-            PropertyContainer.Construct(ref dst, ref src);
-
-            Assert.That(dst.IntList, Is.Not.Null);
-            Assert.That(!ReferenceEquals(src.IntList, dst.IntList));
+            using (var result = PropertyContainer.Construct(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst.IntList, Is.Not.Null);
+                Assert.That(!ReferenceEquals(src.IntList, dst.IntList));
+            }
         }
         
         [Test]
@@ -38,9 +42,11 @@ namespace Unity.Properties.Tests
             var src = new ClassContainerWithLists {IntList = null};
             var dst = new ClassContainerWithLists {IntList = new List<int>()};
 
-            PropertyContainer.Construct(ref dst, ref src);
-
-            Assert.That(dst.IntList, Is.Null);
+            using (var result = PropertyContainer.Construct(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst.IntList, Is.Null);
+            }
         }
         
         [Test]
@@ -52,12 +58,14 @@ namespace Unity.Properties.Tests
             }};
             var dst = new ClassContainerWithLists {ContainerWithPrimitivesList = new List<ClassContainerWithPrimitives>()};
 
-            PropertyContainer.Construct(ref dst, ref src);
-
-            Assert.That(dst.ContainerWithPrimitivesList, Is.Not.Null);
-            Assert.That(!ReferenceEquals(src.ContainerWithPrimitivesList, dst.ContainerWithPrimitivesList));
-            Assert.That(dst.ContainerWithPrimitivesList.Count, Is.EqualTo(1));
-            Assert.That(!ReferenceEquals(src.ContainerWithPrimitivesList[0], dst.ContainerWithPrimitivesList[0]));
+            using (var result = PropertyContainer.Construct(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst.ContainerWithPrimitivesList, Is.Not.Null);
+                Assert.That(!ReferenceEquals(src.ContainerWithPrimitivesList, dst.ContainerWithPrimitivesList));
+                Assert.That(dst.ContainerWithPrimitivesList.Count, Is.EqualTo(1));
+                Assert.That(!ReferenceEquals(src.ContainerWithPrimitivesList[0], dst.ContainerWithPrimitivesList[0]));
+            }
         }
         
         [Test]
@@ -72,12 +80,14 @@ namespace Unity.Properties.Tests
                 new ClassContainerWithPrimitives()
             }};
 
-            PropertyContainer.Construct(ref dst, ref src);
-
-            Assert.That(dst.ContainerWithPrimitivesList, Is.Not.Null);
-            Assert.That(!ReferenceEquals(src.ContainerWithPrimitivesList, dst.ContainerWithPrimitivesList));
-            Assert.That(dst.ContainerWithPrimitivesList.Count, Is.EqualTo(1));
-            Assert.That(dst.ContainerWithPrimitivesList[0], Is.Null);
+            using (var result = PropertyContainer.Construct(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst.ContainerWithPrimitivesList, Is.Not.Null);
+                Assert.That(!ReferenceEquals(src.ContainerWithPrimitivesList, dst.ContainerWithPrimitivesList));
+                Assert.That(dst.ContainerWithPrimitivesList.Count, Is.EqualTo(1));
+                Assert.That(dst.ContainerWithPrimitivesList[0], Is.Null);
+            }
         }
         
         [Test]
@@ -92,12 +102,14 @@ namespace Unity.Properties.Tests
                 new ClassContainerWithPrimitives()
             }};
 
-            PropertyContainer.Construct(ref dst, ref src);
-
-            Assert.That(dst.ContainerWithPrimitivesList, Is.Not.Null);
-            Assert.That(!ReferenceEquals(src.ContainerWithPrimitivesList, dst.ContainerWithPrimitivesList));
-            Assert.That(dst.ContainerWithPrimitivesList.Count, Is.EqualTo(1));
-            Assert.That(dst.ContainerWithPrimitivesList[0], Is.Null);
+            using (var result = PropertyContainer.Construct(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst.ContainerWithPrimitivesList, Is.Not.Null);
+                Assert.That(!ReferenceEquals(src.ContainerWithPrimitivesList, dst.ContainerWithPrimitivesList));
+                Assert.That(dst.ContainerWithPrimitivesList.Count, Is.EqualTo(1));
+                Assert.That(dst.ContainerWithPrimitivesList[0], Is.Null);
+            }
         }
     }
 }

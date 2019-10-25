@@ -47,7 +47,7 @@ namespace Unity.Properties.PerformanceTests
 
             Measure.Method(() =>
                    {
-                       PropertyContainer.Transfer(ref dst, ref src);
+                       PropertyContainer.Transfer(ref dst, ref src).Dispose();
                    })
                    .Definition("PropertyContainerTransfer")
                    .WarmupCount(1)
@@ -77,7 +77,7 @@ namespace Unity.Properties.PerformanceTests
 
             Measure.Method(() =>
                    {
-                       PropertyContainer.Transfer(ref dst, ref src);
+                       PropertyContainer.Transfer(ref dst, ref src).Dispose();
                    })
                    .Definition("PropertyContainerTransfer")
                    .WarmupCount(1)

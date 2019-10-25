@@ -13,10 +13,12 @@ namespace Unity.Properties.Tests
 
             var reference = dst.Container;
 
-            PropertyContainer.Construct(ref dst, ref src);
-
-            Assert.That(ReferenceEquals(reference, dst.Container));
-            Assert.That(!ReferenceEquals(src.Container, dst.Container));
+            using (var result = PropertyContainer.Construct(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(ReferenceEquals(reference, dst.Container));
+                Assert.That(!ReferenceEquals(src.Container, dst.Container));
+            }
         }
 
         [Test]
@@ -25,10 +27,12 @@ namespace Unity.Properties.Tests
             var src = new ClassContainerWithNestedClass {Container = new ClassContainerWithPrimitives()};
             var dst = new ClassContainerWithNestedClass {Container = null};
 
-            PropertyContainer.Construct(ref dst, ref src);
-
-            Assert.That(dst.Container, Is.Not.Null);
-            Assert.That(!ReferenceEquals(src.Container, dst.Container));
+            using (var result = PropertyContainer.Construct(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst.Container, Is.Not.Null);
+                Assert.That(!ReferenceEquals(src.Container, dst.Container));
+            }
         }
 
         [Test]
@@ -36,10 +40,12 @@ namespace Unity.Properties.Tests
         {
             var src = new ClassContainerWithNestedClass {Container = null};
             var dst = new ClassContainerWithNestedClass {Container = new ClassContainerWithPrimitives()};
-            
-            PropertyContainer.Construct(ref dst, ref src);
 
-            Assert.That(dst.Container, Is.Null);
+            using (var result = PropertyContainer.Construct(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst.Container, Is.Null);
+            }
         }
 
         [Test]
@@ -48,9 +54,11 @@ namespace Unity.Properties.Tests
             var src = new StructContainerWithNestedStruct {Container = new StructContainerWithPrimitives()};
             var dst = new ClassContainerWithNestedClass {Container = null};
 
-            PropertyContainer.Construct(ref dst, ref src);
-
-            Assert.That(dst.Container, Is.Not.Null);
+            using (var result = PropertyContainer.Construct(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst.Container, Is.Not.Null);
+            }
         }
 
         [Test]
@@ -59,10 +67,12 @@ namespace Unity.Properties.Tests
             var src = new ClassContainerWithNestedClass {Container = new ClassContainerWithPrimitives()};
             var dst = (ClassContainerWithNestedClass) null;
 
-            PropertyContainer.Construct(ref dst, ref src);
-
-            Assert.That(dst, Is.Not.Null);
-            Assert.That(dst.Container, Is.Not.Null);
+            using (var result = PropertyContainer.Construct(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst, Is.Not.Null);
+                Assert.That(dst.Container, Is.Not.Null);
+            }
         }
     }
 }

@@ -6,24 +6,25 @@ namespace Unity.Properties
     {
         public string TypeIdentifierKey;
     }
-    
+
     public static partial class PropertyContainer
     {
         struct ConstructAbstractType<TSrcContainer> : IContainerTypeCallback
         {
             public PropertyContainerConstructOptions Options;
+            public VisitResult Result;
             public TSrcContainer SrcContainer;
             public object DstContainerBoxed;
 
             public void Invoke<TDstContainer>()
             {
-                var visitor = new TypeConstructionVisitor<TDstContainer>((TDstContainer) DstContainerBoxed, Options);
+                var visitor = new TypeConstructionVisitor<TDstContainer>((TDstContainer) DstContainerBoxed, Result, Options);
                 Visit(ref SrcContainer, ref visitor);
                 DstContainerBoxed = visitor.Target;
             }
         }
-        
-        public static void Construct<TDstContainer, TSrcContainer>(ref TDstContainer dstContainer, ref TSrcContainer srcContainer, PropertyContainerConstructOptions options = default)
+
+        public static VisitResult Construct<TDstContainer, TSrcContainer>(ref TDstContainer dstContainer, ref TSrcContainer srcContainer, PropertyContainerConstructOptions options = default)
         {
             if (!RuntimeTypeInfoCache<TSrcContainer>.IsValueType() && srcContainer == null)
             {
@@ -43,12 +44,24 @@ namespace Unity.Properties
                 }
             }
             
+            var result = VisitResult.GetPooled();
+            Construct(ref dstContainer, ref srcContainer, result, options);
+            return result;
+        }
+
+        internal static void Construct<TDstContainer, TSrcContainer>(
+            ref TDstContainer dstContainer,
+            ref TSrcContainer srcContainer,
+            VisitResult result,
+            PropertyContainerConstructOptions options = default)
+        {
             if (RuntimeTypeInfoCache<TDstContainer>.IsAbstractOrInterface() || typeof(TDstContainer) != dstContainer.GetType())
             {
                 var propertyBag = PropertyBagResolver.Resolve(dstContainer.GetType());
                 var action = new ConstructAbstractType<TSrcContainer>
                 {
                     Options = options,
+                    Result = result,
                     SrcContainer = srcContainer,
                     DstContainerBoxed = dstContainer
                 };
@@ -57,7 +70,7 @@ namespace Unity.Properties
             }
             else
             {
-                var visitor = new TypeConstructionVisitor<TDstContainer>(dstContainer, options);
+                var visitor = new TypeConstructionVisitor<TDstContainer>(dstContainer, result, options);
                 Visit(ref srcContainer, ref visitor);
                 dstContainer = visitor.Target;
             }
@@ -68,12 +81,14 @@ namespace Unity.Properties
     {
         TDstContainer m_DstContainer;
         readonly PropertyContainerConstructOptions m_Options;
+        readonly VisitResult Result;
         readonly IPropertyBag<TDstContainer> m_DstPropertyBag;
         public TDstContainer Target => m_DstContainer;
         
-        public TypeConstructionVisitor(TDstContainer dstContainer, PropertyContainerConstructOptions options)
+        public TypeConstructionVisitor(TDstContainer dstContainer, VisitResult result, PropertyContainerConstructOptions options)
         {
             m_Options = options;
+            Result = result;
             m_DstContainer = dstContainer;
             m_DstPropertyBag = PropertyBagResolver.Resolve<TDstContainer>();
 
@@ -90,6 +105,7 @@ namespace Unity.Properties
             var action = new ConstructContainer<TSrcValue> 
             {
                 Options = m_Options,
+                Result = Result,
                 SrcValue = srcProperty.GetValue(ref srcContainer)
             };
             
@@ -111,6 +127,7 @@ namespace Unity.Properties
             var action = new ConstructCollection<TSrcProperty, TSrcContainer, TSrcValue> 
             {
                 Options = m_Options,
+                Result = Result,
                 SrcProperty = srcProperty,
                 SrcContainer = srcContainer,
                 SrcValue = srcProperty.GetValue(ref srcContainer)
@@ -128,6 +145,7 @@ namespace Unity.Properties
         struct ConstructContainer<TSrcValue> : IPropertyGetter<TDstContainer>
         {
             public PropertyContainerConstructOptions Options;
+            public VisitResult Result;
             public TSrcValue SrcValue;
 
             public void VisitProperty<TDstProperty, TDstValue>(
@@ -151,13 +169,13 @@ namespace Unity.Properties
 
                 if (!RuntimeTypeInfoCache<TDstValue>.IsValueType() && null == dstValue || SrcValue is TDstValue && dstValue.GetType() != SrcValue.GetType())
                 {
-                    if (!TypeConstructionUtility.TryConstructFromData(ref SrcValue, Options.TypeIdentifierKey, out dstValue))
+                    if (!TypeConstructionUtility.TryConstructFromData(ref SrcValue, Options.TypeIdentifierKey, Result, out dstValue))
                     {
                         return;
                     }
                 }
 
-                PropertyContainer.Construct(ref dstValue, ref SrcValue, Options);
+                PropertyContainer.Construct(ref dstValue, ref SrcValue, Result, Options);
 
                 dstProperty.SetValue(ref dstContainer, dstValue);
             }
@@ -168,7 +186,7 @@ namespace Unity.Properties
                 ref ChangeTracker changeTracker)
                 where TDstProperty : ICollectionProperty<TDstContainer, TDstValue>
             {
-                throw new InvalidOperationException($"PropertyContainer.Construct ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstProperty.GetName()}] expected container type but was collection type.");
+                Result.AddException(new InvalidOperationException($"PropertyContainer.Construct ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstProperty.GetName()}] expected container type but was collection type."));
             }
         }
 
@@ -176,6 +194,7 @@ namespace Unity.Properties
             where TSrcProperty : ICollectionProperty<TSrcContainer, TSrcValue>
         {
             public PropertyContainerConstructOptions Options;
+            public VisitResult Result;
             public TSrcProperty SrcProperty;
             public TSrcContainer SrcContainer;
             public TSrcValue SrcValue;
@@ -186,7 +205,7 @@ namespace Unity.Properties
                 ref ChangeTracker changeTracker) 
                 where TDstProperty : IProperty<TDstContainer, TDstValue>
             {
-                throw new InvalidOperationException($"PropertyContainer.Construct ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstProperty.GetName()}] expected collection type but was container type.");
+                Result.AddException(new InvalidOperationException($"PropertyContainer.Construct ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstProperty.GetName()}] expected collection type but was container type."));
             }
 
             public void VisitCollectionProperty<TDstProperty, TDstValue>(
@@ -238,6 +257,7 @@ namespace Unity.Properties
                     var action = new SrcCollectionElementGetter<TDstProperty, TDstValue>
                     {
                         Options = Options,
+                        Result = Result,
                         DstProperty = dstProperty,
                         DstContainer = dstContainer,
                         Index = i
@@ -253,6 +273,7 @@ namespace Unity.Properties
                 where TDstProperty : ICollectionProperty<TDstContainer, TDstValue>
             {
                 public PropertyContainerConstructOptions Options;
+                public VisitResult Result;
                 public TDstProperty DstProperty;
                 public TDstContainer DstContainer;
                 public int Index;
@@ -266,6 +287,7 @@ namespace Unity.Properties
                     var action = new DstCollectionElementGetter<TSrcElementValue>
                     {
                         Options = Options,
+                        Result = Result,
                         SrcElementValue = srcElementProperty.GetValue(ref srcContainer)
                     };
                     
@@ -278,13 +300,14 @@ namespace Unity.Properties
                     ref ChangeTracker changeTracker) 
                     where TSrcElementProperty : ICollectionProperty<TSrcContainer, TSrcElementValue>, ICollectionElementProperty<TSrcContainer, TSrcElementValue>
                 {
-                    throw new InvalidOperationException("PropertyContainer.Construct does not support arrays of arrays.");
+                    Result.AddException(new InvalidOperationException("PropertyContainer.Construct does not support arrays of arrays."));
                 }
             }
 
             struct DstCollectionElementGetter<TSrcElementValue> : ICollectionElementPropertyGetter<TDstContainer>
             {
                 public PropertyContainerConstructOptions Options;
+                public VisitResult Result;
                 public TSrcElementValue SrcElementValue;
 
                 public void VisitProperty<TDstElementProperty, TDstElementValue>(
@@ -308,13 +331,13 @@ namespace Unity.Properties
 
                     if (!RuntimeTypeInfoCache<TDstElementValue>.IsValueType() && null == dstValue || SrcElementValue is TDstElementValue && dstValue.GetType() != SrcElementValue.GetType())
                     {
-                        if (!TypeConstructionUtility.TryConstructFromData(ref SrcElementValue, Options.TypeIdentifierKey, out dstValue))
+                        if (!TypeConstructionUtility.TryConstructFromData(ref SrcElementValue, Options.TypeIdentifierKey, Result, out dstValue))
                         {
                             return;
                         }
                     }
 
-                    PropertyContainer.Construct(ref dstValue, ref SrcElementValue, Options);
+                    PropertyContainer.Construct(ref dstValue, ref SrcElementValue, Result, Options);
 
                     dstElementProperty.SetValue(ref dstContainer, dstValue);
                 }
@@ -325,7 +348,7 @@ namespace Unity.Properties
                     ref ChangeTracker changeTracker) 
                     where TDstElementProperty : ICollectionProperty<TDstContainer, TDstElementValue>, ICollectionElementProperty<TDstContainer, TDstElementValue>
                 {
-                    throw new InvalidOperationException($"PropertyContainer.Construct ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstElementProperty.GetName()}] expected collection type but was container type.");
+                    Result.AddException(new InvalidOperationException($"PropertyContainer.Construct ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstElementProperty.GetName()}] expected collection type but was container type."));
                 }
             }
         }
@@ -333,7 +356,7 @@ namespace Unity.Properties
 
     static class TypeConstructionUtility
     {
-        public static bool TryConstructFromData<TDstValue, TSrcValue>(ref TSrcValue srcValue, string typeIdentifierKey, out TDstValue dstValue)
+        public static bool TryConstructFromData<TDstValue, TSrcValue>(ref TSrcValue srcValue, string typeIdentifierKey, VisitResult result, out TDstValue dstValue)
         {
             if (typeof(UnityEngine.Object).IsAssignableFrom(typeof(TDstValue)))
             {
@@ -362,19 +385,22 @@ namespace Unity.Properties
             // If that fails, we try to construct base on the meta data string.
             if (!PropertyContainer.TryGetValue(ref srcValue, typeIdentifierKey, out string assemblyQualifiedTypeName))
             {
-                throw new InvalidOperationException($"PropertyContainer.Construct failed to construct DstType=[{typeof(TDstValue)}]. SrcValue Property=[{typeIdentifierKey}] was not found.");
+                result.AddException(new InvalidOperationException($"PropertyContainer.Construct failed to construct DstType=[{typeof(TDstValue)}]. SrcValue Property=[{typeIdentifierKey}] was not found."));
+                return false;
             }
 
             if (string.IsNullOrEmpty(assemblyQualifiedTypeName))
             {
-                throw new InvalidOperationException($"PropertyContainer.Construct failed to construct DstType=[{typeof(TDstValue)}]. SrcValue Property=[{typeIdentifierKey}] contained null or empty type information.");
+                result.AddException(new InvalidOperationException($"PropertyContainer.Construct failed to construct DstType=[{typeof(TDstValue)}]. SrcValue Property=[{typeIdentifierKey}] contained null or empty type information."));
+                return false;
             }
 
             var dstType = Type.GetType(assemblyQualifiedTypeName);
             
             if (null == dstType)
             {
-                throw new InvalidOperationException($"PropertyContainer.Construct failed to construct DstType=[{typeof(TDstValue)}]. Could not resolve type from TypeName=[{assemblyQualifiedTypeName}].");
+                result.AddException(new InvalidOperationException($"PropertyContainer.Construct failed to construct DstType=[{typeof(TDstValue)}]. Could not resolve type from TypeName=[{assemblyQualifiedTypeName}]."));
+                return false;
             }
             
             return TypeConstruction.TryConstruct(dstType, out dstValue);

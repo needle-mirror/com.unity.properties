@@ -1,38 +1,48 @@
 using System;
-using UnityEngine;
 
 namespace Unity.Properties
 {
     public static partial class PropertyContainer
     {
-        public static void Transfer<TDstContainer, TSrcContainer>(TDstContainer destination, TSrcContainer source)
+        public static VisitResult Transfer<TDstContainer, TSrcContainer>(TDstContainer destination, TSrcContainer source)
             where TDstContainer : class
         {
-            Transfer(ref destination, ref source);
+            return Transfer(ref destination, ref source);
         }
         
-        public static void Transfer<TDstContainer, TSrcContainer>(ref TDstContainer dstContainer, ref TSrcContainer srcContainer, IVersionStorage versionStorage)
+        public static VisitResult Transfer<TDstContainer, TSrcContainer>(ref TDstContainer dstContainer, ref TSrcContainer srcContainer, IVersionStorage versionStorage)
         {
-            Transfer(ref dstContainer, ref srcContainer);
+            return Transfer(ref dstContainer, ref srcContainer);
         }
         
-        public static void Transfer<TDstContainer, TSrcContainer>(ref TDstContainer dstContainer, ref TSrcContainer srcContainer, ref ChangeTracker changeTracker)
+        public static VisitResult Transfer<TDstContainer, TSrcContainer>(ref TDstContainer dstContainer, ref TSrcContainer srcContainer, ref ChangeTracker changeTracker)
         {
-            Transfer(ref dstContainer, ref srcContainer);
+            return Transfer(ref dstContainer, ref srcContainer);
         }
 
-        public static void Transfer<TDstContainer, TSrcContainer>(ref TDstContainer dstContainer, ref TSrcContainer srcContainer)
+        public static VisitResult Transfer<TDstContainer, TSrcContainer>(ref TDstContainer dstContainer, ref TSrcContainer srcContainer)
         {
             if (!RuntimeTypeInfoCache<TDstContainer>.IsValueType() && dstContainer == null)
             {
                 throw new ArgumentNullException(nameof(dstContainer));
             }
 
+            var result = VisitResult.GetPooled();
+            Transfer(ref dstContainer, ref srcContainer, result);
+            return result;
+        }
+
+        static void Transfer<TDstContainer, TSrcContainer>(
+            ref TDstContainer dstContainer,
+            ref TSrcContainer srcContainer,
+            VisitResult result)
+        {
             if (RuntimeTypeInfoCache<TDstContainer>.IsAbstractOrInterface() || typeof(TDstContainer) != dstContainer.GetType())
             {
                 var propertyBag = PropertyBagResolver.Resolve(dstContainer.GetType());
                 var action = new TransferAbstractType<TSrcContainer>
                 {
+                    Result = result,
                     SrcContainer = srcContainer,
                     DstContainerBoxed = dstContainer
                 };
@@ -41,7 +51,7 @@ namespace Unity.Properties
             }
             else
             {
-                var visitor = new TransferVisitor<TDstContainer>(dstContainer);
+                var visitor = new TransferVisitor<TDstContainer>(dstContainer, result);
                 Visit(ref srcContainer, ref visitor);
                 dstContainer = visitor.Target;
             }
@@ -49,12 +59,13 @@ namespace Unity.Properties
         
         struct TransferAbstractType<TSrcContainer> : IContainerTypeCallback
         {
+            public VisitResult Result;
             public TSrcContainer SrcContainer;
             public object DstContainerBoxed;
 
             public void Invoke<TDstContainer>()
             {
-                var visitor = new TransferVisitor<TDstContainer>((TDstContainer) DstContainerBoxed);
+                var visitor = new TransferVisitor<TDstContainer>((TDstContainer) DstContainerBoxed, Result);
                 Visit(ref SrcContainer, ref visitor);
                 DstContainerBoxed = visitor.Target;
             }
@@ -63,11 +74,13 @@ namespace Unity.Properties
         struct TransferVisitor<TDstContainer> : IPropertyVisitor
         {
             TDstContainer m_DstContainer;
+            VisitResult m_Result;
             readonly IPropertyBag<TDstContainer> m_DstPropertyBag;
             public TDstContainer Target => m_DstContainer;
 
-            public TransferVisitor(TDstContainer dstContainer)
+            public TransferVisitor(TDstContainer dstContainer, VisitResult result)
             {
+                m_Result = result;
                 m_DstContainer = dstContainer;
                 m_DstPropertyBag = PropertyBagResolver.Resolve<TDstContainer>();
 
@@ -83,6 +96,7 @@ namespace Unity.Properties
             {
                 var action = new TransferContainer<TSrcValue>
                 {
+                    Result = m_Result,
                     SrcValue = srcProperty.GetValue(ref srcContainer)
                 };
 
@@ -118,6 +132,7 @@ namespace Unity.Properties
             {
                 var action = new TransferCollection<TSrcProperty, TSrcContainer, TSrcValue>
                 {
+                    Result = m_Result,
                     SrcProperty = srcProperty,
                     SrcContainer = srcContainer,
                     SrcValue = srcProperty.GetValue(ref srcContainer)
@@ -149,6 +164,7 @@ namespace Unity.Properties
 
             struct TransferContainer<TSrcValue> : IPropertyGetter<TDstContainer>
             {
+                public VisitResult Result;
                 public TSrcValue SrcValue;
 
                 public void VisitProperty<TDstProperty, TDstValue>(
@@ -171,10 +187,14 @@ namespace Unity.Properties
                         
                         if (RuntimeTypeInfoCache<TDstValue>.IsValueType() || null != dstValue)
                         {
-                            Transfer(ref dstValue, ref SrcValue);
+                            Transfer(ref dstValue, ref SrcValue, Result);
                         }
                         
                         dstProperty.SetValue(ref dstContainer, dstValue);
+                    }
+                    else
+                    {
+                        Result.AddLog($"PropertyContainer.Transfer ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstProperty.GetName()}] could not be transferred.");
                     }
                 }
 
@@ -184,13 +204,14 @@ namespace Unity.Properties
                     ref ChangeTracker changeTracker)
                     where TDstProperty : ICollectionProperty<TDstContainer, TDstValue>
                 {
-                    throw new InvalidOperationException($"PropertyContainer.Transfer ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstProperty.GetName()}] expected container type but was collection type.");
+                    Result.AddException(new InvalidOperationException($"PropertyContainer.Transfer ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstProperty.GetName()}] expected container type but was collection type."));
                 }
             }
 
             struct TransferCollection<TSrcProperty, TSrcContainer, TSrcValue> : IPropertyGetter<TDstContainer>
                 where TSrcProperty : ICollectionProperty<TSrcContainer, TSrcValue>
             {
+                public VisitResult Result;
                 public TSrcProperty SrcProperty;
                 public TSrcContainer SrcContainer;
                 public TSrcValue SrcValue;
@@ -201,7 +222,7 @@ namespace Unity.Properties
                     ref ChangeTracker changeTracker)
                     where TDstProperty : IProperty<TDstContainer, TDstValue>
                 {
-                    throw new InvalidOperationException($"PropertyContainer.Transfer ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstProperty.GetName()}] expected collection type but was container type.");
+                    Result.AddException(new InvalidOperationException($"PropertyContainer.Transfer ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstProperty.GetName()}] expected collection type but was container type."));
                 }
 
                 public void VisitCollectionProperty<TDstProperty, TDstValue>(
@@ -230,6 +251,7 @@ namespace Unity.Properties
                         {
                             var action = new SrcCollectionElementGetter<TDstProperty, TDstValue>
                             {
+                                Result = Result,
                                 DstProperty = dstProperty,
                                 DstContainer = dstContainer,
                                 Index = i
@@ -240,11 +262,16 @@ namespace Unity.Properties
                             dstContainer = action.DstContainer;
                         }
                     }
+                    else
+                    {
+                        Result.AddLog($"PropertyContainer.Transfer ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstProperty.GetName()}] could not be transferred.");
+                    }
                 }
 
                 struct SrcCollectionElementGetter<TDstProperty, TDstValue> : ICollectionElementPropertyGetter<TSrcContainer>
                     where TDstProperty : ICollectionProperty<TDstContainer, TDstValue>
                 {
+                    public VisitResult Result;
                     public TDstProperty DstProperty;
                     public TDstContainer DstContainer;
                     public int Index;
@@ -257,6 +284,7 @@ namespace Unity.Properties
                     {
                         var action = new DstCollectionElementGetter<TSrcElementValue>
                         {
+                            Result = Result,
                             SrcElementValue = srcElementProperty.GetValue(ref srcContainer)
                         };
 
@@ -269,12 +297,13 @@ namespace Unity.Properties
                         ref ChangeTracker changeTracker)
                         where TSrcElementProperty : ICollectionProperty<TSrcContainer, TSrcElementValue>, ICollectionElementProperty<TSrcContainer, TSrcElementValue>
                     {
-                        throw new InvalidOperationException("PropertyContainer.Transfer does not support arrays of arrays.");
+                        Result.AddException(new InvalidOperationException("PropertyContainer.Transfer does not support arrays of arrays."));
                     }
                 }
 
                 struct DstCollectionElementGetter<TSrcElementValue> : ICollectionElementPropertyGetter<TDstContainer>
                 {
+                    public VisitResult Result; 
                     public TSrcElementValue SrcElementValue;
 
                     public void VisitProperty<TDstElementProperty, TDstElementValue>(
@@ -297,10 +326,14 @@ namespace Unity.Properties
                         
                             if (RuntimeTypeInfoCache<TDstElementValue>.IsValueType() || null != dstElementValue)
                             {
-                                Transfer(ref dstElementValue, ref SrcElementValue);
+                                Transfer(ref dstElementValue, ref SrcElementValue, Result);
                             }
                         
                             dstElementProperty.SetValue(ref dstContainer, dstElementValue);
+                        }
+                        else
+                        {
+                            Result.AddLog($"PropertyContainer.Transfer ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstElementProperty.GetName()}] could not be transferred.");
                         }
                     }
 
@@ -310,7 +343,7 @@ namespace Unity.Properties
                         ref ChangeTracker changeTracker)
                         where TDstElementProperty : ICollectionProperty<TDstContainer, TDstElementValue>, ICollectionElementProperty<TDstContainer, TDstElementValue>
                     {
-                        throw new InvalidOperationException($"PropertyContainer.Transfer ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstElementProperty.GetName()}] expected collection type but was container type.");
+                        Result.AddException(new InvalidOperationException($"PropertyContainer.Transfer ContainerType=[{typeof(TDstContainer)}] PropertyName=[{dstElementProperty.GetName()}] expected collection type but was container type."));
                     }
                 }
             }

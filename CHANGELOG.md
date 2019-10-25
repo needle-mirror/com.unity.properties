@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [0.10.0-preview] - 2019-10-25
+### Changed
+* ***Breaking change*** `PropertyContainer.Construct` and `PropertyContainer.Transfer` will now return a disposable `VisitResult` containing logs, errors and exceptions that occurred during visitation. 
+
 ## [0.9.2-preview] - 2019-10-21
 ### Added
 * Added support for renamed fields using `UnityEngine.Serialization.FormerlySerializedAsAttribute` in the transfer visitor.

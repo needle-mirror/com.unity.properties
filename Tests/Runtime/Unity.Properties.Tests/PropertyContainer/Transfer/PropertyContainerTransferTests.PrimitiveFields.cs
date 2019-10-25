@@ -11,9 +11,11 @@ namespace Unity.Properties.Tests
             var src = new StructContainerWithPrimitives {Int32Value = 10};
             var dst = new StructContainerWithPrimitives {Int32Value = 20};
 
-            PropertyContainer.Transfer(ref dst, ref src);
-
-            Assert.AreEqual(10, dst.Int32Value);
+            using (var result = PropertyContainer.Transfer(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.AreEqual(10, dst.Int32Value);
+            }
         }
         
         [Test]
@@ -24,7 +26,10 @@ namespace Unity.Properties.Tests
 
             Assert.DoesNotThrow(() =>
             {
-                PropertyContainer.Transfer(ref dst, ref src);
+                using (var result = PropertyContainer.Transfer(ref dst, ref src))
+                {
+                    Assert.That(result.Succeeded, Is.True);
+                }
             });
 
             Assert.That(dst.Container.Int32Value, Is.EqualTo(10));
@@ -36,9 +41,11 @@ namespace Unity.Properties.Tests
             var src = new StructContainerWithPrimitives {FlagsEnum = FlagsEnum.Value1 | FlagsEnum.Value4 };
             var dst = new StructContainerWithPrimitives {FlagsEnum = FlagsEnum.None};
 
-            PropertyContainer.Transfer(ref dst, ref src);
-
-            Assert.AreEqual(FlagsEnum.Value1 | FlagsEnum.Value4, dst.FlagsEnum);
+            using (var result = PropertyContainer.Transfer(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.AreEqual(FlagsEnum.Value1 | FlagsEnum.Value4, dst.FlagsEnum);
+            }
         }
     }
 }

@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
-using UnityEngine;
 
 namespace Unity.Properties.Reflection.Tests
 {
@@ -82,9 +80,11 @@ namespace Unity.Properties.Reflection.Tests
                 Nested = new NestedContainer {Int32Value = 10}
             };
 
-            var changeTracker = new ChangeTracker(null);
-            PropertyContainer.Transfer(ref foo, ref source);
-            Assert.AreEqual(42, foo.Nested.Int32Value);
+            using (var result = PropertyContainer.Transfer(ref foo, ref source))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.AreEqual(42, foo.Nested.Int32Value);
+            }
         }
 
         [Test]
@@ -106,11 +106,13 @@ namespace Unity.Properties.Reflection.Tests
                 Array = new int[0]
             };
 
-            var changeTracker = new ChangeTracker(null);
-            PropertyContainer.Transfer(ref destination, ref source);
-            Assert.That(destination.IListGeneric.Count, Is.EqualTo(3));
-            Assert.That(destination.ListGeneric.Count, Is.EqualTo(1));
-            Assert.That(destination.Array.Length, Is.EqualTo(4));
+            using (var result = PropertyContainer.Transfer(ref destination, ref source))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(destination.IListGeneric.Count, Is.EqualTo(3));
+                Assert.That(destination.ListGeneric.Count, Is.EqualTo(1));
+                Assert.That(destination.Array.Length, Is.EqualTo(4));
+            }
         }
     }
 }

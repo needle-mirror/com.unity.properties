@@ -11,10 +11,12 @@ namespace Unity.Properties.Tests
             var src = new ClassContainerWithNestedClass {Container = new ClassContainerWithPrimitives()};
             var dst = new ClassContainerWithNestedClass {Container = null};
 
-            PropertyContainer.Transfer(ref dst, ref src);
-
-            Assert.That(dst.Container, Is.Not.Null);
-            Assert.That(ReferenceEquals(src.Container, dst.Container));
+            using (var result = PropertyContainer.Transfer(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst.Container, Is.Not.Null);
+                Assert.That(ReferenceEquals(src.Container, dst.Container));
+            }
         }
         
         [Test]
@@ -22,10 +24,12 @@ namespace Unity.Properties.Tests
         {
             var src = new ClassContainerWithNestedClass {Container = null};
             var dst = new ClassContainerWithNestedClass {Container = new ClassContainerWithPrimitives()};
-            
-            PropertyContainer.Transfer(ref dst, ref src);
 
-            Assert.That(dst.Container, Is.Null);
+            using (var result = PropertyContainer.Transfer(ref dst, ref src))
+            {
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(dst.Container, Is.Null);
+            }
         }
         
         [Test]
@@ -36,7 +40,10 @@ namespace Unity.Properties.Tests
 
             Assert.DoesNotThrow(() =>
             {
-                PropertyContainer.Transfer(ref dst, ref src);
+                using (var result = PropertyContainer.Transfer(ref dst, ref src))
+                {
+                    Assert.That(result.Succeeded, Is.True);
+                }
             });
 
             Assert.That(dst.Container, Is.Null);
