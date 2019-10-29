@@ -4,7 +4,7 @@ namespace Unity.Properties
 {
     public struct ArrayProperty<TContainer, TElement> : ICollectionProperty<TContainer, TElement[]>
     {
-        readonly struct CollectionElementProperty : ICollectionElementProperty<TContainer, TElement>
+        internal readonly struct CollectionElementProperty : ICollectionElementProperty<TContainer, TElement>
         {
             readonly ArrayProperty<TContainer, TElement> m_Property;
 

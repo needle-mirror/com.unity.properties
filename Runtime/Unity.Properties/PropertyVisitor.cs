@@ -85,7 +85,7 @@ namespace Unity.Properties
             return TryVisitCollectionWithAdapters(property, ref container, ref value, ref changeTracker);
         }
 
-        VisitStatus TryVisitValueWithAdapters<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
+        internal VisitStatus TryVisitValueWithAdapters<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
             where TProperty : IProperty<TContainer, TValue>
         {
             if (null != m_Adapters)
@@ -104,7 +104,7 @@ namespace Unity.Properties
             return Visit(property, ref container, ref value, ref changeTracker);
         }
 
-        VisitStatus TryVisitContainerWithAdapters<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
+        internal VisitStatus TryVisitContainerWithAdapters<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
             where TProperty : IProperty<TContainer, TValue>
         {
             VisitStatus status;
@@ -129,7 +129,7 @@ namespace Unity.Properties
             return status;
         }
 
-        VisitStatus TryVisitCollectionWithAdapters<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
+        internal VisitStatus TryVisitCollectionWithAdapters<TProperty, TContainer, TValue>(TProperty property, ref TContainer container, ref TValue value, ref ChangeTracker changeTracker)
             where TProperty : ICollectionProperty<TContainer, TValue>
         {
             VisitStatus status;
