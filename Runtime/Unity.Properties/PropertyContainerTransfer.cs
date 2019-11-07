@@ -173,6 +173,11 @@ namespace Unity.Properties
                     ref ChangeTracker changeTracker)
                     where TDstProperty : IProperty<TDstContainer, TDstValue>
                 {
+                    if (dstProperty.IsReadOnly)
+                    {
+                        return;
+                    }
+
                     if (!RuntimeTypeInfoCache<TSrcValue>.IsValueType() && null == SrcValue)
                     {
                         dstProperty.SetValue(ref dstContainer, default);
@@ -231,6 +236,11 @@ namespace Unity.Properties
                     ref ChangeTracker changeTracker)
                     where TDstProperty : ICollectionProperty<TDstContainer, TDstValue>
                 {
+                    if (dstProperty.IsReadOnly)
+                    {
+                        return;
+                    }
+
                     var dstValue = dstProperty.GetValue(ref dstContainer);
                     
                     if (!RuntimeTypeInfoCache<TSrcValue>.IsValueType() && null == SrcValue)
@@ -312,6 +322,11 @@ namespace Unity.Properties
                         ref ChangeTracker changeTracker)
                         where TDstElementProperty : ICollectionElementProperty<TDstContainer, TDstElementValue>
                     {
+                        if (dstElementProperty.IsReadOnly)
+                        {
+                            return;
+                        }
+
                         if (!RuntimeTypeInfoCache<TSrcElementValue>.IsValueType() && null == SrcElementValue)
                         {
                             dstElementProperty.SetValue(ref dstContainer, default);

@@ -364,39 +364,40 @@ namespace Unity.Properties
                 return false;
             }
             
-            // First we try to construct based on the source type.
+            // Try to construct based on the source type.
             if (TypeConstruction.TryConstruct(srcValue.GetType(), out dstValue))
             {
                 return true;
             }
             
-            // If that fails we try to construct based on the destination type.
+            // Try to construct based on the destination type.
             if (TypeConstruction.TryConstruct(out dstValue))
             {
                 return true;
             }
 
+            // If type identifier key option is not set, cannot construct this type.
             if (string.IsNullOrEmpty(typeIdentifierKey))
             {
-                // We have no meta data string to look for. We can not construct this type.
                 return false;
             }
 
-            // If that fails, we try to construct base on the meta data string.
+            // Try to get destination type name from type identifier meta data.
             if (!PropertyContainer.TryGetValue(ref srcValue, typeIdentifierKey, out string assemblyQualifiedTypeName))
             {
-                result.AddException(new InvalidOperationException($"PropertyContainer.Construct failed to construct DstType=[{typeof(TDstValue)}]. SrcValue Property=[{typeIdentifierKey}] was not found."));
+                result.AddLog($"PropertyContainer.Construct failed to construct DstType=[{typeof(TDstValue)}]. SrcValue Property=[{typeIdentifierKey}] was not found.");
                 return false;
             }
 
+            // Verify destination type name is valid.
             if (string.IsNullOrEmpty(assemblyQualifiedTypeName))
             {
                 result.AddException(new InvalidOperationException($"PropertyContainer.Construct failed to construct DstType=[{typeof(TDstValue)}]. SrcValue Property=[{typeIdentifierKey}] contained null or empty type information."));
                 return false;
             }
 
+            // Try to get destination type.
             var dstType = Type.GetType(assemblyQualifiedTypeName);
-            
             if (null == dstType)
             {
                 result.AddException(new InvalidOperationException($"PropertyContainer.Construct failed to construct DstType=[{typeof(TDstValue)}]. Could not resolve type from TypeName=[{assemblyQualifiedTypeName}]."));

@@ -70,6 +70,14 @@ namespace Unity.Properties.Tests
         public BaseClass Container;
     }
 
+    class ClassContainerWithReadOnlyProperties
+    {
+        [Property] public int IntValue { get; }
+        [Property] public string StringValue => nameof(StringValue);
+        [Property] public StructContainerWithNestedStruct StructContainerWithNestedStruct { get; }
+        [Property] public ClassContainerWithLists ClassContainerWithLists => new ClassContainerWithLists();
+    }
+
     abstract class BaseClass
     {
         public int BaseIntValue;

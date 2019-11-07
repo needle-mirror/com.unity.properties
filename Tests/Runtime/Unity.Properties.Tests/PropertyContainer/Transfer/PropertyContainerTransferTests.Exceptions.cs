@@ -29,5 +29,20 @@ namespace Unity.Properties.Tests
             Assert.That(ex.Message, Is.EqualTo("Value cannot be null." + Environment.NewLine +
                                                "Parameter name: dstContainer"));
         }
+
+        [Test]
+        public void PropertyContainer_Transfer_DoesNotThrow_WhenPropertyIsReadOnly()
+        {
+            var src = new ClassContainerWithReadOnlyProperties();
+            var dst = new ClassContainerWithReadOnlyProperties();
+
+            Assert.DoesNotThrow(() =>
+            {
+                using (var result = PropertyContainer.Transfer(ref dst, ref src))
+                {
+                    Assert.That(result.Succeeded, Is.True);
+                }
+            });
+        }
     }
 }

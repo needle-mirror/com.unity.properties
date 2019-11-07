@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [0.10.2-preview] - 2019-11-07
+### Changed
+* Missing type identifier key meta data in `PropertyContainer.Construct` is no longer considered an error, but is still reported in result logs.
+
+### Fixed
+* Calling `PropertyContainer.Transfer` when destination container have properties without setters will no longer throws.
+
 ## [0.10.1-preview] - 2019-10-29
 ### Added
 * Added a helper class to drive code generation in order to support AOT platforms.
