@@ -139,7 +139,7 @@ namespace Unity.Properties
             }
         }
 
-        struct VisitAtPathCallback : IContainerTypeCallback
+        internal struct VisitAtPathCallback : IContainerTypeCallback
         {
             readonly object m_Container;
             readonly PropertyPath m_PropertyPath;

@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [0.10.3-preview] - 2019-11-08
+### Fixed
+* AOT Fix: Allows for registering container types with the internal generic virtual calls in Properties
+
 ## [0.10.2-preview] - 2019-11-07
 ### Changed
 * Missing type identifier key meta data in `PropertyContainer.Construct` is no longer considered an error, but is still reported in result logs.

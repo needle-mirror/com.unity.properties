@@ -22,7 +22,7 @@ namespace Unity.Properties
             return count;
         }
         
-        static VisitErrorCode TryGetCountImpl<TContainer>(ref TContainer container, PropertyPath propertyPath, int propertyPathIndex,
+        internal static VisitErrorCode TryGetCountImpl<TContainer>(ref TContainer container, PropertyPath propertyPath, int propertyPathIndex,
             ref ChangeTracker changeTracker, out int count)
         {
             var action = new GetCountAtPathGetter<TContainer>(propertyPath, propertyPathIndex);
@@ -71,7 +71,7 @@ namespace Unity.Properties
             return VisitErrorCode.Ok;
         }
 
-        struct GetCountAtPathGetter<TContainer> : IPropertyGetter<TContainer>
+        internal struct GetCountAtPathGetter<TContainer> : IPropertyGetter<TContainer>
         {
             private PropertyPath m_PropertyPath;
             private int m_PropertyPathIndex;
@@ -98,7 +98,7 @@ namespace Unity.Properties
                     m_PropertyPath, m_PropertyPathIndex, ref changeTracker, out Count);
         }
 
-        struct GetCollectionCountGetter<TContainer> : ICollectionElementPropertyGetter<TContainer>
+        internal struct GetCollectionCountGetter<TContainer> : ICollectionElementPropertyGetter<TContainer>
         {
             readonly PropertyPath m_PropertyPath;
             readonly int m_PropertyPathIndex;
@@ -125,7 +125,7 @@ namespace Unity.Properties
                     m_PropertyPath, m_PropertyPathIndex, ref changeTracker, out Count);
         }
         
-        struct GetCountFromActualTypeCallback : IContainerTypeCallback
+        internal struct GetCountFromActualTypeCallback : IContainerTypeCallback
         {
             readonly object m_Container;
             readonly PropertyPath m_PropertyPath;

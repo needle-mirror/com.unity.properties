@@ -1,5 +1,3 @@
-using UnityEditor;
-
 namespace Unity.Properties
 {
     /// <summary>
@@ -9,6 +7,27 @@ namespace Unity.Properties
     /// </summary>
     public static class AOTFunctionGenerator
     {
+        // Unused variables
+        #pragma warning disable 0219
+        public static void GenerateAOTContainerFunctions<TContainer>()
+        {
+            TContainer container = default(TContainer);
+            ChangeTracker changeTracker = default(ChangeTracker);
+            
+            Actions.GetCollectionCountGetter<TContainer> getCollectionCountGetter = new Actions.GetCollectionCountGetter<TContainer>();
+            Actions.GetCountFromActualTypeCallback getCountFromActualTypeCallback = new Actions.GetCountFromActualTypeCallback();
+            getCountFromActualTypeCallback.Invoke<TContainer>();
+            Actions.GetCountAtPathGetter<TContainer> getCountAtPathGetter = new Actions.GetCountAtPathGetter<TContainer>();
+            Actions.VisitAtPathCallback visitAtPathCallback = default;
+            visitAtPathCallback.Invoke<TContainer>();
+            Actions.SetCountCallback setCountCallback = default;
+            setCountCallback.Invoke<TContainer>();
+            
+            Actions.TryGetCount(ref container, new PropertyPath(), 0, ref changeTracker, out var count);
+            Actions.TryGetCountImpl(ref container, new PropertyPath(), 0, ref changeTracker, out var otherCount);
+            Actions.GetCount(ref container, new PropertyPath(), 0, ref changeTracker);
+        }
+        
         public static void GenerateAOTFunctions<TProperty, TContainer, TValue>()
             where TProperty : IProperty<TContainer, TValue>
         {
@@ -22,6 +41,22 @@ namespace Unity.Properties
             propertyVisitor.TryVisitValueWithAdapters(property, ref container, ref value, ref changeTracker);
             PropertyVisitorAdapterExtensions.TryVisitContainer(null, null, property, ref container, ref value, ref changeTracker);
             PropertyVisitorAdapterExtensions.TryVisitValue(null, null, property, ref container, ref value, ref changeTracker);
+            
+            Actions.GetCollectionCountGetter<TContainer> getCollectionCountGetter = new Actions.GetCollectionCountGetter<TContainer>();
+            Actions.GetCountFromActualTypeCallback getCountFromActualTypeCallback = new Actions.GetCountFromActualTypeCallback();
+            getCountFromActualTypeCallback.Invoke<TContainer>();
+            getCountFromActualTypeCallback.Invoke<TValue>();
+            Actions.GetCountAtPathGetter<TContainer> getCountAtPathGetter = new Actions.GetCountAtPathGetter<TContainer>();
+            Actions.VisitAtPathCallback visitAtPathCallback = default;
+            visitAtPathCallback.Invoke<TContainer>();
+            visitAtPathCallback.Invoke<TValue>();
+            Actions.SetCountCallback setCountCallback = default;
+            setCountCallback.Invoke<TContainer>();
+            setCountCallback.Invoke<TValue>();
+            
+            Actions.TryGetCount(ref container, new PropertyPath(), 0, ref changeTracker, out var count);
+            Actions.TryGetCountImpl(ref container, new PropertyPath(), 0, ref changeTracker, out var otherCount);
+            Actions.GetCount(ref container, new PropertyPath(), 0, ref changeTracker);
         }
         
         public static void GenerateAOTCollectionFunctions<TProperty, TContainer, TValue>()
@@ -54,6 +89,23 @@ namespace Unity.Properties
             listCollectionElementProperty.GetValue(ref container);
             listCollectionElementProperty.SetValue(ref container, value);
             propertyVisitor.VisitProperty<ListProperty<TContainer, TValue>.CollectionElementProperty, TContainer, TValue>(listCollectionElementProperty, ref container, ref changeTracker);
+            
+            Actions.GetCollectionCountGetter<TContainer> getCollectionCountGetter = new Actions.GetCollectionCountGetter<TContainer>();
+            Actions.GetCountFromActualTypeCallback getCountFromActualTypeCallback = new Actions.GetCountFromActualTypeCallback();
+            getCountFromActualTypeCallback.Invoke<TContainer>();
+            getCountFromActualTypeCallback.Invoke<TValue>();
+            Actions.GetCountAtPathGetter<TContainer> getCountAtPathGetter = new Actions.GetCountAtPathGetter<TContainer>();
+            Actions.VisitAtPathCallback visitAtPathCallback = default;
+            visitAtPathCallback.Invoke<TContainer>();
+            visitAtPathCallback.Invoke<TValue>();
+            Actions.SetCountCallback setCountCallback = default;
+            setCountCallback.Invoke<TContainer>();
+            setCountCallback.Invoke<TValue>();
+            
+            Actions.TryGetCount(ref container, new PropertyPath(), 0, ref changeTracker, out var count);
+            Actions.TryGetCountImpl(ref container, new PropertyPath(), 0, ref changeTracker, out var otherCount);
+            Actions.GetCount(ref container, new PropertyPath(), 0, ref changeTracker);
         }
+        #pragma warning restore 0219 
     }
 }

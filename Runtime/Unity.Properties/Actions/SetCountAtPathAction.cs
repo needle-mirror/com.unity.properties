@@ -126,7 +126,7 @@ namespace Unity.Properties
                     m_PropertyPathIndex, m_Count, ref changeTracker);
         }
 
-        private struct SetCountCallback : IContainerTypeCallback
+        internal struct SetCountCallback : IContainerTypeCallback
         {
             readonly object m_Container;
             readonly PropertyPath m_PropertyPath;
