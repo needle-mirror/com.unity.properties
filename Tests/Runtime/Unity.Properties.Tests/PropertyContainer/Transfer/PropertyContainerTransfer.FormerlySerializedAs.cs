@@ -15,7 +15,7 @@ namespace Unity.Properties.Tests
             {
                 MyFloat = 15,
                 SomeList = new List<int>{1, 2, 4, 5, 6},
-                MyVector = new MyOwnVector{ x = 25, y = 25 }
+                MyVector = new MyOwnVector{ x = 11, y = 22, z = 33 }
             };
             
             var dst = new FormerlySerializedAsData();
@@ -25,8 +25,9 @@ namespace Unity.Properties.Tests
                 Assert.That(result.Succeeded, Is.True);
                 Assert.That(dst.SomeSimpleFloat, Is.EqualTo(src.MyFloat));
                 Assert.That(dst.ListOfInts, Is.EqualTo(src.SomeList));
-                Assert.That(dst.MyVectorRenamed.X, Is.EqualTo(src.MyVector.x));
-                Assert.That(dst.MyVectorRenamed.Y, Is.EqualTo(src.MyVector.y));
+                Assert.That(dst.MyVectorRenamed.RenamedX, Is.EqualTo(src.MyVector.x));
+                Assert.That(dst.MyVectorRenamed.RenamedY, Is.EqualTo(src.MyVector.y));
+                Assert.That(dst.MyVectorRenamed.RenamedZ, Is.EqualTo(src.MyVector.z));
             }
         }
     }

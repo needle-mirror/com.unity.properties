@@ -19,6 +19,7 @@ namespace Unity.Properties.Tests
         }
     }
     
+    [FormerlySerializedAs("Some.Other.Assembly.DerivedTypeThatIsConstructible, Some.Other.Assembly")]
     public class ConstructibleDerivedType : ConstructibleBaseType
     {
         public float SubValue;

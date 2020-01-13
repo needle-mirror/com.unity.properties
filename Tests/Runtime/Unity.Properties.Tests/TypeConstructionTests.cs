@@ -124,15 +124,32 @@ namespace Unity.Properties.Tests
         [Test]
         public void TryConstruct_DoesNotThrow()
         {
-            Assert.That(TypeConstruction.TryConstruct<ParameterLessConstructorType>(out var _), Is.True);
-            Assert.That(TypeConstruction.TryConstruct<ParameterConstructorType>(out var _), Is.False);
+            Assert.That(TypeConstruction.TryConstruct<ParameterLessConstructorType>(out _), Is.True);
+            Assert.That(TypeConstruction.TryConstruct<ParameterConstructorType>(out _), Is.False);
         }
 
         [Test]
         public void TryConstruct_DerivedType_DoesNotThrow()
         {
-            Assert.That(TypeConstruction.TryConstruct<ConstructibleBaseType>(typeof(ConstructibleDerivedType), out var _), Is.True);
-            Assert.That(TypeConstruction.TryConstruct<ConstructibleBaseType>(typeof(NonConstructibleDerivedType), out var _), Is.False);
+            Assert.That(TypeConstruction.TryConstruct<ConstructibleBaseType>(typeof(ConstructibleDerivedType), out _), Is.True);
+            Assert.That(TypeConstruction.TryConstruct<ConstructibleBaseType>(typeof(NonConstructibleDerivedType), out _), Is.False);
+        }
+
+        [Test]
+        public void TryConstruct_DerivedType_FromAssemblyQualifiedTypeName()
+        {
+            {
+                var type = typeof(ConstructibleDerivedType);
+                var assemblyQualifiedTypeName = $"{type}, {type.Assembly.GetName().Name}";
+                Assert.That(TypeConstruction.TryConstructFromAssemblyQualifiedTypeName<ConstructibleBaseType>(assemblyQualifiedTypeName, out _), Is.True);
+                Assert.That(TypeConstruction.TryConstructFromAssemblyQualifiedTypeName<ConstructibleBaseType>("Some.Other.Assembly.DerivedTypeThatIsConstructible, Some.Other.Assembly", out _), Is.True);
+            }
+            {
+                var type = typeof(NonConstructibleDerivedType);
+                var assemblyQualifiedTypeName = $"{type}, {type.Assembly.GetName().Name}";
+                Assert.That(TypeConstruction.TryConstructFromAssemblyQualifiedTypeName<ConstructibleBaseType>(assemblyQualifiedTypeName, out _), Is.False);
+                Assert.That(TypeConstruction.TryConstructFromAssemblyQualifiedTypeName<ConstructibleBaseType>("Some.Other.Assembly.DerivedTypeThatIsNOTConstructible, Some.Other.Assembly", out _), Is.False);
+            }
         }
 
         private static ParameterConstructorType ExplicitConstruction()

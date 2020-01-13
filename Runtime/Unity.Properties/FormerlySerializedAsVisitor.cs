@@ -29,20 +29,37 @@ namespace Unity.Properties
             TProperty property)
             where TProperty : IProperty<TContainer, TValue>
         {
-            var attributes = property.Attributes?.GetAttributes<UnityEngine.Serialization.FormerlySerializedAsAttribute>();
-            if (null == attributes)
+            if (null == property.Attributes)
             {
                 return VisitStatus.Override;
             }
 
-            foreach (var formerlySerializedAs in attributes)
+            var ourFormerlySerializedAsAttributes = property.Attributes.GetAttributes<FormerlySerializedAsAttribute>();
+            if (null != ourFormerlySerializedAsAttributes)
             {
-                if (formerlySerializedAs.oldName != m_SerializedName)
+                foreach (var formerlySerializedAs in ourFormerlySerializedAsAttributes)
                 {
-                    continue;
+                    if (formerlySerializedAs.OldName != m_SerializedName)
+                    {
+                        continue;
+                    }
+                    CurrentName = property.GetName();
+                    return VisitStatus.Override;
                 }
-                CurrentName = property.GetName();
-                break;
+            }
+
+            var theirFormerlySerializedAsAttributes = property.Attributes.GetAttributes<UnityEngine.Serialization.FormerlySerializedAsAttribute>();
+            if (null != theirFormerlySerializedAsAttributes)
+            {
+                foreach (var formerlySerializedAs in theirFormerlySerializedAsAttributes)
+                {
+                    if (formerlySerializedAs.oldName != m_SerializedName)
+                    {
+                        continue;
+                    }
+                    CurrentName = property.GetName();
+                    return VisitStatus.Override;
+                }
             }
 
             return VisitStatus.Override;

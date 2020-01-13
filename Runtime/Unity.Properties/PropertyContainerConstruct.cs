@@ -396,15 +396,14 @@ namespace Unity.Properties
                 return false;
             }
 
-            // Try to get destination type.
-            var dstType = Type.GetType(assemblyQualifiedTypeName);
-            if (null == dstType)
+            // Try to construct from assembly qualified type name.
+            if (!TypeConstruction.TryConstructFromAssemblyQualifiedTypeName(assemblyQualifiedTypeName, out dstValue))
             {
                 result.AddException(new InvalidOperationException($"PropertyContainer.Construct failed to construct DstType=[{typeof(TDstValue)}]. Could not resolve type from TypeName=[{assemblyQualifiedTypeName}]."));
                 return false;
             }
-            
-            return TypeConstruction.TryConstruct(dstType, out dstValue);
+
+            return true;
         }
     }
 }

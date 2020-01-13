@@ -8,18 +8,20 @@ namespace Unity.Properties
 {
     public static class TypeConstruction
     {
-        private static readonly MethodInfo HasParameterLessConstructorMethod;
+        private static readonly MethodInfo s_HasParameterLessConstructorMethod;
+        private static Dictionary<string, string> s_FormerlySerializedAsToCurrentName;
 
         static TypeConstruction()
         {
-            HasParameterLessConstructorMethod = typeof(TypeConstruction)
+            s_HasParameterLessConstructorMethod = typeof(TypeConstruction)
                 .GetMethods(BindingFlags.Public | BindingFlags.Static)
                 .First(m => m.Name == nameof(HasParameterLessConstructor)
                             && m.IsGenericMethod
                             && m.GetGenericArguments().Length == 1);
-            Assert.IsNotNull(HasParameterLessConstructorMethod);
+            Assert.IsNotNull(s_HasParameterLessConstructorMethod);
 
             RegisterBuiltInConstructors();
+            RegisterFormerlySerializedAsTypes();
         }
 
         private static void RegisterBuiltInConstructors()
@@ -27,9 +29,29 @@ namespace Unity.Properties
             TypeConstructionCache<string>.ExplicitConstruction = () => string.Empty;
         }
 
+        private static void RegisterFormerlySerializedAsTypes()
+        {
+#if UNITY_EDITOR
+            s_FormerlySerializedAsToCurrentName = new Dictionary<string, string>();
+            foreach (var type in UnityEditor.TypeCache.GetTypesWithAttribute<FormerlySerializedAsAttribute>())
+            {
+                if (type.IsAbstract || type.IsGenericType)
+                {
+                    continue;
+                }
+
+                var attributes = (FormerlySerializedAsAttribute[])type.GetCustomAttributes(typeof(FormerlySerializedAsAttribute), false);
+                foreach (var attribute in attributes)
+                {
+                    s_FormerlySerializedAsToCurrentName.Add(attribute.OldName, $"{type}, {type.Assembly.GetName().Name}");
+                }
+            }
+#endif
+        }
+
         public static bool HasParameterLessConstructor(Type type)
         {
-            return (bool)HasParameterLessConstructorMethod
+            return (bool)s_HasParameterLessConstructorMethod
                 .MakeGenericMethod(type)
                 .Invoke(null, null);
         }
@@ -89,6 +111,30 @@ namespace Unity.Properties
 
             value = default;
             return false;
+        }
+
+        public static TType ConstructFromAssemblyQualifiedTypeName<TType>(string assemblyQualifiedTypeName)
+        {
+            var type = Type.GetType(assemblyQualifiedTypeName);
+#if UNITY_EDITOR
+            if (null == type && s_FormerlySerializedAsToCurrentName.TryGetValue(assemblyQualifiedTypeName, out var currentName))
+            {
+                type = Type.GetType(currentName);
+            }
+#endif
+            return Construct<TType>(type);
+        }
+
+        public static bool TryConstructFromAssemblyQualifiedTypeName<TType>(string assemblyQualifiedTypeName, out TType value)
+        {
+            var type = Type.GetType(assemblyQualifiedTypeName);
+#if UNITY_EDITOR
+            if (null == type && s_FormerlySerializedAsToCurrentName.TryGetValue(assemblyQualifiedTypeName, out var currentName))
+            {
+                type = Type.GetType(currentName);
+            }
+#endif
+            return TryConstruct(type, out value);
         }
 
         public static void SetExplicitConstructionMethod<TType>(Func<TType> constructor)
