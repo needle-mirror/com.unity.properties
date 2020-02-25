@@ -1,10 +1,13 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
-## [0.10.4-preview] - 2020-01-13
-### Added
-* Added new `FormerlySerializedAs` attribute that can be applied to struct, class, field and property types.
-* Added new methods `TypeConstruction.[Try]ConstructFromAssemblyQualifiedTypeName` that can construct types from assembly qualified type name. If the assembly qualified type name fails to resolve to a valid type, it will try from types marked with `FormerlySerializedAs` that matches.
+## [1.0.0-preview.3] - 2020-02-25
+### Changed
+* `readonly` fields will now have properties generated for both reflection and code generation.
+
+## [1.0.0-preview.2] - 2020-02-20
+### Changed
+* ***Breaking change*** Complete API overhaul, see the package documentation for details.
 
 ## [0.10.3-preview] - 2019-11-08
 ### Fixed
@@ -134,17 +137,3 @@ All notable changes to this package will be documented in this file.
 ### Changed
 * Complete refactor of the Properties package.
 
-<!-- Template for version sections
-## [0.0.0-preview.0]
-
-### New Features
-
-
-### Upgrade guide
-
-
-### Changes
-
-
-### Fixes
--->
