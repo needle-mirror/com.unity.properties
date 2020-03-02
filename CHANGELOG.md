@@ -1,38 +1,35 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
-## [1.0.0-preview.3] - 2020-02-25
-### Changed
-* `readonly` fields will now have properties generated for both reflection and code generation.
-
-## [1.0.0-preview.2] - 2020-02-20
+## [1.0.0] - 2020-03-02
 ### Changed
 * ***Breaking change*** Complete API overhaul, see the package documentation for details.
+* `readonly` fields will now have properties generated for both reflection and code generation.
 
-## [0.10.3-preview] - 2019-11-08
+## [0.10.3] - 2019-11-08
 ### Fixed
 * AOT Fix: Allows for registering container types with the internal generic virtual calls in Properties
 
-## [0.10.2-preview] - 2019-11-07
+## [0.10.2] - 2019-11-07
 ### Changed
 * Missing type identifier key meta data in `PropertyContainer.Construct` is no longer considered an error, but is still reported in result logs.
 
 ### Fixed
 * Calling `PropertyContainer.Transfer` when destination container have properties without setters will no longer throws.
 
-## [0.10.1-preview] - 2019-10-29
+## [0.10.1] - 2019-10-29
 ### Added
 * Added a helper class to drive code generation in order to support AOT platforms.
 
-## [0.10.0-preview] - 2019-10-25
+## [0.10.0] - 2019-10-25
 ### Changed
 * ***Breaking change*** `PropertyContainer.Construct` and `PropertyContainer.Transfer` will now return a disposable `VisitResult` containing logs, errors and exceptions that occurred during visitation. 
 
-## [0.9.2-preview] - 2019-10-21
+## [0.9.2] - 2019-10-21
 ### Added
 * Added support for renamed fields using `UnityEngine.Serialization.FormerlySerializedAsAttribute` in the transfer visitor.
 
-## [0.9.1-preview] - 2019-10-18
+## [0.9.1] - 2019-10-18
 ### Added
 * Added `PropertyContainer.Construct` API call. This method can be used to initialize a tree using the default constructor for any uninitialized types.
 * Added support for instantiating `UnityEngine.ScriptableObject` derived types using the `TypeConstruction` utility.
@@ -40,7 +37,7 @@ All notable changes to this package will be documented in this file.
 ### Changed
 * `PropertyContainer.Transfer` will now visit the source instead of the destination when transfering.
 
-## [0.9.0-preview] - 2019-10-06
+## [0.9.0] - 2019-10-06
 ### Added
 * Added `TypeConstruction.TryConstruct[...]` variants for instantiating types without throwing exceptions.
 * Support for property drawers.
@@ -53,11 +50,11 @@ All notable changes to this package will be documented in this file.
 * Added `PropertyContainer.Visit` overload with `ref TVisitor`.
 * ***Breaking change*** Changed all `IPropertyBag{T}.Accept` methods to pass the `TVisitor` by ref.
 
-## [0.8.1-preview] - 2019-09-25
+## [0.8.1] - 2019-09-25
 ### Fixed
 * Public fields and properties from base class will now again be reflected correctly.
 
-## [0.8.0-preview] - 2019-09-24
+## [0.8.0] - 2019-09-24
 ### Added
 * Added a `TypeConstruction` utility to allow the creation of new instances.
 * Minimal unity version has been updated to 2019.3.
@@ -67,7 +64,7 @@ All notable changes to this package will be documented in this file.
 * Fixed all `PropertyContainer.Try[...]` methods to not throw exceptions when visiting nested types.
 * Fixed property bag reflection duplicates when base class contains an internal field or property.
 
-## [0.7.2-preview] - 2019-09-12
+## [0.7.2] - 2019-09-12
 ### Changed
 * Exposed a default way to manually visit collection items, through `VisitCollectionElementCallback<TContainer>`
 
@@ -76,11 +73,11 @@ All notable changes to this package will be documented in this file.
 * Added `PropertyContainer.TryGetCountAtPath` and `PropertyContainer.TrySetCountAtPath`, which will try to set the count of a collection for a given `PropertyPath`.
 * Added `PropertyContainer.VisitAtPath` and `PropertyContainer.TryVisitAtPath`, which will do a partial visitation for a given `PropertyPath`.
 
-## [0.7.1-preview] - 2019-08-29
+## [0.7.1] - 2019-08-29
 ### Fixed
 * Narrowing conversions between supported enum types will not throw an `InvalidCastException` anymore. 
 
-## [0.7.0-preview] - 2019-08-23
+## [0.7.0] - 2019-08-23
 ### Fixed
 * Conversion to all supported underlying type of enums should now be supported.
 * Type conversion should now work on derived types.
@@ -92,31 +89,31 @@ All notable changes to this package will be documented in this file.
 ### Changed
 * ***Breaking change*** `IPropertyGetter` and `ICollectionPropertyGetter` are now passed by ref during visitation.
 
-## [0.6.4-preview] - 2019-08-15
+## [0.6.4] - 2019-08-15
 
 ### Fixed
 * Fixed property bag reflection for base class with private properties.
 * Disabled generation of properties for reflected pointer fields in order to avoid casting errors.
 
-## [0.6.3-preview] - 2019-08-06
+## [0.6.3] - 2019-08-06
 
 ### Fixed
 * Fixed `System.Guid` properties `IsContainer` value to return `false`.
 * Fixed property bag reflection for base class with private fields.
 * Fixed property bag reflection for private properties.
 
-## [0.6.2-preview] - 2019-07-29
+## [0.6.2] - 2019-07-29
 
 ### Fixed
 * Fixed property bag resolution for boxed and interface types.
 
-## [0.6.1-preview] - 2019-07-25
+## [0.6.1] - 2019-07-25
 
 ### Fixed
 * Fixed the reflection property generator to correclty handle `IList<T>`, `List<T>` and `T[]` collection types.
 * Fixed `ArgumentNullException` when visiting a null container.
 
-## [0.6.0-preview] - 2019-07-19
+## [0.6.0] - 2019-07-19
 
 ### Added
 * Added `[Property]` attribute which can be used on fields or C# properties. The attribute will force the reflection generator to include the member.
@@ -132,7 +129,7 @@ All notable changes to this package will be documented in this file.
 * Fix generated properties for `List<string>` incorrectly treating strings as container types.
 * `UnmanagedProperty` can now be generated for `char` types during reflection.
 
-## [0.5.0-preview] - 2019-04-29
+## [0.5.0] - 2019-04-29
 
 ### Changed
 * Complete refactor of the Properties package.

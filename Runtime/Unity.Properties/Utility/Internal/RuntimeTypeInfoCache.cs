@@ -18,52 +18,50 @@ namespace Unity.Properties.Internal
     /// </summary>
     struct RuntimeTypeInfoCache<T>
     {
-        static readonly bool s_IsValueType;
-        static readonly bool s_IsPrimitive;
-        static readonly bool s_IsString;
-        static readonly bool s_IsContainerType;
-        static readonly bool s_IsInterface;
-        static readonly bool s_IsAbstract;
-        static readonly bool s_IsArray;
-        static readonly bool s_IsEnum;
-        static readonly bool s_IsEnumFlags;
-        static readonly bool s_IsNullable;
-        static readonly bool s_CanBeNull;
+        public static readonly bool IsValueType;
+        public static readonly bool IsPrimitive;
+        public static readonly bool IsInterface;
+        public static readonly bool IsAbstract;
+        public static readonly bool IsArray;
+        public static readonly bool IsEnum;
+        public static readonly bool IsEnumFlags;
+        public static readonly bool IsNullable;
+
+        public static readonly bool IsObjectType;
+        public static readonly bool IsStringType;
+        public static readonly bool IsContainerType;
+        
+        public static readonly bool CanBeNull;
+        public static readonly bool IsNullableOrEnum;
+        public static readonly bool IsPrimitiveOrString;
+        public static readonly bool IsAbstractOrInterface;
         
         static RuntimeTypeInfoCache()
         {
             var type = typeof(T);
-            s_IsValueType = type.IsValueType;
-            s_IsPrimitive = type.IsPrimitive;
-            s_IsString = typeof(T) == typeof(string);
-            s_IsContainerType = RuntimeTypeInfoCache.IsContainerType(typeof(T));
-            s_IsInterface = type.IsInterface;
-            s_IsAbstract = type.IsAbstract;
-            s_IsArray = type.IsArray;
-            s_IsEnum = type.IsEnum;
-            
+            IsValueType = type.IsValueType;
+            IsPrimitive = type.IsPrimitive;
+            IsInterface = type.IsInterface;
+            IsAbstract = type.IsAbstract;
+            IsArray = type.IsArray;
+            IsEnum = type.IsEnum;
+
 #if !NET_DOTS
-            s_IsEnumFlags = s_IsEnum && null != type.GetCustomAttribute<FlagsAttribute>();
-            s_IsNullable = Nullable.GetUnderlyingType(typeof(T)) != null;
+            IsEnumFlags = IsEnum && null != type.GetCustomAttribute<FlagsAttribute>();
+            IsNullable = Nullable.GetUnderlyingType(typeof(T)) != null;
 #else
-            s_IsEnumFlags = false;
-            s_IsNullable = false;
+            IsEnumFlags = false;
+            IsNullable = false;
 #endif
             
-            s_CanBeNull = !s_IsValueType || s_IsNullable;
+            IsObjectType = type == typeof(object);
+            IsStringType = type == typeof(string);
+            IsContainerType = RuntimeTypeInfoCache.IsContainerType(type);
+            
+            CanBeNull = !IsValueType || IsNullable;
+            IsNullableOrEnum = IsNullable || IsEnum;
+            IsPrimitiveOrString = IsPrimitive || IsStringType;
+            IsAbstractOrInterface = IsAbstract || IsInterface;
         }
-        
-        public static bool IsValueType() => s_IsValueType;
-        public static bool IsPrimitive() => s_IsPrimitive;
-        public static bool IsPrimitiveOrString() => s_IsPrimitive || s_IsString;
-        public static bool IsContainerType() => s_IsContainerType;
-        public static bool IsInterface() => s_IsInterface;
-        public static bool IsAbstract() => s_IsAbstract;
-        public static bool IsArray() => s_IsArray;
-        public static bool IsAbstractOrInterface() => s_IsAbstract || s_IsInterface;
-        public static bool IsEnum() => s_IsEnum;
-        public static bool IsFlagsEnum() => s_IsEnumFlags;
-        public static bool IsNullable() => s_IsNullable;
-        public static bool CanBeNull() => s_CanBeNull;
     }
 }

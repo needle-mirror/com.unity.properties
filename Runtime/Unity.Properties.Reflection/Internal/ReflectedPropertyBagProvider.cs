@@ -57,7 +57,7 @@ namespace Unity.Properties.Reflection.Internal
 
         public IPropertyBag<TContainer> CreatePropertyBag<TContainer>()
         {
-            if (!RuntimeTypeInfoCache<TContainer>.IsContainerType() || typeof(TContainer) == typeof(object))
+            if (!RuntimeTypeInfoCache<TContainer>.IsContainerType || RuntimeTypeInfoCache<TContainer>.IsObjectType)
             {                
                 throw new InvalidOperationException("Invalid container type.");
             }

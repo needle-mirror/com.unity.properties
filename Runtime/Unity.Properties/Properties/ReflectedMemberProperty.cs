@@ -167,7 +167,7 @@ namespace Unity.Properties
         internal ReflectedMemberProperty(IMemberInfo info)
         {
             m_Info = info;
-            m_IsStructContainerType = RuntimeTypeInfoCache<TContainer>.IsValueType();
+            m_IsStructContainerType = RuntimeTypeInfoCache<TContainer>.IsValueType;
             
             AddAttributes(info.GetCustomAttributes());
             var isReadOnly = m_Info.IsReadOnly || HasAttribute<ReadOnlyAttribute>();

@@ -51,7 +51,7 @@ namespace Unity.Properties.Tests
             Assert.That(RuntimeTypeInfoCache<T>.IsInterface, Is.False);
             Assert.That(RuntimeTypeInfoCache<T>.CanBeNull, Is.False);
             Assert.That(RuntimeTypeInfoCache<T>.IsContainerType, Is.False);
-            Assert.That(RuntimeTypeInfoCache<T>.IsFlagsEnum, Is.False);
+            Assert.That(RuntimeTypeInfoCache<T>.IsEnumFlags, Is.False);
             Assert.That(RuntimeTypeInfoCache<T>.IsAbstractOrInterface, Is.False);
         }
         
@@ -65,7 +65,7 @@ namespace Unity.Properties.Tests
             Assert.That(RuntimeTypeInfoCache<T>.IsInterface, Is.False);
             Assert.That(RuntimeTypeInfoCache<T>.CanBeNull, Is.True);
             Assert.That(RuntimeTypeInfoCache<T>.IsContainerType, Is.True);
-            Assert.That(RuntimeTypeInfoCache<T>.IsFlagsEnum, Is.False);
+            Assert.That(RuntimeTypeInfoCache<T>.IsEnumFlags, Is.False);
             Assert.That(RuntimeTypeInfoCache<T>.IsAbstractOrInterface, Is.False);
         }
     }

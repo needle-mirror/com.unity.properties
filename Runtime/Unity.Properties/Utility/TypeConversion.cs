@@ -72,7 +72,7 @@ namespace Unity.Properties
                 return true;
             }
 
-            if (RuntimeTypeInfoCache<TDestination>.IsNullable())
+            if (RuntimeTypeInfoCache<TDestination>.IsNullable)
             {
                 var underlyingType = Nullable.GetUnderlyingType(typeof(TDestination));
 

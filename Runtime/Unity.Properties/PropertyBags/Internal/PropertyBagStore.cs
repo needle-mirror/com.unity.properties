@@ -50,12 +50,12 @@ namespace Unity.Properties.Internal
         /// <typeparam name="TContainer">The container type this <see cref="ContainerPropertyBag{TContainer}"/> describes.</typeparam>
         internal static void AddPropertyBag<TContainer>(IPropertyBag<TContainer> propertyBag)
         {
-            if (!RuntimeTypeInfoCache<TContainer>.IsContainerType())
+            if (!RuntimeTypeInfoCache<TContainer>.IsContainerType)
             {
                 throw new Exception($"PropertyBagStore Type=[{typeof(TContainer)}] is not a valid container type. Type can not be primitive, enum or string.");
             }
 
-            if (RuntimeTypeInfoCache<TContainer>.IsAbstractOrInterface())
+            if (RuntimeTypeInfoCache<TContainer>.IsAbstractOrInterface)
             {
                 throw new Exception($"PropertyBagStore Type=[{typeof(TContainer)}] is not a valid container type. Type can not be abstract or interface.");
             }
@@ -152,7 +152,7 @@ namespace Unity.Properties.Internal
         /// <returns><see langword="true"/> if the property bag exists; otherwise, <see langword="false"/>.</returns>
         internal static bool Exists<TContainer>(ref TContainer value)
         {
-            if (!RuntimeTypeInfoCache<TContainer>.CanBeNull())
+            if (!RuntimeTypeInfoCache<TContainer>.CanBeNull)
             {
                 return GetPropertyBag<TContainer>() != null;
             }
@@ -176,7 +176,7 @@ namespace Unity.Properties.Internal
         internal static bool TryGetPropertyBagForValue<TValue>(ref TValue value, out IPropertyBag propertyBag)
         {
             // We can not recurse on a null value.
-            if (RuntimeTypeInfoCache<TValue>.CanBeNull())
+            if (RuntimeTypeInfoCache<TValue>.CanBeNull)
             {
                 if (EqualityComparer<TValue>.Default.Equals(value, default))
                 {
@@ -187,7 +187,7 @@ namespace Unity.Properties.Internal
             
             // early out for primitive types that don't have associated containers
             // note: GetPropertyBag checks for RuntimeTypeInfoCache.IsContainerType(type) already
-            if (!RuntimeTypeInfoCache<TValue>.IsContainerType())
+            if (!RuntimeTypeInfoCache<TValue>.IsContainerType)
             {
                 propertyBag = null;
                 return false;

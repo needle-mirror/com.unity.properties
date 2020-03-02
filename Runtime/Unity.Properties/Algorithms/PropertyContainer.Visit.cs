@@ -137,14 +137,14 @@ namespace Unity.Properties
         /// <returns><see langword="true"/> if the visitation succeeded; <see langword="false"/> otherwise.</returns>
         internal static bool Visit<TContainer>(ref TContainer container, IVisitor visitor, out VisitErrorCode errorCode)
         {
-            if (!RuntimeTypeInfoCache<TContainer>.IsContainerType())
+            if (!RuntimeTypeInfoCache<TContainer>.IsContainerType)
             {
                 errorCode = VisitErrorCode.InvalidContainerType;
                 return false;
             }
             
             // Can not visit a null container.
-            if (RuntimeTypeInfoCache<TContainer>.CanBeNull())
+            if (RuntimeTypeInfoCache<TContainer>.CanBeNull)
             {
                 if (EqualityComparer<TContainer>.Default.Equals(container, default))
                 {
@@ -153,7 +153,7 @@ namespace Unity.Properties
                 }
             }
 
-            if (!RuntimeTypeInfoCache<TContainer>.IsValueType() && typeof(TContainer) != container.GetType())
+            if (!RuntimeTypeInfoCache<TContainer>.IsValueType && typeof(TContainer) != container.GetType())
             {
                 if (!RuntimeTypeInfoCache.IsContainerType(container.GetType()))
                 {

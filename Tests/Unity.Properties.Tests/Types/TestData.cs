@@ -281,7 +281,7 @@ namespace Unity.Properties.Tests
             public PropertyBag()
             {
                 AddProperty(new DelegateProperty<ClassWithNestedStruct, StructWithPrimitives>(
-                                name: nameof(ClassWithPrimitives), 
+                                name: nameof(Container), 
                                 getter: (ref ClassWithNestedStruct c) => c.Container, 
                                 setter: (ref ClassWithNestedStruct c, StructWithPrimitives v) => c.Container = v));
             }
