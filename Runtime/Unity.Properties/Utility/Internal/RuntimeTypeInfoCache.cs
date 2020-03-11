@@ -22,6 +22,7 @@ namespace Unity.Properties.Internal
         public static readonly bool IsPrimitive;
         public static readonly bool IsInterface;
         public static readonly bool IsAbstract;
+        public static readonly bool IsGeneric;
         public static readonly bool IsArray;
         public static readonly bool IsEnum;
         public static readonly bool IsEnumFlags;
@@ -30,12 +31,14 @@ namespace Unity.Properties.Internal
         public static readonly bool IsObjectType;
         public static readonly bool IsStringType;
         public static readonly bool IsContainerType;
-        
+
         public static readonly bool CanBeNull;
         public static readonly bool IsNullableOrEnum;
         public static readonly bool IsPrimitiveOrString;
         public static readonly bool IsAbstractOrInterface;
-        
+
+        public static readonly bool IsLazyLoadReference;
+
         static RuntimeTypeInfoCache()
         {
             var type = typeof(T);
@@ -43,6 +46,7 @@ namespace Unity.Properties.Internal
             IsPrimitive = type.IsPrimitive;
             IsInterface = type.IsInterface;
             IsAbstract = type.IsAbstract;
+            IsGeneric = type.IsGenericType;
             IsArray = type.IsArray;
             IsEnum = type.IsEnum;
 
@@ -53,15 +57,17 @@ namespace Unity.Properties.Internal
             IsEnumFlags = false;
             IsNullable = false;
 #endif
-            
+
             IsObjectType = type == typeof(object);
             IsStringType = type == typeof(string);
             IsContainerType = RuntimeTypeInfoCache.IsContainerType(type);
-            
+
             CanBeNull = !IsValueType || IsNullable;
             IsNullableOrEnum = IsNullable || IsEnum;
             IsPrimitiveOrString = IsPrimitive || IsStringType;
             IsAbstractOrInterface = IsAbstract || IsInterface;
+
+            IsLazyLoadReference = IsGeneric && type.GetGenericTypeDefinition() == typeof(UnityEngine.LazyLoadReference<>);
         }
     }
 }

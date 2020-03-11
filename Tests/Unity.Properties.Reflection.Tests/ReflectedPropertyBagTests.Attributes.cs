@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace Unity.Properties.Reflection.Tests
 {
+#pragma warning disable 649
     partial class ReflectedPropertyBagTests
     {
         class ClassWithMemberAttributes
@@ -72,6 +73,6 @@ namespace Unity.Properties.Reflection.Tests
             Assert.That(propertyBag.HasProperty(ClassWithMemberAttributes.PublicFieldWithSerializeFieldAndNonSerializedAttributesName), Is.False);
             Assert.That(propertyBag.HasProperty(ClassWithMemberAttributes.PrivateFieldWithSerializeFieldAndNonSerializedAttributesName), Is.False);
         }
-
     }
+#pragma warning restore 649
 }

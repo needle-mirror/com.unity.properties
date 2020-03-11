@@ -62,12 +62,12 @@ namespace Unity.Properties.Internal
                     if (m_Position < m_List.Count)
                     {
                         m_Property.m_Index = m_Position;
-                        m_Property.m_IsReadOnly = m_List.IsReadOnly;
+                        m_Property.m_IsReadOnly = false;
                         return true;
                     }
                     
                     m_Property.m_Index = m_Previous;
-                    m_Property.m_IsReadOnly = m_List.IsReadOnly;
+                    m_Property.m_IsReadOnly = false;
                     return false;
                 }
 
@@ -76,7 +76,7 @@ namespace Unity.Properties.Internal
                 {
                     m_Position = -1;
                     m_Property.m_Index = m_Previous;
-                    m_Property.m_IsReadOnly = m_List.IsReadOnly;
+                    m_Property.m_IsReadOnly = false;
                 }
 
                 /// <inheritdoc/>
@@ -136,7 +136,7 @@ namespace Unity.Properties.Internal
             property = new ListElementProperty<TList, TElement>
             {
                 m_Index = index,
-                m_IsReadOnly = container.IsReadOnly
+                m_IsReadOnly = false
             };
 
             return true;

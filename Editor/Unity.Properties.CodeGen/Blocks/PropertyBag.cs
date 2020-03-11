@@ -54,7 +54,7 @@ namespace Unity.Properties.CodeGen.Blocks
             {
                 var memberType = context.ImportReference(Utility.GetMemberType(member).ResolveGenericParameter(containerType));
 
-                if (memberType.IsGenericInstance)
+                if (memberType.IsGenericInstance || memberType.IsArray)
                 {
                     RegisterCollectionTypes(context, containerType, memberType, il);
                 }
@@ -89,7 +89,15 @@ namespace Unity.Properties.CodeGen.Blocks
         {
             var resolvedMember = memberType.Resolve();
 
-            if (resolvedMember.Interfaces.Any(i => i.InterfaceType.FullName.Contains("System.Collections.Generic.IList`1")))
+            if (memberType.IsArray)
+            {
+                var elementType = memberType.GetElementType();
+                var method =  context.Module.ImportReference(context.PropertyBagRegisterListGenericMethodReference.Value.MakeGenericInstanceMethod(containerType, memberType, elementType));
+                il.Emit(OpCodes.Call, method);
+                
+                RegisterCollectionTypes(context, memberType, elementType, il);
+            }
+            else if (resolvedMember.Interfaces.Any(i => i.InterfaceType.FullName.Contains(typeof(System.Collections.Generic.IList<>).FullName)))
             {
                 var elementType = (memberType as GenericInstanceType).GenericArguments[0];
                 var method =  context.Module.ImportReference(context.PropertyBagRegisterListGenericMethodReference.Value.MakeGenericInstanceMethod(containerType, memberType, elementType));
@@ -97,7 +105,7 @@ namespace Unity.Properties.CodeGen.Blocks
                 
                 RegisterCollectionTypes(context, memberType, elementType, il);
             }
-            else if (resolvedMember.Interfaces.Any(i => i.InterfaceType.FullName.Contains("System.Collections.Generic.ISet`1")))
+            else if (resolvedMember.Interfaces.Any(i => i.InterfaceType.FullName.Contains(typeof(System.Collections.Generic.ISet<>).FullName)))
             {
                 var elementType = (memberType as GenericInstanceType).GenericArguments[0];
                 var method = context.Module.ImportReference(context.PropertyBagRegisterSetGenericMethodReference.Value.MakeGenericInstanceMethod(containerType, memberType, elementType));
@@ -105,7 +113,7 @@ namespace Unity.Properties.CodeGen.Blocks
                 
                 RegisterCollectionTypes(context, memberType, elementType, il);
             }
-            else if (resolvedMember.Interfaces.Any(i => i.InterfaceType.FullName.Contains("System.Collections.Generic.IDictionary`2")))
+            else if (resolvedMember.Interfaces.Any(i => i.InterfaceType.FullName.Contains(typeof(System.Collections.Generic.IDictionary<,>).FullName)))
             {
                 var keyType = (memberType as GenericInstanceType).GenericArguments[0];
                 var valueType = (memberType as GenericInstanceType).GenericArguments[1];

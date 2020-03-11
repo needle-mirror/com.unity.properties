@@ -1,10 +1,14 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.1.0] - 2020-03-11
+### Fixed
+* Fixed list elements incorrectly being considered as `readonly` if the list was `readonly`. 
+* Fixed codegen not correctly registering property bags for array types.
+
 ## [1.0.0] - 2020-03-02
 ### Changed
 * ***Breaking change*** Complete API overhaul, see the package documentation for details.
-* `readonly` fields will now have properties generated for both reflection and code generation.
 
 ## [0.10.3] - 2019-11-08
 ### Fixed
