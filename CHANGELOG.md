@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.1.1] - 2020-03-20
+### Fixed
+* Fixed an issue where the `PropertyVisitor.IsExcluded` override was only being called when adapters were registered.
+
 ## [1.1.0] - 2020-03-11
 ### Fixed
 * Fixed list elements incorrectly being considered as `readonly` if the list was `readonly`. 

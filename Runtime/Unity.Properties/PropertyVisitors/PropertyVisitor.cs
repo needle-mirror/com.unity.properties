@@ -103,20 +103,17 @@ namespace Unity.Properties
         {
             var value = property.GetValue(ref container);
 
-            if (m_Adapters.Count > 0)
-            {
-                // Give adapters a chance to exclude.
-                if (m_Adapters.GetEnumerator().TryExclude(property, ref container, ref value) == VisitStatus.Stop)
-                    return;
+            // Give adapters a chance to exclude.
+            if (m_Adapters.Count > 0 && m_Adapters.GetEnumerator().TryExclude(property, ref container, ref value) == VisitStatus.Stop)
+                return;
 
-                // Give the explicit overrides a chance to exclude.
-                if (IsExcluded(property, ref container, ref value))
-                    return;
-
-                // Give user defined adapters a chance to handle this value type.
-                if (m_Adapters.GetEnumerator().TryVisit(property, ref container, ref value) == VisitStatus.Stop)
-                    return;
-            }
+            // Give the explicit overrides a chance to exclude.
+            if (IsExcluded(property, ref container, ref value))
+                return;
+            
+            // Give user defined adapters a chance to handle this value type.
+            if (m_Adapters.Count > 0 && m_Adapters.GetEnumerator().TryVisit(property, ref container, ref value) == VisitStatus.Stop)
+                return;
 
             if (PropertyBagStore.TryGetPropertyBagForValue(ref value, out var valuePropertyBag))
             {

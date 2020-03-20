@@ -324,9 +324,9 @@ namespace Unity.Properties.CodeGen
                 }
             }
 
-            fixed (char* p = suffix)
+            for (var i = 0; i < suffix.Length; i++)
             {
-                UnsafeUtility.MemCpy(chars + name.Length, p, suffix.Length * sizeof(char));
+                chars[name.Length + i] = suffix[i];
             }
 
             return new string(chars, 0, length);
