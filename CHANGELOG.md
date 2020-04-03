@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.2.0] - 2020-04-03
+### Fixed
+* CodeGen: Fixed arrays of arrays.
+* CodeGen: Fixed types with generic bases.
+
+## Added
+* CodeGen: Add `GeneratePropertyBagsInEditorAttribute` which can be used to enable Editor time codegen per assembly.
+
 ## [1.1.1] - 2020-03-20
 ### Fixed
 * Fixed an issue where the `PropertyVisitor.IsExcluded` override was only being called when adapters were registered.

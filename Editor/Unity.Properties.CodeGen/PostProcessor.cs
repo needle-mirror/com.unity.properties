@@ -10,7 +10,15 @@ namespace Unity.Properties.CodeGen
 {
     class PostProcessor : ILPostProcessor
     {
-        const string kPropertiesAssemblyName = "Unity.Properties";
+        static readonly string[] s_ExcludeIfAssemblyNameContains = {
+            // Core Unity assemblies do not reference properties. We can simply skip processing them.
+            "UnityEngine",
+            "UnityEditor",
+            
+            // Any codegen related tests should be skipped.
+            "CodeGen.Tests",
+            "CodeGen.PerformanceTests"
+        };
 
         public override ILPostProcessor GetInstance()
         {
@@ -19,10 +27,13 @@ namespace Unity.Properties.CodeGen
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly)
         {
-            if (compiledAssembly.Name.Contains("Serialization.PerformanceTests")) return true;
-            if (compiledAssembly.Defines.Contains("UNITY_EDITOR")) return false;
-            if (compiledAssembly.Name == kPropertiesAssemblyName) return false;
-            return !compiledAssembly.Name.Contains("CodeGen.Tests") && !compiledAssembly.Name.Contains("CodeGen.PerformanceTests");
+            var name = compiledAssembly.Name;
+
+            // Exclude based on name.
+            if (s_ExcludeIfAssemblyNameContains.Any(x => name.Contains(x))) return false;
+            
+            var isEditor = compiledAssembly.Defines.Contains("UNITY_EDITOR");
+            return !isEditor || Utility.ShouldGeneratePropertyBagsInEditor(compiledAssembly.Name);
         }
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)

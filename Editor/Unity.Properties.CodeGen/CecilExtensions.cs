@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Mono.Cecil;
 
@@ -79,16 +80,26 @@ namespace Unity.Properties.CodeGen
     {
         public static TypeReference ResolveGenericParameter(this TypeReference type, TypeReference parent)
         {
-            if (!(parent is GenericInstanceType parentGenericInstanceType))
-            {
-                return type;
-            }
-
             if (type.IsGenericParameter)
             {
-                return parentGenericInstanceType.GenericArguments[(type as GenericParameter).Position];
+                var genericParameter = (GenericParameter) type;
+                var genericInstanceType = parent as GenericInstanceType;
+
+                if (null == genericInstanceType || genericInstanceType.Name != type.DeclaringType.Name)
+                {
+                    var baseType = parent.Resolve()?.BaseType;
+
+                    if (null == baseType)
+                    {
+                        throw new Exception($"Failed to resolve generic parameter for type {parent.FullName}");
+                    }
+
+                    return type.ResolveGenericParameter(baseType.ResolveGenericParameter(parent));
+                }
+
+                return genericInstanceType.GenericArguments[genericParameter.Position];
             }
-            
+
             if (type.IsArray)
             {
                 var array = type as ArrayType;
@@ -97,6 +108,11 @@ namespace Unity.Properties.CodeGen
             }
 
             if (!type.IsGenericInstance)
+            {
+                return type;
+            }
+            
+            if (!(parent is GenericInstanceType parentGenericInstanceType))
             {
                 return type;
             }

@@ -30,7 +30,7 @@ namespace Unity.Properties.CodeGen.Blocks
             var type = new TypeDefinition
             (
                 @namespace: string.Empty,
-                @name: Utility.GetSanitizedName(member.Name, string.Empty),
+                @name: Utility.GetSanitizedName(member.Name, "_Property"),
                 @attributes: TypeAttributes.Class | TypeAttributes.NestedPrivate,
                 @baseType: propertyBaseType
             )

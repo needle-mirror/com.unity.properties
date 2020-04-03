@@ -122,6 +122,14 @@ namespace Unity.Properties
     }
     
     /// <summary>
+    /// By default, property bags are only generated in builds. Use this attribute to force the ILPostProcessor to generate property bags in editor for the tagged assembly.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Assembly)]
+    public class GeneratePropertyBagsInEditorAttribute : Attribute
+    {
+    }
+    
+    /// <summary>
     /// Use this attribute to have the ILPostProcessor generate property bags for a given type.
     /// </summary>
     [AttributeUsage(AttributeTargets.Struct | AttributeTargets.Class)]

@@ -29,22 +29,10 @@ namespace Unity.Properties
         /// <summary>
         /// An <see cref="PropertyCollection"/> used to store a collection of properties for a given container type. This is an internal class.
         /// </summary>
-        class PropertyCollection : ICollection<IProperty<TContainer>>
+        class PropertyCollection : IEnumerable<IProperty<TContainer>>
         {
             readonly List<IProperty<TContainer>> m_PropertiesList = new List<IProperty<TContainer>>();
             readonly Dictionary<string, IProperty<TContainer>> m_PropertiesHash = new Dictionary<string, IProperty<TContainer>>();
-
-            /// <inheritdoc/>
-            public int Count => m_PropertiesList.Count;
-
-            /// <inheritdoc/>
-            public bool IsReadOnly => false;
-
-            /// <summary>
-            /// Gets the property associated with the specified name.
-            /// </summary>
-            /// <param name="name">The name of the value to get.</param>
-            public IProperty<TContainer> this[string name] => m_PropertiesHash[name];
 
             /// <summary>
             /// Adds a property to the collection.
@@ -95,18 +83,6 @@ namespace Unity.Properties
             public bool TryGetProperty(string name, out IProperty<TContainer> property)
             {
                 return m_PropertiesHash.TryGetValue(name, out property);
-            }
-
-            /// <inheritdoc/>
-            bool ICollection<IProperty<TContainer>>.Contains(IProperty<TContainer> property)
-            {
-                return m_PropertiesList.Contains(property);
-            }
-
-            /// <inheritdoc/>
-            void ICollection<IProperty<TContainer>>.CopyTo(IProperty<TContainer>[] array, int arrayIndex)
-            {
-                throw new NotSupportedException();
             }
 
             /// <inheritdoc/>

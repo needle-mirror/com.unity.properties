@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
-using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Properties.CodeGen
 {
@@ -12,6 +11,7 @@ namespace Unity.Properties.CodeGen
     {
         static readonly GeneratePropertyBagsForTypeAttribute[] s_AssemblyDefinedTypeAttributes;
         static readonly GeneratePropertyBagsForTypesQualifiedWithAttribute[] s_AssemblyDefinedTypesQualifiedWithAttributes;
+        static readonly HashSet<string> s_AssembliesWithEditorCodeGenEnabled = new HashSet<string>();
 
         static Utility()
         {
@@ -26,6 +26,25 @@ namespace Unity.Properties.CodeGen
                                                    .Where(a => !a.FullName.StartsWith("UnityEditor"))
                                                    .SelectMany(a => a.GetCustomAttributes<GeneratePropertyBagsForTypesQualifiedWithAttribute>())
                                                    .ToArray();
+            
+            var assembliesWithEditorCodeGenEnabled = AppDomain.CurrentDomain.GetAssemblies()
+                                                           .Where(a => !a.FullName.StartsWith("UnityEngine"))
+                                                           .Where(a => !a.FullName.StartsWith("UnityEditor"))
+                                                           .Where(a => a.GetCustomAttributes<GeneratePropertyBagsInEditorAttribute>().Any())
+                                                           .Select(a => a.GetName().Name).ToArray();
+
+            foreach (var name in assembliesWithEditorCodeGenEnabled)
+                s_AssembliesWithEditorCodeGenEnabled.Add(name);
+        }
+
+        /// <summary>
+        /// Returns true if the given assembly has edit time property bag generation enabled.
+        /// </summary>
+        /// <param name="assemblyName">The full name of the assembly.</param>
+        /// <returns></returns>
+        internal static bool ShouldGeneratePropertyBagsInEditor(string assemblyName)
+        {
+            return s_AssembliesWithEditorCodeGenEnabled.Contains(assemblyName);
         }
 
         /// <summary>
@@ -99,12 +118,31 @@ namespace Unity.Properties.CodeGen
             if (type.IsValueType) return (options & TypeOptions.ValueType) != 0;
             return (options & TypeOptions.ReferenceType) != 0;
         }
+
+        static bool IsUnityEngineType(Context context, TypeReference type)
+        {
+#if !UNITY_DOTSPLAYER
+            while (true)
+            {
+                var unityEngineObjectTypeReference = context.ImportReference(typeof(UnityEngine.Object));
+                var systemObjectTypeReference = context.ImportReference(typeof(object));
+
+                if (null == type) return false;
+                if (type.FullName == systemObjectTypeReference.FullName) return false;
+                if (type.FullName == unityEngineObjectTypeReference.FullName) return true;
+
+                type = type.Resolve()?.BaseType;
+            }
+#else 
+            return false;
+#endif
+        }
         
         static IEnumerable<TypeReference> GetContainerTypesRecursive(Context context, TypeReference type, ISet<TypeReference> visited)
         {
             type = context.ImportReference(type);
             
-            if (type.IsPrimitive || type.IsPointer || type.FullName == context.ImportReference(typeof(string)).FullName)
+            if (type.IsPrimitive || type.IsPointer || type.FullName == context.ImportReference(typeof(string)).FullName || type.FullName == context.ImportReference(typeof(object)).FullName)
             {
                 yield break;
             }
@@ -114,6 +152,11 @@ namespace Unity.Properties.CodeGen
                 yield break;
             }
 
+            if (IsUnityEngineType(context, type))
+            {
+                yield break;
+            }
+            
             var resolved = type.Resolve();
             
             if (resolved == null || resolved.IsEnum || resolved.IsAbstract || resolved.IsInterface)
@@ -123,7 +166,7 @@ namespace Unity.Properties.CodeGen
 
             if (type.IsArray)
             {
-                foreach (var inner in GetContainerTypesRecursive(context, type.GetElementType(), visited))
+                foreach (var inner in GetContainerTypesRecursive(context, (type as ArrayType).ElementType, visited))
                 {
                     yield return inner;
                 }
@@ -173,7 +216,7 @@ namespace Unity.Properties.CodeGen
             
             foreach (var member in GetPropertyMembers(context, resolved))
             {
-                foreach (var inner in GetContainerTypesRecursive(context, GetMemberType(member), visited))
+                foreach (var inner in GetContainerTypesRecursive(context, GetMemberType(member).ResolveGenericParameter(type), visited))
                 {
                     yield return inner;
                 }

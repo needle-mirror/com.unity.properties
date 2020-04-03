@@ -91,7 +91,7 @@ namespace Unity.Properties.CodeGen.Blocks
 
             if (memberType.IsArray)
             {
-                var elementType = memberType.GetElementType();
+                var elementType = (memberType as ArrayType).ElementType;
                 var method =  context.Module.ImportReference(context.PropertyBagRegisterListGenericMethodReference.Value.MakeGenericInstanceMethod(containerType, memberType, elementType));
                 il.Emit(OpCodes.Call, method);
                 

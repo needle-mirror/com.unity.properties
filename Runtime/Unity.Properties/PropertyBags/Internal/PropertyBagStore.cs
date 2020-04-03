@@ -101,6 +101,11 @@ namespace Unity.Properties.Internal
         /// <returns>The resolved property bag.</returns>
         internal static IPropertyBag GetPropertyBag(Type type)
         {
+            if (s_PropertyBags.TryGetValue(type, out var propertyBag))
+            {
+                return propertyBag;
+            }
+
             if (!RuntimeTypeInfoCache.IsContainerType(type))
             {
                 return null;
@@ -111,11 +116,6 @@ namespace Unity.Properties.Internal
                 return null;
             }
             
-            if (s_PropertyBags.TryGetValue(type, out var propertyBag))
-            {
-                return propertyBag;
-            }
-
             if (null != s_PropertyBagProvider)
             {
                 propertyBag = s_PropertyBagProvider.CreatePropertyBag(type);
