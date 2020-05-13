@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.3.0] - 2020-05-13
+## Added
+* Added a utility class around `System.Type`.
+
+## Fixed
+* `PropertyContainer.SetValue` will not throw `AccessViolationException` when trying to set a `read-only` property.
+
 ## [1.2.0] - 2020-04-03
 ### Fixed
 * CodeGen: Fixed arrays of arrays.

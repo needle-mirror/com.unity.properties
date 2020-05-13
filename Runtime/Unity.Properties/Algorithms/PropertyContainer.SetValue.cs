@@ -19,6 +19,12 @@ namespace Unity.Properties
             protected override void VisitPath<TContainer, TValue>(Property<TContainer, TValue> property,
                 ref TContainer container, ref TValue value)
             {
+                if (property.IsReadOnly)
+                {
+                    ErrorCode = VisitErrorCode.AccessViolation;
+                    return;
+                }
+
                 if (TypeConversion.TryConvert(Value, out TValue v))
                 {
                     property.SetValue(ref container, v);
@@ -112,6 +118,7 @@ namespace Unity.Properties
         /// <exception cref="MissingPropertyBagException">The specified container type has no property bag associated with it.</exception>
         /// <exception cref="InvalidCastException">The specified <typeparamref name="TValue"/> could not be assigned to the property.</exception>
         /// <exception cref="InvalidPathException">The specified <paramref name="path"/> was not found or could not be resolved.</exception>
+        /// <exception cref="AccessViolationException">The specified <paramref name="path"/> is read-only.</exception>
         public static void SetValue<TContainer, TValue>(ref TContainer container, PropertyPath path, TValue value)
         {
             if (null == path)
@@ -135,6 +142,8 @@ namespace Unity.Properties
                     throw new InvalidCastException($"Failed to SetValue of Type=[{typeof(TValue).Name}] for property with path=[{path}]");
                 case VisitErrorCode.InvalidPath:
                     throw new InvalidPathException($"Failed to SetValue for property with Path=[{path}]");
+                case VisitErrorCode.AccessViolation:
+                    throw new AccessViolationException($"Failed to SetValue for read-only property with Path=[{path}]");
                 default:
                     throw new Exception($"Unexpected {nameof(VisitErrorCode)}=[{errorCode}]");
             }

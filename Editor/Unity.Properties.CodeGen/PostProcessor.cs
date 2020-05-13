@@ -103,7 +103,10 @@ namespace Unity.Properties.CodeGen
             var readerParameters = new ReaderParameters
             {
                 AssemblyResolver = resolver,
-                ReadingMode = ReadingMode.Deferred
+                ReadingMode = ReadingMode.Deferred,
+                
+                // We _could_ be running in .NET core. In this case we need to force imports to resolve to mscorlib.
+                ReflectionImporterProvider = new PostProcessorReflectionImporterProvider()
             };
 
             if (null != compiledAssembly.InMemoryAssembly.PdbData)

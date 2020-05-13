@@ -33,6 +33,11 @@ namespace Unity.Properties.Internal
         /// <summary>
         /// Failed to reinterpret the target value as the requested type.
         /// </summary>
-        InvalidCast
+        InvalidCast,
+        
+        /// <summary>
+        /// Failed to set value at path because it is read-only.
+        /// </summary>
+        AccessViolation
     }
 }
