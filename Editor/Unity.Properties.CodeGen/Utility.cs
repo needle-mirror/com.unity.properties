@@ -9,18 +9,11 @@ namespace Unity.Properties.CodeGen
 {
     static class Utility
     {
-        static readonly GeneratePropertyBagsForTypeAttribute[] s_AssemblyDefinedTypeAttributes;
         static readonly GeneratePropertyBagsForTypesQualifiedWithAttribute[] s_AssemblyDefinedTypesQualifiedWithAttributes;
         static readonly HashSet<string> s_AssembliesWithEditorCodeGenEnabled = new HashSet<string>();
 
         static Utility()
         {
-            s_AssemblyDefinedTypeAttributes = AppDomain.CurrentDomain.GetAssemblies()
-                                                       .Where(a => !a.FullName.StartsWith("UnityEngine"))
-                                                       .Where(a => !a.FullName.StartsWith("UnityEditor"))
-                                                       .SelectMany(a => a.GetCustomAttributes<GeneratePropertyBagsForTypeAttribute>())
-                                                       .ToArray();
-           
             s_AssemblyDefinedTypesQualifiedWithAttributes = AppDomain.CurrentDomain.GetAssemblies()
                                                    .Where(a => !a.FullName.StartsWith("UnityEngine"))
                                                    .Where(a => !a.FullName.StartsWith("UnityEditor"))
@@ -81,11 +74,26 @@ namespace Unity.Properties.CodeGen
 
         static IEnumerable<TypeReference> GetRootContainerTypes(Context context)
         {
-            var propertyContainerAttribute = context.ImportReference(typeof(GeneratePropertyBagAttribute));
+            var generatePropertyBagAttribute = context.ImportReference(typeof(GeneratePropertyBagAttribute));
+            var generatePropertyBagsForTypeAttribute = context.ImportReference(typeof(GeneratePropertyBagsForTypeAttribute));
             var stringTypeReference = context.ImportReference(typeof(string));
 
+            var assemblyDefinedTypes = context.Module.Assembly.CustomAttributes
+                                              .Where(a => a.AttributeType.FullName == generatePropertyBagsForTypeAttribute.FullName)
+                                              .Select(a => a.ConstructorArguments[0].Value as TypeReference).ToArray();
+            
+            foreach (var type in assemblyDefinedTypes)
+            {
+                yield return type;
+            }
+            
             foreach (var type in context.Module.GetAllTypes())
             {
+                if (assemblyDefinedTypes.Contains(type))
+                {
+                    continue;
+                }
+                
                 if (type.IsPrimitive || type.IsPointer || type.FullName == stringTypeReference.FullName)
                 {
                     continue;
@@ -96,17 +104,17 @@ namespace Unity.Properties.CodeGen
                     continue;
                 }
 
-                if (type.HasCustomAttributes && type.CustomAttributes.Any(a => a.AttributeType.FullName == propertyContainerAttribute.FullName))
+                if (type.HasGenericParameters)
+                {
+                    continue;
+                }
+                
+                if (type.HasCustomAttributes && type.CustomAttributes.Any(a => a.AttributeType.FullName == generatePropertyBagAttribute.FullName))
                 {
                     yield return type;
                 }
 
                 if (type.Interfaces.Any(i => s_AssemblyDefinedTypesQualifiedWithAttributes.Any(a => i.InterfaceType.FullName == context.ImportReference(a.Type).FullName && MatchesPropertyContainerOptions(type, a.Options))))
-                {
-                    yield return type;
-                }
-
-                if (s_AssemblyDefinedTypeAttributes.Any(a => a.Type.FullName == type.FullName))
                 {
                     yield return type;
                 }
@@ -244,16 +252,21 @@ namespace Unity.Properties.CodeGen
             {
                 foreach (var field in type.Fields)
                 {
-                    if (field.FieldType.IsPointer || field.IsStatic)
-                    {
-                        continue;
-                    }
-                    
-                    if (field.DeclaringType != type)
+                    if (field.IsStatic)
                     {
                         continue;
                     }
 
+                    if (!IsValidPropertyType(field.FieldType))
+                    {
+                        continue;
+                    }
+
+                    if (field.DeclaringType != type)
+                    {
+                        continue;
+                    }
+                    
                     if (field.HasCustomAttributes)
                     {
                         if (field.HasAttribute(dontCreatePropertyAttributeTypeReference))
@@ -289,11 +302,11 @@ namespace Unity.Properties.CodeGen
                 
                 foreach (var property in type.Properties)
                 {
-                    if (property.PropertyType.IsPointer)
+                    if (!IsValidPropertyType(property.PropertyType))
                     {
                         continue;
                     }
-                    
+
                     if (property.DeclaringType != type)
                     {
                         continue;
@@ -338,6 +351,22 @@ namespace Unity.Properties.CodeGen
 
                 type = type.BaseType.Resolve();
             } 
+        }
+
+        static bool IsValidPropertyType(TypeReference type)
+        {
+            if (type.IsPointer)
+                return false;
+            
+            if (IsMultidimensionalArray(type))
+                return false;
+            
+            return !type.IsGenericInstance || (type as GenericInstanceType).GenericArguments.All(IsValidPropertyType);;
+        }
+
+        static bool IsMultidimensionalArray(TypeReference type)
+        {
+            return type.IsArray && (type as ArrayType).Rank != 1;
         }
         
         internal static unsafe string GetSanitizedName(string name, string suffix)

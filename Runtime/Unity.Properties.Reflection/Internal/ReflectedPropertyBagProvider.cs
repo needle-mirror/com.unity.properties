@@ -52,6 +52,7 @@ namespace Unity.Properties.Reflection.Internal
 
         public IPropertyBag CreatePropertyBag(Type type)
         {
+            if (type.IsGenericTypeDefinition) return null;
             return (IPropertyBag) m_CreatePropertyBagMethod.MakeGenericMethod(type).Invoke(this, null);
         }
 
@@ -64,6 +65,11 @@ namespace Unity.Properties.Reflection.Internal
 
             if (typeof(TContainer).IsArray)
             {
+                if (typeof(TContainer).GetArrayRank() != 1)
+                {
+                    throw new InvalidOperationException("Properties does not support multidimensional arrays.");
+                }
+                
                 return (IPropertyBag<TContainer>) m_CreateListPropertyBagMethod.MakeGenericMethod(typeof(TContainer), typeof(TContainer).GetElementType()).Invoke(this, new object[0]);
             }
             
@@ -173,7 +179,7 @@ namespace Unity.Properties.Reflection.Internal
                         continue;
                     }
 
-                    if (!IsValidMemberType(member))
+                    if (!IsValidMember(member))
                     {
                         continue;
                     }
@@ -222,17 +228,33 @@ namespace Unity.Properties.Reflection.Internal
             while (type != null && type != typeof(object));
         }
 
-        static bool IsValidMemberType(MemberInfo memberInfo)
+        static bool IsValidMember(MemberInfo memberInfo)
         {
             switch (memberInfo)
             {
                 case FieldInfo fieldInfo:
-                    return !(fieldInfo.IsStatic || fieldInfo.FieldType.IsPointer);
+                    return !fieldInfo.IsStatic && IsValidPropertyType(fieldInfo.FieldType);
                 case PropertyInfo propertyInfo:
-                    return !(null == propertyInfo.GetMethod || propertyInfo.GetMethod.IsStatic || propertyInfo.PropertyType.IsPointer);
+                    return null != propertyInfo.GetMethod && !propertyInfo.GetMethod.IsStatic && IsValidPropertyType(propertyInfo.PropertyType);
             }
 
             return false;
+        }
+
+        static bool IsValidPropertyType(Type type)
+        {
+            if (type.IsPointer)
+                return false;
+            
+            if (IsMultidimensionalArray(type))
+                return false;
+
+            return !type.IsGenericType || type.GetGenericArguments().All(IsValidPropertyType);
+        }
+
+        static bool IsMultidimensionalArray(Type type)
+        {
+            return type.IsArray && type.GetArrayRank() != 1;
         }
     }
 }

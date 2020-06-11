@@ -1,12 +1,20 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.3.1] - 2020-06-11
+## Fixed
+* `TypeUtility.GetRootType` will now return `null` when provided an interface type.
+* CodeGen: Fix exception thrown when trying to generate property bags for multidimensional array types. Multidimensional arrays are not supported.
+* CodeGen: Fix cross assembly type references for C# properties. 
+* CodeGen: Fix issue when initializing attributes for private members of base types.
+
 ## [1.3.0] - 2020-05-13
 ## Added
 * Added a utility class around `System.Type`.
 
 ## Fixed
 * `PropertyContainer.SetValue` will not throw `AccessViolationException` when trying to set a `read-only` property.
+* CodeGen: Fixed invalid IL produced by open generic root types.
 
 ## [1.2.0] - 2020-04-03
 ### Fixed

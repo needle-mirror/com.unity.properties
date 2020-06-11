@@ -116,9 +116,14 @@ namespace Unity.Properties.Editor
         /// <returns>The base type.</returns>
         public static Type GetRootType(this Type type)
         {
+            if (type.IsInterface)
+                return null;
+            
             var baseType = type.IsValueType ? typeof(ValueType) : typeof(object);
             while (baseType != type.BaseType)
+            {
                 type = type.BaseType;
+            }
 
             return type;
         }

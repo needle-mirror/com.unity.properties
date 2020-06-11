@@ -67,7 +67,11 @@ namespace Unity.Properties.Internal
             IsPrimitiveOrString = IsPrimitive || IsStringType;
             IsAbstractOrInterface = IsAbstract || IsInterface;
 
+#if !UNITY_DOTSPLAYER
             IsLazyLoadReference = IsGeneric && type.GetGenericTypeDefinition() == typeof(UnityEngine.LazyLoadReference<>);
+#else
+            IsLazyLoadReference = false;
+#endif
         }
     }
 }

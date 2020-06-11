@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-using Unity.Collections;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
@@ -79,7 +77,6 @@ namespace Unity.Properties.CodeGen.Blocks
             
             var il = method.Body.GetILProcessor();
             
-            // this.base()
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Call, context.Module.ImportReference(basePropertyConstructor));
 
@@ -87,7 +84,7 @@ namespace Unity.Properties.CodeGen.Blocks
             {
                 il.Emit(OpCodes.Ldarg_0);
 
-                il.Emit(OpCodes.Ldtoken, containerType);
+                il.Emit(OpCodes.Ldtoken, member.GetResolvedDeclaringType(containerType));
                 il.Emit(OpCodes.Call, context.TypeGetTypeFromTypeHandleMethodReference.Value);
 
                 il.Emit(OpCodes.Ldstr, member.Name);
@@ -242,11 +239,18 @@ namespace Unity.Properties.CodeGen.Blocks
             
             if (member is FieldDefinition field)
             {
-                il.Emit(OpCodes.Ldfld, new FieldReference(field.Name, memberType, containerType));
+                var resolvedDeclaringType = field.GetResolvedDeclaringType(containerType);
+                var reference = TypeResolver.For(resolvedDeclaringType).Resolve(field).CreateImportedType(context.Module);
+                
+                il.Emit(OpCodes.Ldfld, reference);
             }
             else if (member is PropertyDefinition property)
             {
-                il.Emit(OpCodes.Call, context.Module.ImportReference(property.GetMethod));
+                var resolvedDeclaringType = property.GetResolvedDeclaringType(containerType);
+                var getMethod = property.GetMethod.MakeGenericHostMethod(resolvedDeclaringType);
+                getMethod.ReturnType = getMethod.ReturnType.CreateImportedType(context.Module);
+                
+                il.Emit(containerType != resolvedDeclaringType ? OpCodes.Callvirt : OpCodes.Call, context.Module.ImportReference(getMethod));
             }
             
             il.Emit(OpCodes.Ret);
@@ -284,22 +288,30 @@ namespace Unity.Properties.CodeGen.Blocks
             {
                 if (member is FieldDefinition field)
                 {
-                    il.Emit(OpCodes.Ldarg_1); // container
-                
-                    if (!containerType.IsValueType) il.Emit(OpCodes.Ldind_Ref);
-
-                    il.Emit(OpCodes.Ldarg_2); // value
-                    il.Emit(OpCodes.Stfld, new FieldReference(field.Name, memberType, containerType));
-                    il.Emit(OpCodes.Ret);
-                }
-                else if (member is PropertyDefinition property)
-                {
+                    var resolvedDeclaringType = field.GetResolvedDeclaringType(containerType);
+                    var reference = TypeResolver.For(resolvedDeclaringType).Resolve(field).CreateImportedType(context.Module);
+                    
                     il.Emit(OpCodes.Ldarg_1); // container
             
                     if (!containerType.IsValueType) il.Emit(OpCodes.Ldind_Ref);
 
                     il.Emit(OpCodes.Ldarg_2); // value
-                    il.Emit(OpCodes.Call, context.Module.ImportReference(property.SetMethod));
+                    il.Emit(OpCodes.Stfld, reference);
+                    il.Emit(OpCodes.Ret);
+
+                }
+                else if (member is PropertyDefinition property)
+                {
+                    var resolvedDeclaringType = property.GetResolvedDeclaringType(containerType);
+                    var setMethod = property.SetMethod.MakeGenericHostMethod(resolvedDeclaringType);
+                    setMethod.Parameters[0].ParameterType = setMethod.Parameters[0].ParameterType.CreateImportedType(context.Module);
+
+                    il.Emit(OpCodes.Ldarg_1); // container
+            
+                    if (!containerType.IsValueType) il.Emit(OpCodes.Ldind_Ref);
+
+                    il.Emit(OpCodes.Ldarg_2); // value
+                    il.Emit(containerType != resolvedDeclaringType ? OpCodes.Callvirt : OpCodes.Call, context.Module.ImportReference(setMethod));
                     il.Emit(OpCodes.Ret);
                 }
             }

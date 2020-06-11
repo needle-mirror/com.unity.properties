@@ -30,12 +30,14 @@ namespace Unity.Properties.Internal
             m_PathIndex = 0;
             Path = null;
             ErrorCode = VisitErrorCode.Ok;
+            ReadonlyVisit = false;
         }
 
         /// <summary>
         /// Returns the property for the currently visited container.
         /// </summary>
         IProperty Property { get; set; }
+        public bool ReadonlyVisit { get; set; }
 
         public VisitErrorCode ErrorCode { get; protected set; }
 
@@ -113,7 +115,7 @@ namespace Unity.Properties.Internal
                     property.Visit(this, ref value);
                 }
 
-                if (!property.IsReadOnly)
+                if (!property.IsReadOnly && !ReadonlyVisit)
                     property.SetValue(ref container, value);
             }
             else

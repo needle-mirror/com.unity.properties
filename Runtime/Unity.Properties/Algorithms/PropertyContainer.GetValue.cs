@@ -14,6 +14,7 @@ namespace Unity.Properties
             {
                 base.Reset();
                 Value = default;
+                ReadonlyVisit = true;
             }
 
             protected override void VisitPath<TContainer, TValue>(Property<TContainer, TValue> property,
@@ -203,6 +204,7 @@ namespace Unity.Properties
 
             var visitor = GetValueVisitor<TValue>.Pool.Get();
             visitor.Path = path;
+            visitor.ReadonlyVisit = true;
 
             try
             {

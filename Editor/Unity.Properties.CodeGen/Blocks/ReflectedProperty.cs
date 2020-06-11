@@ -73,7 +73,7 @@ namespace Unity.Properties.CodeGen.Blocks
             il.Emit(OpCodes.Ldarg_0); // this
 
             // typeof({TContainer})
-            il.Emit(OpCodes.Ldtoken, containerType);
+            il.Emit(OpCodes.Ldtoken, member.GetResolvedDeclaringType(containerType));
             il.Emit(OpCodes.Call, context.TypeGetTypeFromTypeHandleMethodReference.Value);
 
             // {FieldName}

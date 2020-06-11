@@ -132,6 +132,19 @@ namespace Unity.Properties.CodeGen
 
             return instance;
         }
+        
+        public static TypeReference CreateImportedType(this TypeReference type, ModuleDefinition module)
+        {
+            if (type.IsGenericInstance)
+            {
+                var importedType = new GenericInstanceType(module.ImportReference(type.Resolve()));
+                var genericType = type as GenericInstanceType;
+                foreach (var ga in genericType.GenericArguments)
+                    importedType.GenericArguments.Add(ga.IsGenericParameter ? ga : module.ImportReference(ga));
+                return module.ImportReference(importedType);
+            }
+            return module.ImportReference(type);
+        }
     }
 
     static class IMetadataTokenProviderExtensions
@@ -159,6 +172,49 @@ namespace Unity.Properties.CodeGen
             }
 
             return false;
+        }
+    }
+
+    static class FieldReferenceExtensions
+    {
+        public static FieldReference CreateImportedType(this FieldReference fieldRef, ModuleDefinition module)
+        {
+            var declaringType = fieldRef.DeclaringType.CreateImportedType(module);
+            var fieldType = fieldRef.FieldType.CreateImportedType(module);
+            var importedField = new FieldReference(fieldRef.Name, fieldType, declaringType);
+            return module.ImportReference(importedField);
+        }
+    }
+
+    static class IMemberDefinitionExtensions
+    {
+        public static TypeReference GetResolvedDeclaringType(this IMemberDefinition member, TypeReference type)
+        {
+            if (member is FieldDefinition field) return field.GetResolvedDeclaringType(type);
+            if (member is PropertyDefinition property) return property.GetResolvedDeclaringType(type);
+            return type;
+        }
+    }
+
+    static class FieldDefinitionExtensions
+    {
+        public static TypeReference GetResolvedDeclaringType(this FieldDefinition field, TypeReference type)
+        {
+            while (!type.Resolve().Fields.Contains(field))
+                type = TypeResolver.For(type).Resolve(type.Resolve().BaseType);
+
+            return type;
+        }
+    }
+
+    static class PropertyDefinitionExtensions
+    {
+        public static TypeReference GetResolvedDeclaringType(this PropertyDefinition property, TypeReference type)
+        {
+            while (!type.Resolve().Properties.Contains(property))
+                type = TypeResolver.For(type).Resolve(type.Resolve().BaseType);
+
+            return type;
         }
     }
 }

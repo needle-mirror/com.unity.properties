@@ -14,6 +14,7 @@ namespace Unity.Properties
             {
                 base.Reset();
                 Visitor = default;
+                ReadonlyVisit = true;
             }
 
             protected override void VisitPath<TContainer, TValue>(Property<TContainer, TValue> property,
@@ -32,6 +33,7 @@ namespace Unity.Properties
             {
                 base.Reset();
                 Exists = default;
+                ReadonlyVisit = true;
             }
 
             protected override void VisitPath<TContainer, TValue>(Property<TContainer, TValue> property, ref TContainer container, ref TValue value)

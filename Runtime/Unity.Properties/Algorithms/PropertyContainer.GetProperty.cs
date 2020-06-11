@@ -15,6 +15,7 @@ namespace Unity.Properties
             {
                 base.Reset();
                 Property = default;
+                ReadonlyVisit = true;
             }
 
             protected override void VisitPath<TContainer, TValue>(Property<TContainer, TValue> property,

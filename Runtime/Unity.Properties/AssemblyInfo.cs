@@ -5,6 +5,7 @@ using UnityEngine.Scripting;
 [assembly: InternalsVisibleTo("Unity.Properties.Reflection")]
 [assembly: InternalsVisibleTo("Unity.Properties.Reflection.Tests")]
 [assembly: InternalsVisibleTo("Unity.Properties.Editor")]
+[assembly: InternalsVisibleTo("Unity.Properties.CodeGen.IntegrationTests")]
 [assembly: InternalsVisibleTo("Unity.Properties.UI")]
 [assembly: InternalsVisibleTo("Unity.Properties.UI.Editor")]
 [assembly: InternalsVisibleTo("Unity.Properties.Tests")]

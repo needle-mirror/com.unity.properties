@@ -47,6 +47,14 @@ namespace Unity.Properties.Editor.Tests
         public class CustomNames<TFirst, TSecond, TRandom, TType>{}
         
         public class NestedCustomNames<T1, T2> : CustomNames<int, T1, float, T2>{}
+        
+        public interface IBaseInterface
+        {
+        }
+        
+        public interface IDerivedInterface : IBaseInterface
+        {
+        }
     }
 
     [TestFixture]
@@ -105,6 +113,13 @@ namespace Unity.Properties.Editor.Tests
         public void GettingTheBaseType_GivenAnyType_ReturnsExpectedType(Type type, Type root)
         {
             Assert.That(TypeUtility.GetRootType(type), Is.EqualTo(root));
+        }
+
+        [TestCase(typeof(Difficulty.IBaseInterface))]
+        [TestCase(typeof(Difficulty.IDerivedInterface))]
+        public void GettingTheBaseType_GivenAnInterface_ReturnsNull(Type type)
+        {
+            Assert.That(TypeUtility.GetRootType(type), Is.EqualTo(null));
         }
     }
 }
