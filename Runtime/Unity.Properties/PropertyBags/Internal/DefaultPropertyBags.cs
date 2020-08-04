@@ -20,9 +20,10 @@ namespace Unity.Properties
             PropertyBagStore.AddPropertyBag(new RectIntPropertyBag());
             PropertyBagStore.AddPropertyBag(new BoundsPropertyBag());
             PropertyBagStore.AddPropertyBag(new BoundsIntPropertyBag());
+            PropertyBagStore.AddPropertyBag(new SystemVersionPropertyBag());
         }
     }
-    
+
     class AnimationCurvePropertyBag : ContainerPropertyBag<AnimationCurve>
     {
         public AnimationCurvePropertyBag()
@@ -321,6 +322,49 @@ namespace Unity.Properties
             public override bool IsReadOnly => false;
             public override Vector3Int GetValue(ref BoundsInt container) => container.size;
             public override void SetValue(ref BoundsInt container, Vector3Int value) => container.size = value;
+        }
+    }
+    
+    class SystemVersionPropertyBag : ContainerPropertyBag<System.Version>
+    {
+        public SystemVersionPropertyBag()
+        {
+            AddProperty(new MajorProperty().WithAttribute(new MinAttribute(0)));
+            AddProperty(new MinorProperty().WithAttribute(new MinAttribute(0)));
+            AddProperty(new BuildProperty().WithAttribute(new MinAttribute(0)));
+            AddProperty(new RevisionProperty().WithAttribute(new MinAttribute(0)));
+        }
+        
+        class MajorProperty : Property<System.Version, int>
+        {
+            public override string Name => nameof(System.Version.Major);
+            public override bool IsReadOnly => true;
+            public override int GetValue(ref System.Version container) => container.Major;
+            public override void SetValue(ref System.Version container, int value) {}
+        }
+        
+        class MinorProperty : Property<System.Version, int>
+        {
+            public override string Name => nameof(System.Version.Minor);
+            public override bool IsReadOnly => true;
+            public override int GetValue(ref System.Version container) => container.Minor;
+            public override void SetValue(ref System.Version container, int value) {}
+        }
+        
+        class BuildProperty : Property<System.Version, int>
+        {
+            public override string Name => nameof(System.Version.Build);
+            public override bool IsReadOnly => true;
+            public override int GetValue(ref System.Version container) => container.Build;
+            public override void SetValue(ref System.Version container, int value) {}
+        }
+        
+        class RevisionProperty : Property<System.Version, int>
+        {
+            public override string Name => nameof(System.Version.Revision);
+            public override bool IsReadOnly => true;
+            public override int GetValue(ref System.Version container) => container.Revision;
+            public override void SetValue(ref System.Version container, int value) {}
         }
     }
 }

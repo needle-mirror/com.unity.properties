@@ -115,6 +115,11 @@ namespace Unity.Properties.Internal
             {
                 return null;
             }
+
+            if (type == typeof(object))
+            {
+                return null;
+            }
             
             if (null != s_PropertyBagProvider)
             {
@@ -180,8 +185,8 @@ namespace Unity.Properties.Internal
             {
                 if (EqualityComparer<TValue>.Default.Equals(value, default))
                 {
-                    propertyBag = null;
-                    return false;
+                    propertyBag = GetPropertyBag<TValue>();
+                    return null != propertyBag;
                 }
             }
             

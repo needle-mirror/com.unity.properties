@@ -1,18 +1,42 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.4.3] - 2020-08-04
+### Fixed
+* CodeGen: Fixed exception thrown when trying to generate property bags for anonymous types.
+
+## [1.4.2] - 2020-08-04
+### Fixed
+* Fixed issues where a test would fail when using IL2CPP.
+
+### Added
+* Added a built-in property bag for `System.Version`.
+
+## [1.4.1] - 2020-07-31
+### Fixed
+* Fixed issues where removing an element from an array would not preserve subsequent elements.
+
+## [1.4.0] - 2020-07-30
+### Fixed
+* Fixed error logged during visitation when nested visitation contains the same property path.
+* Fixed `PropertyVisitor.VisitCollection` not being invoked for `null` collection types.
+
+### Changed
+* Update `com.unity.nuget.mono-cecil` to version `0.1.6-preview.2`.
+
 ## [1.3.1] - 2020-06-11
-## Fixed
+### Fixed
 * `TypeUtility.GetRootType` will now return `null` when provided an interface type.
-* CodeGen: Fix exception thrown when trying to generate property bags for multidimensional array types. Multidimensional arrays are not supported.
-* CodeGen: Fix cross assembly type references for C# properties. 
-* CodeGen: Fix issue when initializing attributes for private members of base types.
+* Fixed exception thrown when trying to generate property bags for multidimensional array types. Multidimensional arrays are not supported.
+* CodeGen: Fixed exception thrown when trying to generate property bags for multidimensional array types. Multidimensional arrays are not supported.
+* CodeGen: Fixed cross assembly type references for C# properties. 
+* CodeGen: Fixed issue when initializing attributes for private members of base types.
 
 ## [1.3.0] - 2020-05-13
-## Added
+### Added
 * Added a utility class around `System.Type`.
 
-## Fixed
+### Fixed
 * `PropertyContainer.SetValue` will not throw `AccessViolationException` when trying to set a `read-only` property.
 * CodeGen: Fixed invalid IL produced by open generic root types.
 
@@ -21,7 +45,7 @@ All notable changes to this package will be documented in this file.
 * CodeGen: Fixed arrays of arrays.
 * CodeGen: Fixed types with generic bases.
 
-## Added
+### Added
 * CodeGen: Add `GeneratePropertyBagsInEditorAttribute` which can be used to enable Editor time codegen per assembly.
 
 ## [1.1.1] - 2020-03-20

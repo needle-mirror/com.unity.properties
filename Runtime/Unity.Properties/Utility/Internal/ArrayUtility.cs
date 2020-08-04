@@ -41,8 +41,8 @@ namespace Unity.Properties
             }
 
             dest[index] = value;
-            Copy(source, 0, dest, 0, index - 1);
-            Copy(source, index, dest, index, source.Length - index);
+            Copy(source, 0, dest, 0, index);
+            Copy(source, index, dest, index + 1, source.Length - index);
             return dest;
         }
 
@@ -52,9 +52,9 @@ namespace Unity.Properties
             int sourceIndex,
             T[] destinationArray,
             int destinationIndex,
-            int length)
+            int count)
         {
-            for (; destinationIndex < length; destinationIndex++, sourceIndex++)
+            for (var index = 0; index < count && destinationIndex < destinationArray.Length; index++, destinationIndex++, sourceIndex++)
             {
                 var sourceValue = sourceArray[sourceIndex];
                 destinationArray[destinationIndex] = sourceValue;

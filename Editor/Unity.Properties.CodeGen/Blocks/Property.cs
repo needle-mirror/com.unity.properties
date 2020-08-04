@@ -84,7 +84,7 @@ namespace Unity.Properties.CodeGen.Blocks
             {
                 il.Emit(OpCodes.Ldarg_0);
 
-                il.Emit(OpCodes.Ldtoken, member.GetResolvedDeclaringType(containerType));
+                il.Emit(OpCodes.Ldtoken, context.ImportReference(member.GetResolvedDeclaringType(containerType)));
                 il.Emit(OpCodes.Call, context.TypeGetTypeFromTypeHandleMethodReference.Value);
 
                 il.Emit(OpCodes.Ldstr, member.Name);

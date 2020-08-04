@@ -69,5 +69,56 @@ namespace Unity.Properties.Tests
 
             Assert.That(visitor.Count, Is.EqualTo(41));
         }
+        
+        class VisitorWithoutVisitCollection : PropertyVisitor
+        {
+            public int VisitPropertyCount;
+            public int VisitCollectionCount;
+            
+            protected override void VisitProperty<TContainer, TValue>(Property<TContainer, TValue> property, ref TContainer container, ref TValue value)
+            {
+                VisitPropertyCount++;
+            }
+        }
+        
+        class VisitorWithVisitCollection : PropertyVisitor
+        {
+            public int VisitPropertyCount;
+            public int VisitCollectionCount;
+            
+            protected override void VisitProperty<TContainer, TValue>(Property<TContainer, TValue> property, ref TContainer container, ref TValue value)
+            {
+                VisitPropertyCount++;
+            }
+
+            protected override void VisitCollection<TContainer, TCollection, TElement>(Property<TContainer, TCollection> property, ref TContainer container, ref TCollection value)
+            {
+                VisitCollectionCount++;
+            }
+        }
+        
+        [Test]
+        public void PropertyVisitor_NullCollectionType_VisitCollectionIsInvoked()
+        {
+            var withVisitCollection = new VisitorWithVisitCollection();
+            var withoutVisitCollection = new VisitorWithoutVisitCollection();
+
+            var container = new ClassWithLists()
+            {
+                Int32List = new List<int>(),
+                ClassContainerList = null,
+                StructContainerList = null,
+                Int32ListList = null
+            };
+
+            PropertyContainer.Visit(container, withVisitCollection);
+            PropertyContainer.Visit(container, withoutVisitCollection);
+
+            Assert.That(withVisitCollection.VisitCollectionCount, Is.EqualTo(4));
+            Assert.That(withVisitCollection.VisitPropertyCount, Is.EqualTo(0));
+
+            Assert.That(withoutVisitCollection.VisitCollectionCount, Is.EqualTo(0));
+            Assert.That(withoutVisitCollection.VisitPropertyCount, Is.EqualTo(4));
+        }
     }
 }

@@ -94,7 +94,7 @@ namespace Unity.Properties
                 
                 Visit(ref container, visitAtPath, parameters);
 
-                if ((parameters.IgnoreExceptions & VisitExceptionType.Internal) != 0)
+                if ((parameters.IgnoreExceptions & VisitExceptionType.Internal) == 0)
                 {
                     switch (visitAtPath.ErrorCode)
                     {

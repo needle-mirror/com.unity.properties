@@ -361,7 +361,7 @@ namespace Unity.Properties.CodeGen
             if (IsMultidimensionalArray(type))
                 return false;
             
-            return !type.IsGenericInstance || (type as GenericInstanceType).GenericArguments.All(IsValidPropertyType);;
+            return !type.IsGenericInstance || (type as GenericInstanceType).GenericArguments.All(IsValidPropertyType);
         }
 
         static bool IsMultidimensionalArray(TypeReference type)

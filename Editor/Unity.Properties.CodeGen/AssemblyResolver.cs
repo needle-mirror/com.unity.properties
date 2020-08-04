@@ -120,13 +120,13 @@ namespace Unity.Properties.CodeGen
                 parameters.AssemblyResolver = this;
                 parameters.ReadingMode = ReadingMode.Deferred;
 
-                using (var stream = OpenMemoryStream(path))
+                using (var stream = OpenFileStream(path))
                 {
                     var pdb = Path.ChangeExtension(path, ".pdb");
                 
                     if (File.Exists(pdb))
                     {
-                        parameters.SymbolStream = OpenMemoryStream(pdb);
+                        parameters.SymbolStream = OpenFileStream(pdb);
                     }
                     
                     var assemblyDefinition = AssemblyDefinition.ReadAssembly(stream, parameters);
@@ -136,12 +136,12 @@ namespace Unity.Properties.CodeGen
             }
         }
 
-        static MemoryStream OpenMemoryStream(string fileName)
+        static FileStream OpenFileStream(string fileName)
         {
-            return Retry(10, TimeSpan.FromSeconds(1), () => new MemoryStream(File.ReadAllBytes(fileName)));
+            return Retry(10, TimeSpan.FromSeconds(1), () => File.OpenRead(fileName));
         }
 
-        static MemoryStream Retry(int retryCount, TimeSpan waitTime, Func<MemoryStream> func)
+        static FileStream Retry(int retryCount, TimeSpan waitTime, Func<FileStream> func)
         {
             try
             {

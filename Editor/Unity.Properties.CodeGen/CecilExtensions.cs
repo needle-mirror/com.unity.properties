@@ -180,7 +180,7 @@ namespace Unity.Properties.CodeGen
         public static FieldReference CreateImportedType(this FieldReference fieldRef, ModuleDefinition module)
         {
             var declaringType = fieldRef.DeclaringType.CreateImportedType(module);
-            var fieldType = fieldRef.FieldType.CreateImportedType(module);
+            var fieldType = fieldRef.FieldType.IsGenericParameter ? fieldRef.FieldType : fieldRef.FieldType.CreateImportedType(module);
             var importedField = new FieldReference(fieldRef.Name, fieldType, declaringType);
             return module.ImportReference(importedField);
         }
