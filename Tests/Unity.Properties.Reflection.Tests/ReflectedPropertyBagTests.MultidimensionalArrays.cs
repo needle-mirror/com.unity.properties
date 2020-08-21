@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Properties.Reflection.Internal;
+#pragma warning disable 649
 
 namespace Unity.Properties.Reflection.Tests
 {
@@ -38,7 +39,7 @@ namespace Unity.Properties.Reflection.Tests
         {
             var propertyBag = new ReflectedPropertyBagProvider().CreatePropertyBag<ClassWithMultidimensionalGeneric>();
             var container = new ClassWithMultidimensionalGeneric();
-            Assert.That(propertyBag.GetProperties(ref container).Count(), Is.EqualTo(0)); 
+            Assert.That(propertyBag.GetProperties(ref container).Count(), Is.EqualTo(0));
         }
     }
 }

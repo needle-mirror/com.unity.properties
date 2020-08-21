@@ -14,11 +14,17 @@ namespace Unity.Properties.CodeGen.Blocks
         
         public static TypeDefinition Generate(Context context, IEnumerable<Tuple<TypeDefinition, TypeReference>> types)
         {
+#if !UNITY_DOTSPLAYER
+			var accessModifier = TypeAttributes.NotPublic;
+#else
+			var accessModifier = TypeAttributes.Public;
+#endif
+
             var type = new TypeDefinition
             (
                 @namespace: Context.kNamespace,
                 @name: kTypeName,
-                @attributes: TypeAttributes.Class | TypeAttributes.NotPublic,
+                @attributes: TypeAttributes.Class | accessModifier,
                 @baseType: context.ImportReference(typeof(object))
             )
             {
@@ -44,8 +50,6 @@ namespace Unity.Properties.CodeGen.Blocks
             // custom attributes in hybrid. DOTS Player will solve this elsewhere (in TypeRegGen)
             context.AddInitializeOnLoadMethodAttribute(method);
             context.AddPreserveAttribute(method);
-#else
-            throw new Exception("InitializeOnLoadMethodAttribute not supported in UNITY_DOTSPLAYER.")
 #endif
             
             method.Body.InitLocals = true;

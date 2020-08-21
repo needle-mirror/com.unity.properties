@@ -14,7 +14,7 @@ namespace Unity.Properties.CodeGen.Blocks
 {
     static class Property
     {
-        public static TypeDefinition Generate(Context context, TypeReference containerType, IMemberDefinition member)
+        public static TypeDefinition Generate(Context context, TypeReference containerType, IMemberDefinition member, string nameOverride = null)
         {
             if (null == member)
             {
@@ -22,13 +22,13 @@ namespace Unity.Properties.CodeGen.Blocks
             }
 
             var memberType = context.Module.ImportReference(Utility.GetMemberType(member).ResolveGenericParameter(containerType));
-            
             var propertyBaseType = context.ImportReference(typeof(Property<,>)).MakeGenericInstanceType(containerType, memberType);
+            var memberName = string.IsNullOrEmpty(nameOverride) ? member.Name : nameOverride;
             
             var type = new TypeDefinition
             (
                 @namespace: string.Empty,
-                @name: Utility.GetSanitizedName(member.Name, "_Property"),
+                @name: Utility.GetSanitizedName(memberName, "_Property"),
                 @attributes: TypeAttributes.Class | TypeAttributes.NestedPrivate,
                 @baseType: propertyBaseType
             )
@@ -38,9 +38,9 @@ namespace Unity.Properties.CodeGen.Blocks
 
             var isReadOnly = (member is PropertyDefinition p && p.SetMethod == null) || (member is FieldDefinition f && f.IsInitOnly);
 
-            var nameProperty = CreateNameProperty(context, member.Name);
+            var nameProperty = CreateNameProperty(context, memberName);
             var readOnlyProperty = CreateIsReadOnlyProperty(context, isReadOnly);
-            var ctorMethod = CreatePropertyCtorMethod(context, containerType, propertyBaseType, member);
+            var ctorMethod = CreatePropertyCtorMethod(context, containerType, propertyBaseType, member, memberName);
             var getValueMethod = CreateGetValueMethod(context, containerType, memberType, member);
             var setValueMethod = CreateSetValueMethod(context, containerType, memberType, member, isReadOnly);
 
@@ -56,7 +56,7 @@ namespace Unity.Properties.CodeGen.Blocks
             return type;
         }
 
-        static MethodDefinition CreatePropertyCtorMethod(Context context, TypeReference containerType, TypeReference baseType, IMemberDefinition member)
+        static MethodDefinition CreatePropertyCtorMethod(Context context, TypeReference containerType, TypeReference baseType, IMemberDefinition member, string memberName)
         {
             // NOTE: We create our own method reference since this assembly may not reference Unity.Properties on it's own. Thus any attempt
             // to Resolve() a TypeReference from Properties will return null. So instead we create MethodReferences for methods we
@@ -87,17 +87,17 @@ namespace Unity.Properties.CodeGen.Blocks
                 il.Emit(OpCodes.Ldtoken, context.ImportReference(member.GetResolvedDeclaringType(containerType)));
                 il.Emit(OpCodes.Call, context.TypeGetTypeFromTypeHandleMethodReference.Value);
 
-                il.Emit(OpCodes.Ldstr, member.Name);
+                il.Emit(OpCodes.Ldstr, memberName);
                 
                 var flags = BindingFlags.Instance;
 
-                if (member.IsPrivate())
+                if (member.IsPublic())
                 {
-                    flags |= BindingFlags.NonPublic;
+                    flags |= BindingFlags.Public;
                 }
                 else
                 {
-                    flags |= BindingFlags.Public;
+                    flags |= BindingFlags.NonPublic;
                 }
                 
                 il.Emit(OpCodes.Ldc_I4_S, (sbyte) flags);

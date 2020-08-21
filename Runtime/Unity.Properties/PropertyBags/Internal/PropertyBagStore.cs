@@ -127,7 +127,11 @@ namespace Unity.Properties.Internal
 
                 if (null == propertyBag)
                 {
+#if !NET_DOTS
                     s_PropertyBags.TryAdd(type, null);
+#else
+                    s_PropertyBags[type] = null;
+#endif
                 }
                 else
                 {

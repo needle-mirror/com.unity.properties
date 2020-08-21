@@ -36,7 +36,7 @@ namespace Unity.Properties.CodeGen.Tests
     {
         class Hidden : ReflectedMemberProperty<StructWithPrimitives, int>
         {
-            public Hidden() : base(typeof(StructWithPrimitives).GetProperty("Int32Field", BindingFlags.Instance | BindingFlags.NonPublic))
+            public Hidden() : base(typeof(StructWithPrimitives).GetProperty("Int32Field", BindingFlags.Instance | BindingFlags.NonPublic), "Int32Field")
             {
             }
         }

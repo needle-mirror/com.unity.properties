@@ -11,45 +11,9 @@ namespace Unity.Properties.CodeGen.Blocks
     {
         public static TypeDefinition Generate(Context context, TypeReference containerType)
         {
-            var basePropertyBagType = context.ImportReference(typeof(ContainerPropertyBag<>)).MakeGenericInstanceType(containerType);
-            
-            var propertyBagType = new TypeDefinition
-            (
-                @namespace: Context.kNamespace,
-                @name: Utility.GetSanitizedName(containerType.FullName, "_PropertyBag"),
-                @attributes: TypeAttributes.Class | TypeAttributes.NotPublic,
-                @baseType: basePropertyBagType
-            )
-            {
-                Scope = containerType.Scope
-            };
-                
-            // NOTE: We create our own method reference since this assembly may not reference Unity.Properties on it's own. Thus any attempt
-            // to Resolve() a TypeReference from Properties will return null. So instead we create MethodReferences for methods we
-            // know will exist ourselves and let the new assembly, which will now include a reference to Properties, resolve at runtime
-            var baseCtorMethod = new MethodReference(".ctor", context.ImportReference(typeof(void)), basePropertyBagType)
-            {
-                HasThis = true,
-                ExplicitThis = false,
-                CallingConvention = MethodCallingConvention.Default
-            };
-            
-            var ctorMethod = new MethodDefinition
-            (
-                ".ctor",
-                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
-                context.ImportReference(typeof(void))
-            );
-            
-            propertyBagType.Methods.Add(ctorMethod);
-            
+            var propertyBagType = GeneratePropertyBagHeader(context, containerType, out var ctorMethod, out var addPropertyMethod);
             var il = ctorMethod.Body.GetILProcessor();
             
-            il.Emit(OpCodes.Ldarg_0); // this
-            il.Emit(OpCodes.Call, context.Module.ImportReference(baseCtorMethod));
-            
-            var addPropertyMethod = context.Module.ImportReference(context.ContainerPropertyBagAddPropertyGenericMethodReference.Value.MakeGenericHostMethod(basePropertyBagType));
-
             foreach (var member in Utility.GetPropertyMembers(context, containerType.Resolve()))
             {
                 var memberType = context.ImportReference(Utility.GetMemberType(member).ResolveGenericParameter(containerType));
@@ -61,7 +25,7 @@ namespace Unity.Properties.CodeGen.Blocks
 
                 TypeDefinition propertyType;
                 
-                if (!member.IsPrivate())
+                if (member.IsPublic())
                 {
                     propertyType = Property.Generate(context, containerType, member);
                 }
@@ -70,7 +34,7 @@ namespace Unity.Properties.CodeGen.Blocks
 #if !NET_DOTS
                     propertyType = ReflectedProperty.Generate(context, containerType, member);
 #else
-                    throw new Exception("Private properties require reflection which is not supported in NET_DOTS.");
+                    continue;
 #endif
                 }
                 
@@ -85,7 +49,54 @@ namespace Unity.Properties.CodeGen.Blocks
             return propertyBagType;
         }
 
-        static void RegisterCollectionTypes(Context context, TypeReference containerType, TypeReference memberType, ILProcessor il)
+        internal static TypeDefinition GeneratePropertyBagHeader(Context context, TypeReference containerType, 
+            out MethodDefinition ctorMethod, out MethodReference addPropertyMethod)
+        {
+            var basePropertyBagType = context.ImportReference(typeof(ContainerPropertyBag<>)).MakeGenericInstanceType(containerType);
+
+            var propertyBagType = new TypeDefinition
+            (
+                @namespace: Context.kNamespace,
+                name: Utility.GetSanitizedName(containerType.FullName, "_PropertyBag"),
+                attributes: TypeAttributes.Class | TypeAttributes.NotPublic,
+                baseType: basePropertyBagType
+            )
+            {
+                Scope = containerType.Scope
+            };
+
+            // NOTE: We create our own method reference since this assembly may not reference Unity.Properties on it's own. Thus any attempt
+            // to Resolve() a TypeReference from Properties will return null. So instead we create MethodReferences for methods we
+            // know will exist ourselves and let the new assembly, which will now include a reference to Properties, resolve at runtime
+            var baseCtorMethod = new MethodReference(".ctor", context.ImportReference(typeof(void)), basePropertyBagType)
+            {
+                HasThis = true,
+                ExplicitThis = false,
+                CallingConvention = MethodCallingConvention.Default
+            };
+
+            ctorMethod = new MethodDefinition
+            (
+                ".ctor",
+                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
+                context.ImportReference(typeof(void))
+            );
+
+            propertyBagType.Methods.Add(ctorMethod);
+
+            var il = ctorMethod.Body.GetILProcessor();
+
+            il.Emit(OpCodes.Ldarg_0); // this
+            il.Emit(OpCodes.Call, context.Module.ImportReference(baseCtorMethod));
+            
+            // ctorMethodIlProcessor.Emit(OpCodes.Ldstr, propertyBagType.Name);
+            // ctorMethodIlProcessor.Emit(OpCodes.Call, context.DebugLogMethodReference.Value);
+
+            addPropertyMethod = context.Module.ImportReference(context.ContainerPropertyBagAddPropertyGenericMethodReference.Value.MakeGenericHostMethod(basePropertyBagType));
+            return propertyBagType;
+        }
+
+        internal static void RegisterCollectionTypes(Context context, TypeReference containerType, TypeReference memberType, ILProcessor il)
         {
             var resolvedMember = memberType.Resolve();
 

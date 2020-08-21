@@ -1,7 +1,7 @@
 {
   "name": "com.unity.properties",
   "displayName": "Properties",
-  "version": "1.4.3-preview",
+  "version": "1.5.0-preview",
   "unity": "2019.3",
   "unityRelease": "0f1",
   "description": "Interfaces and utilities to describe and visit data containers.",
@@ -14,11 +14,11 @@
     "com.unity.test-framework.performance": "2.0.8-preview"
   },
   "upmCi": {
-    "footprint": "da064fd7a055613c3de39c57b5eafebd743a2101"
+    "footprint": "6a8614d1744efe85ce4196fad5f869e2dfe77138"
   },
   "repository": {
     "url": "https://github.com/Unity-Technologies/com.unity.properties.git",
     "type": "git",
-    "revision": "827d95e323725edd57a1f738a8899327c0b66c59"
+    "revision": "6e6b8c016f2f98375b41bf2f3f079bfb6504da58"
   }
 }

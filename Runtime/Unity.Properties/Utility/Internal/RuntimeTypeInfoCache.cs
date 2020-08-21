@@ -22,11 +22,13 @@ namespace Unity.Properties.Internal
         public static readonly bool IsPrimitive;
         public static readonly bool IsInterface;
         public static readonly bool IsAbstract;
-        public static readonly bool IsGeneric;
         public static readonly bool IsArray;
         public static readonly bool IsEnum;
+        
+#if !NET_DOTS
         public static readonly bool IsEnumFlags;
         public static readonly bool IsNullable;
+#endif
 
         public static readonly bool IsObjectType;
         public static readonly bool IsStringType;
@@ -37,7 +39,9 @@ namespace Unity.Properties.Internal
         public static readonly bool IsPrimitiveOrString;
         public static readonly bool IsAbstractOrInterface;
 
+#if !NET_DOTS
         public static readonly bool IsLazyLoadReference;
+#endif
 
         static RuntimeTypeInfoCache()
         {
@@ -46,31 +50,29 @@ namespace Unity.Properties.Internal
             IsPrimitive = type.IsPrimitive;
             IsInterface = type.IsInterface;
             IsAbstract = type.IsAbstract;
-            IsGeneric = type.IsGenericType;
             IsArray = type.IsArray;
             IsEnum = type.IsEnum;
 
 #if !NET_DOTS
             IsEnumFlags = IsEnum && null != type.GetCustomAttribute<FlagsAttribute>();
             IsNullable = Nullable.GetUnderlyingType(typeof(T)) != null;
-#else
-            IsEnumFlags = false;
-            IsNullable = false;
 #endif
-
             IsObjectType = type == typeof(object);
             IsStringType = type == typeof(string);
             IsContainerType = RuntimeTypeInfoCache.IsContainerType(type);
 
-            CanBeNull = !IsValueType || IsNullable;
-            IsNullableOrEnum = IsNullable || IsEnum;
+            CanBeNull = !IsValueType;
+            IsNullableOrEnum = IsEnum;
             IsPrimitiveOrString = IsPrimitive || IsStringType;
             IsAbstractOrInterface = IsAbstract || IsInterface;
 
+#if !NET_DOTS
+            CanBeNull |= IsNullable;
+            IsNullableOrEnum |= IsNullable;
+#endif
+
 #if !UNITY_DOTSPLAYER
-            IsLazyLoadReference = IsGeneric && type.GetGenericTypeDefinition() == typeof(UnityEngine.LazyLoadReference<>);
-#else
-            IsLazyLoadReference = false;
+            IsLazyLoadReference = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(UnityEngine.LazyLoadReference<>);
 #endif
         }
     }

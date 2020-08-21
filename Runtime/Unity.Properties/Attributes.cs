@@ -114,7 +114,11 @@ namespace Unity.Properties
         {
             if (!RuntimeTypeInfoCache.IsContainerType(type))
             {
+#if !NET_DOTS
                 throw new ArgumentException($"{type.Name} is not a valid container type.");
+#else
+                throw new ArgumentException($"Type is not a valid container type.");
+#endif
             }
             
             Type = type;

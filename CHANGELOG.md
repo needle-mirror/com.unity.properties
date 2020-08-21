@@ -1,8 +1,13 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.5.0] - 2020-08-21
+### Changed
+* Enabled minimal support for `NET_DOTS`. `Property`, `PropertyBag` and `PropertyContainer.Visit` are now available.
+
 ## [1.4.3] - 2020-08-04
 ### Fixed
+* Fixed error logged during visitation when nested visitation contains the same property path.
 * CodeGen: Fixed exception thrown when trying to generate property bags for anonymous types.
 
 ## [1.4.2] - 2020-08-04
@@ -29,7 +34,7 @@ All notable changes to this package will be documented in this file.
 * `TypeUtility.GetRootType` will now return `null` when provided an interface type.
 * Fixed exception thrown when trying to generate property bags for multidimensional array types. Multidimensional arrays are not supported.
 * CodeGen: Fixed exception thrown when trying to generate property bags for multidimensional array types. Multidimensional arrays are not supported.
-* CodeGen: Fixed cross assembly type references for C# properties. 
+* CodeGen: Fixed cross assembly type references for C# properties.
 * CodeGen: Fixed issue when initializing attributes for private members of base types.
 
 ## [1.3.0] - 2020-05-13
@@ -54,7 +59,7 @@ All notable changes to this package will be documented in this file.
 
 ## [1.1.0] - 2020-03-11
 ### Fixed
-* Fixed list elements incorrectly being considered as `readonly` if the list was `readonly`. 
+* Fixed list elements incorrectly being considered as `readonly` if the list was `readonly`.
 * Fixed codegen not correctly registering property bags for array types.
 
 ## [1.0.0] - 2020-03-02
@@ -78,7 +83,7 @@ All notable changes to this package will be documented in this file.
 
 ## [0.10.0] - 2019-10-25
 ### Changed
-* ***Breaking change*** `PropertyContainer.Construct` and `PropertyContainer.Transfer` will now return a disposable `VisitResult` containing logs, errors and exceptions that occurred during visitation. 
+* ***Breaking change*** `PropertyContainer.Construct` and `PropertyContainer.Transfer` will now return a disposable `VisitResult` containing logs, errors and exceptions that occurred during visitation.
 
 ## [0.9.2] - 2019-10-21
 ### Added
@@ -130,7 +135,7 @@ All notable changes to this package will be documented in this file.
 
 ## [0.7.1] - 2019-08-29
 ### Fixed
-* Narrowing conversions between supported enum types will not throw an `InvalidCastException` anymore. 
+* Narrowing conversions between supported enum types will not throw an `InvalidCastException` anymore.
 
 ## [0.7.0] - 2019-08-23
 ### Fixed

@@ -34,7 +34,11 @@ namespace Unity.Properties
 
         static string GetMessageForType(Type type)
         {
+#if !NET_DOTS
             return $"No PropertyBag was found for Type=[{type.FullName}]. Please make sure all types are declared ahead of time using [{nameof(GeneratePropertyBagAttribute)}], [{nameof(GeneratePropertyBagsForTypeAttribute)}] or [{nameof(GeneratePropertyBagsForTypesQualifiedWithAttribute)}]";
+#else    
+            return $"No PropertyBag was found for type. Please make sure all types are declared ahead of time using [{nameof(GeneratePropertyBagAttribute)}], [{nameof(GeneratePropertyBagsForTypeAttribute)}] or [{nameof(GeneratePropertyBagsForTypesQualifiedWithAttribute)}]";
+#endif
         }
     }
     
@@ -70,7 +74,11 @@ namespace Unity.Properties
 
         static string GetMessageForType(Type type)
         {
+#if !NET_DOTS
             return $"Invalid container Type=[{type.Name}.{type.Name}]";
+#else
+            return "Invalid container type.";
+#endif
         }
     }
     

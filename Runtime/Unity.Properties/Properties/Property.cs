@@ -71,6 +71,7 @@ namespace Unity.Properties
     /// <typeparam name="TContainer">The container type this property operates on.</typeparam>
     public interface IProperty<TContainer> : IProperty
     {
+#if !NET_DOTS
         /// <summary>
         /// Returns the property value of a specified container.
         /// </summary>
@@ -85,6 +86,7 @@ namespace Unity.Properties
         /// <param name="value">The new property value.</param>
         /// <returns><see langword="true"/> if the value was set; otherwise, <see langword="false"/>.</returns>
         bool TrySetValue(ref TContainer container, object value);
+#endif
     }
     
     /// <summary>
@@ -126,6 +128,7 @@ namespace Unity.Properties
         /// <inheritdoc/>
         void IPropertyAccept<TContainer>.Accept(IPropertyVisitor visitor, ref TContainer container) => visitor.Visit(this, ref container);
 
+#if !NET_DOTS
         /// <inheritdoc/>
         object IProperty<TContainer>.GetValue(ref TContainer container) => GetValue(ref container);
         
@@ -138,6 +141,7 @@ namespace Unity.Properties
             SetValue(ref container, typed);
             return true;
         }
+#endif
 
         /// <summary>
         /// Returns the property value of a specified container.

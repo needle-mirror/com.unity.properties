@@ -11,18 +11,19 @@ namespace Unity.Properties.CodeGen.Blocks
 {
     static class ReflectedProperty
     {
-        public static TypeDefinition Generate(Context context, TypeReference containerType, IMemberDefinition member)
+        public static TypeDefinition Generate(Context context, TypeReference containerType, IMemberDefinition member, string nameOverride = null)
         {
             if (null == member)
                 throw new ArgumentException(nameof(member));
 
             var memberType = context.Module.ImportReference(Utility.GetMemberType(member).ResolveGenericParameter(containerType));
             var propertyBaseType = context.ImportReference(typeof(ReflectedMemberProperty<,>)).MakeGenericInstanceType(containerType, memberType);
+            var memberName = string.IsNullOrEmpty(nameOverride) ? member.Name : nameOverride;
 
             var type = new TypeDefinition
             (
                 @namespace: string.Empty,
-                name: Utility.GetSanitizedName(member.Name, string.Empty),
+                name: Utility.GetSanitizedName(memberName, string.Empty),
                 attributes: TypeAttributes.Class | TypeAttributes.NestedPrivate,
                 baseType: propertyBaseType
             )
@@ -30,13 +31,13 @@ namespace Unity.Properties.CodeGen.Blocks
                 Scope = containerType.Scope
             };
 
-            var ctorMethod = CreateReflectedMemberPropertyCtorMethod(context, containerType, propertyBaseType, member);
+            var ctorMethod = CreateReflectedMemberPropertyCtorMethod(context, containerType, propertyBaseType, member, memberName);
             type.Methods.Add(ctorMethod);
 
             return type;
         }
 
-        static MethodDefinition CreateReflectedMemberPropertyCtorMethod(Context context, TypeReference containerType, TypeReference baseType, IMemberDefinition member)
+        static MethodDefinition CreateReflectedMemberPropertyCtorMethod(Context context, TypeReference containerType, TypeReference baseType, IMemberDefinition member, string memberName)
         {
             // NOTE: We create our own method reference since this assembly may not reference Unity.Properties on it's own. Thus any attempt
             // to Resolve() a TypeReference from Properties will return null. So instead we create MethodReferences for methods we
@@ -48,18 +49,21 @@ namespace Unity.Properties.CodeGen.Blocks
                 CallingConvention = MethodCallingConvention.Default
             };
 
+            var parameters = basePropertyConstructor.Parameters;
             if (member is FieldDefinition)
             {
-                basePropertyConstructor.Parameters.Add(new ParameterDefinition(context.ImportReference(typeof(FieldInfo))));
+                parameters.Add(new ParameterDefinition(context.ImportReference(typeof(FieldInfo))));
             }
             else if (member is PropertyDefinition)
             {
-                basePropertyConstructor.Parameters.Add(new ParameterDefinition(context.ImportReference(typeof(PropertyInfo))));
+                parameters.Add(new ParameterDefinition(context.ImportReference(typeof(PropertyInfo))));
             }
             else
             {
                 throw new ArgumentException($"No constructor exists for ReflectedMemberProperty({member.GetType()})");
             }
+            
+            parameters.Add(new ParameterDefinition(context.ImportReference(typeof(string))));
 
             var method = new MethodDefinition
             (
@@ -81,13 +85,13 @@ namespace Unity.Properties.CodeGen.Blocks
 
             var flags = BindingFlags.Instance;
 
-            if (member.IsPrivate())
+            if (member.IsPublic())
             {
-                flags |= BindingFlags.NonPublic;
+                flags |= BindingFlags.Public;
             }
             else
             {
-                flags |= BindingFlags.Public;
+                flags |= BindingFlags.NonPublic;
             }
 
             il.Emit(OpCodes.Ldc_I4_S, (sbyte) flags);
@@ -102,6 +106,8 @@ namespace Unity.Properties.CodeGen.Blocks
                 // GetProperty
                 il.Emit(OpCodes.Callvirt, context.TypeGetPropertyMethodReference.Value);
             }
+            
+            il.Emit(OpCodes.Ldstr, memberName);
 
             // : base
             il.Emit(OpCodes.Call, context.Module.ImportReference(basePropertyConstructor));

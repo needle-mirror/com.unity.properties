@@ -1,3 +1,4 @@
+#if !NET_DOTS
 using System;
 
 namespace Unity.Properties.Internal
@@ -137,3 +138,4 @@ namespace Unity.Properties.Internal
         }
     }
 }
+#endif

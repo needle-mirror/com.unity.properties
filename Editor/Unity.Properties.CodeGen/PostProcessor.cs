@@ -109,12 +109,15 @@ namespace Unity.Properties.CodeGen
                 ReflectionImporterProvider = new PostProcessorReflectionImporterProvider()
             };
 
+#if !UNITY_DOTSPLAYER
+            // @FIXME Trying to read symbols in DOTSPLAYER is throwing an exception. Need to investigate.
             if (null != compiledAssembly.InMemoryAssembly.PdbData)
             {
                 readerParameters.ReadSymbols = true;
                 readerParameters.SymbolStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData.ToArray());
                 readerParameters.SymbolReaderProvider = new PortablePdbReaderProvider();
             }
+#endif
             
             var peStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PeData.ToArray());
             var assemblyDefinition = AssemblyDefinition.ReadAssembly(peStream, readerParameters);

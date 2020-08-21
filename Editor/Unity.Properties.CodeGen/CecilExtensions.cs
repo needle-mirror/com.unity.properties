@@ -149,22 +149,22 @@ namespace Unity.Properties.CodeGen
 
     static class IMetadataTokenProviderExtensions
     {
-        public static bool IsPrivate(this IMetadataTokenProvider member)
+        public static bool IsPublic(this IMetadataTokenProvider member)
         {
             if (member is FieldDefinition field)
             {
-                return field.IsPrivate || field.IsAssembly;
+                return field.IsPublic;
             }
 
             if (member is PropertyDefinition property)
             {
-                if (property.GetMethod.IsPrivate || property.GetMethod.IsAssembly)
+                if (property.GetMethod.IsPublic)
                 {
                     return true;
                 }
                 if (null != property.SetMethod)
                 {
-                    if (property.SetMethod.IsPrivate || property.SetMethod.IsAssembly)
+                    if (property.SetMethod.IsPublic)
                     {
                         return true;
                     }

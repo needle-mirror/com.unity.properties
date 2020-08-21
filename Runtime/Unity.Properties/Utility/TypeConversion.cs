@@ -1,3 +1,4 @@
+#if !NET_DOTS
 using System;
 using System.Globalization;
 using Unity.Properties.Internal;
@@ -866,3 +867,4 @@ namespace Unity.Properties
         }
     }
 }
+#endif

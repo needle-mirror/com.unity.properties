@@ -131,7 +131,7 @@ namespace Unity.Properties.Reflection.Internal
                 return;
             }
             
-            propertyBag.AddProperty(new ReflectedMemberProperty<TContainer, TValue>(member));
+            propertyBag.AddProperty(new ReflectedMemberProperty<TContainer, TValue>(member, member.Name));
         }
 
         [Preserve]

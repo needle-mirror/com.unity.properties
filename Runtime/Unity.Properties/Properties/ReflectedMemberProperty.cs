@@ -137,7 +137,7 @@ namespace Unity.Properties
         SetClassValueAction m_SetClassValueAction;
 
         /// <inheritdoc/>
-        public override string Name => m_Info.Name;
+        public override string Name { get; }
 
         /// <inheritdoc/>
         public override bool IsReadOnly { get; }
@@ -146,7 +146,8 @@ namespace Unity.Properties
         /// Initializes a new <see cref="ReflectedMemberProperty{TContainer,TValue}"/> instance for the specified <see cref="FieldInfo"/>.
         /// </summary>
         /// <param name="info">The system reflection field info.</param>
-        public ReflectedMemberProperty(FieldInfo info) : this(new FieldMember(info))
+        /// <param name="name">Use this name property--this might override the MemberInfo name</param>
+        public ReflectedMemberProperty(FieldInfo info, string name) : this(new FieldMember(info), name)
         {
             
         }
@@ -155,7 +156,8 @@ namespace Unity.Properties
         /// Initializes a new <see cref="ReflectedMemberProperty{TContainer,TValue}"/> instance for the specified <see cref="PropertyInfo"/>.
         /// </summary>
         /// <param name="info">The system reflection property info.</param>
-        public ReflectedMemberProperty(PropertyInfo info) : this(new PropertyMember(info))
+        /// <param name="name">Use this name property--this might override the MemberInfo name</param>
+        public ReflectedMemberProperty(PropertyInfo info, string name) : this(new PropertyMember(info), name)
         {
             
         }
@@ -164,8 +166,10 @@ namespace Unity.Properties
         /// Initializes a new <see cref="ReflectedMemberProperty{TContainer,TValue}"/> instance. This is an internal constructor.
         /// </summary>
         /// <param name="info">The reflected info object backing this property.</param>
-        internal ReflectedMemberProperty(IMemberInfo info)
+        /// <param name="name">Use this name property--this might override the MemberInfo name</param>
+        internal ReflectedMemberProperty(IMemberInfo info, string name)
         {
+            Name = name;
             m_Info = info;
             m_IsStructContainerType = RuntimeTypeInfoCache<TContainer>.IsValueType;
             

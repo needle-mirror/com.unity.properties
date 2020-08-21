@@ -7,7 +7,7 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": ["!NET_DOTS"],
+    "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false
 }

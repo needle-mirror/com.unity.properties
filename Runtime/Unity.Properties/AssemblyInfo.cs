@@ -13,3 +13,4 @@ using UnityEngine.Scripting;
 [assembly: InternalsVisibleTo("Unity.Serialization.Tests")]
 [assembly: InternalsVisibleTo("Unity.Entities")]
 [assembly: InternalsVisibleTo("Unity.Entities.Editor")]
+[assembly: InternalsVisibleTo("Unity.RuntimeSceneSerialization")]

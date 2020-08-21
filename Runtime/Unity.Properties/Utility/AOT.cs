@@ -44,7 +44,10 @@ namespace Unity.Properties
             static void Generate()
             {
                 PropertyVisitor.AOT.RegisterType<TContainer, TValue>();
+                
+#if !NET_DOTS
                 PathVisitor.AOT.RegisterType(default(Property<TContainer, TValue>));
+#endif
             }
         }
         

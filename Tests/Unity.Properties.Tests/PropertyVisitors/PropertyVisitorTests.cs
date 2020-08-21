@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+#pragma warning disable 649
 
 namespace Unity.Properties.Tests
 {
@@ -11,7 +12,7 @@ namespace Unity.Properties.Tests
         {
             public string Name;
             public List<Node> Children;
-            
+
             public Node(string name) => Name = name;
         }
 
@@ -21,7 +22,7 @@ namespace Unity.Properties.Tests
             protected override void VisitProperty<TContainer, TValue>(Property<TContainer, TValue> property, ref TContainer container, ref TValue value)
             {
                 var index = GetIndex(property);
-                    
+
                 Count++;
 
                 property.Visit(this, ref value);
@@ -69,23 +70,23 @@ namespace Unity.Properties.Tests
 
             Assert.That(visitor.Count, Is.EqualTo(41));
         }
-        
+
         class VisitorWithoutVisitCollection : PropertyVisitor
         {
             public int VisitPropertyCount;
             public int VisitCollectionCount;
-            
+
             protected override void VisitProperty<TContainer, TValue>(Property<TContainer, TValue> property, ref TContainer container, ref TValue value)
             {
                 VisitPropertyCount++;
             }
         }
-        
+
         class VisitorWithVisitCollection : PropertyVisitor
         {
             public int VisitPropertyCount;
             public int VisitCollectionCount;
-            
+
             protected override void VisitProperty<TContainer, TValue>(Property<TContainer, TValue> property, ref TContainer container, ref TValue value)
             {
                 VisitPropertyCount++;
@@ -96,7 +97,7 @@ namespace Unity.Properties.Tests
                 VisitCollectionCount++;
             }
         }
-        
+
         [Test]
         public void PropertyVisitor_NullCollectionType_VisitCollectionIsInvoked()
         {

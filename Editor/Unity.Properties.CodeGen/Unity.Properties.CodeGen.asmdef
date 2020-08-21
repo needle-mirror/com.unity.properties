@@ -15,6 +15,6 @@
         "Mono.Cecil.Pdb.dll"
     ],
     "autoReferenced": false,
-    "defineConstraints": ["!NET_DOTS"],
+    "defineConstraints": [],
     "versionDefines": []
 }
