@@ -66,14 +66,14 @@ namespace Unity.Properties.CodeGen
             var dll = name.Name + ".dll";
             foreach (var reference in references)
             {
-                if (reference.EndsWith(dll)) return reference;
+                if (Path.GetFileName(reference) == dll) return reference;
             }
             
             // Check for exe
             var exe = name.Name + ".exe";
             foreach (var reference in references)
             {
-                if (reference.EndsWith(exe)) return reference;
+                if (Path.GetFileName(reference) == exe) return reference;
             }
             
             // Unfortunately the current ICompiledAssembly API only provides direct references.

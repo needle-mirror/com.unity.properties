@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.6.0] - 2020-10-07
+### Changed
+* Updated minimum Unity version to `2020.1`.
+* Update `com.unity.test-framework.performance` to version `2.3.1-preview`.
+
+### Fixed
+* CodeGen: Fixed cross assembly base type references.
+
 ## [1.5.0] - 2020-08-21
 ### Changed
 * Enabled minimal support for `NET_DOTS`. `Property`, `PropertyBag` and `PropertyContainer.Visit` are now available.
