@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.7.0] - 2021-02-26
+### Added
+* Added overloads to `TypeConversion.Convert` and `TypeConversion.TryConvert` to pass the source as a `ref` to avoid creating copies during conversion.
+
 ## [1.6.0] - 2020-10-07
 ### Changed
 * Updated minimum Unity version to `2020.1`.

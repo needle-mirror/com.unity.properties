@@ -21,7 +21,7 @@ namespace Unity.Properties
             protected override void VisitPath<TContainer, TValue>(Property<TContainer, TValue> property,
                 ref TContainer container, ref TValue value)
             {
-                if (!TypeConversion.TryConvert(value, out Value))
+                if (!TypeConversion.TryConvert(ref value, out Value))
                 {
                     ErrorCode = VisitErrorCode.InvalidCast;
                 }

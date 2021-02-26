@@ -98,32 +98,49 @@ namespace Unity.Properties.CodeGen
 
         static AssemblyDefinition CreateAssemblyDefinition(ICompiledAssembly compiledAssembly)
         {
-            var resolver = new AssemblyResolver(compiledAssembly);
+            var resolver = new PostProcessorAssemblyResolver(compiledAssembly);
 
-            var readerParameters = new ReaderParameters
-            {
-                AssemblyResolver = resolver,
-                ReadingMode = ReadingMode.Deferred,
-                
-                // We _could_ be running in .NET core. In this case we need to force imports to resolve to mscorlib.
-                ReflectionImporterProvider = new PostProcessorReflectionImporterProvider()
-            };
-
-#if !UNITY_DOTSPLAYER
-            // @FIXME Trying to read symbols in DOTSPLAYER is throwing an exception. Need to investigate.
-            if (null != compiledAssembly.InMemoryAssembly.PdbData)
-            {
-                readerParameters.ReadSymbols = true;
-                readerParameters.SymbolStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData.ToArray());
-                readerParameters.SymbolReaderProvider = new PortablePdbReaderProvider();
-            }
-#endif
+            AssemblyDefinition assemblyDefinition = null;
             
-            var peStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PeData.ToArray());
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(peStream, readerParameters);
+            // BUG: In some cases the assembly resolver fails to load symbol information. In this case we retry without symbols.
+            try
+            {
+                var readerParameters = new ReaderParameters
+                {
+                    AssemblyResolver = resolver,
+                    ReadingMode = ReadingMode.Deferred,
 
-            resolver.AddAssemblyDefinitionBeingOperatedOn(assemblyDefinition);
+                    // We _could_ be running in .NET core. In this case we need to force imports to resolve to mscorlib.
+                    ReflectionImporterProvider = new PostProcessorReflectionImporterProvider()
+                };
 
+                if (null != compiledAssembly.InMemoryAssembly.PdbData)
+                {
+                    readerParameters.ReadSymbols = true;
+                    readerParameters.SymbolStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData.ToArray());
+                    readerParameters.SymbolReaderProvider = new PortablePdbReaderProvider();
+                }
+
+                var peStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PeData.ToArray());
+                assemblyDefinition = AssemblyDefinition.ReadAssembly(peStream, readerParameters);
+                resolver.AddAssemblyDefinitionBeingOperatedOn(assemblyDefinition);
+            }
+            catch (BadImageFormatException)
+            {
+                var readerParameters = new ReaderParameters
+                {
+                    AssemblyResolver = resolver,
+                    ReadingMode = ReadingMode.Deferred,
+
+                    // We _could_ be running in .NET core. In this case we need to force imports to resolve to mscorlib.
+                    ReflectionImporterProvider = new PostProcessorReflectionImporterProvider()
+                };
+
+                var peStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PeData.ToArray());
+                assemblyDefinition = AssemblyDefinition.ReadAssembly(peStream, readerParameters);
+                resolver.AddAssemblyDefinitionBeingOperatedOn(assemblyDefinition);
+            }
+            
             return assemblyDefinition;
         }
     }

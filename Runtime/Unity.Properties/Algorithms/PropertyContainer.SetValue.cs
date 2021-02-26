@@ -26,7 +26,7 @@ namespace Unity.Properties
                     return;
                 }
 
-                if (TypeConversion.TryConvert(Value, out TValue v))
+                if (TypeConversion.TryConvert(ref Value, out TValue v))
                 {
                     property.SetValue(ref container, v);
                 }

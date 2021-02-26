@@ -39,7 +39,8 @@ namespace Unity.Properties.Internal
         public static readonly bool IsPrimitiveOrString;
         public static readonly bool IsAbstractOrInterface;
 
-#if !NET_DOTS
+#if !UNITY_DOTSPLAYER
+        public static readonly bool IsUnityObject;
         public static readonly bool IsLazyLoadReference;
 #endif
 
@@ -73,6 +74,7 @@ namespace Unity.Properties.Internal
 
 #if !UNITY_DOTSPLAYER
             IsLazyLoadReference = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(UnityEngine.LazyLoadReference<>);
+            IsUnityObject = typeof(UnityEngine.Object).IsAssignableFrom(type);
 #endif
         }
     }

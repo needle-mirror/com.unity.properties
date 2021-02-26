@@ -47,7 +47,7 @@ namespace Unity.Properties
         /// <typeparam name="TDestination">The destination type to convert to.</typeparam>
         /// <returns>The value converted to the <typeparamref name="TDestination"/> type.</returns>
         /// <exception cref="InvalidOperationException">No converter is registered for the given types.</exception>
-        public static TDestination Convert<TSource, TDestination>(TSource value)
+        public static TDestination Convert<TSource, TDestination>(ref TSource value)
         {
             if (!TryConvert<TSource, TDestination>(value, out var destination))
             {
@@ -60,12 +60,25 @@ namespace Unity.Properties
         /// <summary>
         /// Converts the specified value from <typeparamref name="TSource"/> to <typeparamref name="TDestination"/>.
         /// </summary>
+        /// <param name="value">The source value to convert.</param>
+        /// <typeparam name="TSource">The source type to convert from.</typeparam>
+        /// <typeparam name="TDestination">The destination type to convert to.</typeparam>
+        /// <returns>The value converted to the <typeparamref name="TDestination"/> type.</returns>
+        /// <exception cref="InvalidOperationException">No converter is registered for the given types.</exception>
+        public static TDestination Convert<TSource, TDestination>(TSource value)
+        {
+            return Convert<TSource, TDestination>(ref value);
+        }
+        
+        /// <summary>
+        /// Converts the specified value from <typeparamref name="TSource"/> to <typeparamref name="TDestination"/>.
+        /// </summary>
         /// <param name="source">The source value to convert.</param>
         /// <param name="destination">When this method returns, contains the converted destination value if the conversion succeeded; otherwise, default.</param>
         /// <typeparam name="TSource">The source type to convert from.</typeparam>
         /// <typeparam name="TDestination">The destination type to convert to.</typeparam>
         ///<returns><see langword="true"/> if the conversion succeeded; otherwise, <see langword="false"/>.</returns>
-        public static bool TryConvert<TSource, TDestination>(TSource source, out TDestination destination)
+        public static bool TryConvert<TSource, TDestination>(ref TSource source, out TDestination destination)
         {
             if (null != Converter<TSource, TDestination>.Convert)
             {
@@ -87,15 +100,21 @@ namespace Unity.Properties
             }
 
 #if !UNITY_DOTSPLAYER
-            if (TryConvertToUnityEngineObject(source, out destination))
+            if (RuntimeTypeInfoCache<TDestination>.IsUnityObject)
             {
-                return true;
+                if (TryConvertToUnityEngineObject(ref source, out destination))
+                {
+                    return true;
+                }
             }
 #endif
-            
-            if (TryConvertToEnum(source, out destination))
+
+            if (RuntimeTypeInfoCache<TDestination>.IsEnum)
             {
-                return true;
+                if (TryConvertToEnum(ref source, out destination))
+                {
+                    return true;
+                }
             }
 
             // Could be boxing :(
@@ -114,10 +133,22 @@ namespace Unity.Properties
             destination = default;
             return false;
         }
-
+        
+        /// <summary>
+        /// Converts the specified value from <typeparamref name="TSource"/> to <typeparamref name="TDestination"/>.
+        /// </summary>
+        /// <param name="source">The source value to convert.</param>
+        /// <param name="destination">When this method returns, contains the converted destination value if the conversion succeeded; otherwise, default.</param>
+        /// <typeparam name="TSource">The source type to convert from.</typeparam>
+        /// <typeparam name="TDestination">The destination type to convert to.</typeparam>
+        ///<returns><see langword="true"/> if the conversion succeeded; otherwise, <see langword="false"/>.</returns>
+        public static bool TryConvert<TSource, TDestination>(TSource source, out TDestination destination)
+        {
+            return TryConvert(ref source, out destination);
+        }
 
 #if !UNITY_DOTSPLAYER
-        static bool TryConvertToUnityEngineObject<TSource, TDestination>(TSource source, out TDestination destination)
+        static bool TryConvertToUnityEngineObject<TSource, TDestination>(ref TSource source, out TDestination destination)
         {
             if (!typeof(UnityEngine.Object).IsAssignableFrom(typeof(TDestination)))
             {
@@ -158,7 +189,7 @@ namespace Unity.Properties
         }
 #endif
 
-        static bool TryConvertToEnum<TSource, TDestination>(TSource source, out TDestination destination)
+        static bool TryConvertToEnum<TSource, TDestination>(ref TSource source, out TDestination destination)
         {
             if (!typeof(TDestination).IsEnum)
             {
@@ -194,31 +225,32 @@ namespace Unity.Properties
             switch (sourceTypeCode)
             {
                 case TypeCode.UInt64:
+                    var uLongValue = Convert<TSource, ulong>(ref source);
                     switch (destinationTypeCode)
-                    {
+                    { 
                         case TypeCode.Int32:
-                            destination = (TDestination) (object) Convert<ulong, int>(Convert<TSource, ulong>(source));
+                            destination = (TDestination) (object) Convert<ulong, int>(ref uLongValue);
                             break;
                         case TypeCode.Byte:
-                            destination = (TDestination) (object) Convert<ulong, byte>(Convert<TSource, ulong>(source));
+                            destination = (TDestination) (object) Convert<ulong, byte>(ref uLongValue);
                             break;
                         case TypeCode.Int16:
-                            destination = (TDestination) (object) Convert<ulong, short>(Convert<TSource, ulong>(source));
+                            destination = (TDestination) (object) Convert<ulong, short>(ref uLongValue);
                             break;
                         case TypeCode.Int64:
-                            destination = (TDestination) (object) Convert<ulong, long>(Convert<TSource, ulong>(source));
+                            destination = (TDestination) (object) Convert<ulong, long>(ref uLongValue);
                             break;
                         case TypeCode.SByte:
-                            destination = (TDestination) (object) Convert<ulong, sbyte>(Convert<TSource, ulong>(source));
+                            destination = (TDestination) (object) Convert<ulong, sbyte>(ref uLongValue);
                             break;
                         case TypeCode.UInt16:
-                            destination = (TDestination) (object) Convert<ulong, ushort>(Convert<TSource, ulong>(source));
+                            destination = (TDestination) (object) Convert<ulong, ushort>(ref uLongValue);
                             break;
                         case TypeCode.UInt32:
-                            destination = (TDestination) (object) Convert<ulong, uint>(Convert<TSource, ulong>(source));
+                            destination = (TDestination) (object) Convert<ulong, uint>(ref uLongValue);
                             break;
                         case TypeCode.UInt64:
-                            destination = (TDestination) (object) Convert<TSource, ulong>(source);
+                            destination = (TDestination) (object) Convert<TSource, ulong>(ref source);
                             break;
                         default:
                             destination = default;
@@ -227,31 +259,32 @@ namespace Unity.Properties
 
                     break;
                 case TypeCode.Int32:
+                    var intValue = Convert<TSource, int>(ref source);
                     switch (destinationTypeCode)
                     {
                         case TypeCode.Int32:
-                            destination = (TDestination) (object) Convert<TSource, int>(source);
+                            destination = (TDestination) (object) intValue;
                             break;
                         case TypeCode.Byte:
-                            destination = (TDestination) (object) Convert<int, byte>(Convert<TSource, int>(source));
+                            destination = (TDestination) (object) Convert<int, byte>(ref intValue);
                             break;
                         case TypeCode.Int16:
-                            destination = (TDestination) (object) Convert<int, short>(Convert<TSource, int>(source));
+                            destination = (TDestination) (object) Convert<int, short>(ref intValue);
                             break;
                         case TypeCode.Int64:
-                            destination = (TDestination) (object) Convert<int, long>(Convert<TSource, int>(source));
+                            destination = (TDestination) (object) Convert<int, long>(ref intValue);
                             break;
                         case TypeCode.SByte:
-                            destination = (TDestination) (object) Convert<int, sbyte>(Convert<TSource, int>(source));
+                            destination = (TDestination) (object) Convert<int, sbyte>(ref intValue);
                             break;
                         case TypeCode.UInt16:
-                            destination = (TDestination) (object) Convert<int, ushort>(Convert<TSource, int>(source));
+                            destination = (TDestination) (object) Convert<int, ushort>(ref intValue);
                             break;
                         case TypeCode.UInt32:
-                            destination = (TDestination) (object) Convert<int, uint>(Convert<TSource, int>(source));
+                            destination = (TDestination) (object) Convert<int, uint>(ref intValue);
                             break;
                         case TypeCode.UInt64:
-                            destination = (TDestination) (object) Convert<int, ulong>(Convert<TSource, int>(source));
+                            destination = (TDestination) (object) Convert<int, ulong>(ref intValue);
                             break;
                         default:
                             destination = default;
@@ -260,31 +293,32 @@ namespace Unity.Properties
 
                     break;
                 case TypeCode.Byte:
+                    var byteValue = Convert<TSource, byte>(ref source);
                     switch (destinationTypeCode)
                     {
                         case TypeCode.Byte:
-                            destination = (TDestination) (object) Convert<TSource, byte>(source);
+                            destination = (TDestination) (object) byteValue;
                             break;
                         case TypeCode.Int16:
-                            destination = (TDestination) (object) Convert<byte, short>(Convert<TSource, byte>(source));
+                            destination = (TDestination) (object) Convert<byte, short>(ref byteValue);
                             break;
                         case TypeCode.Int32:
-                            destination = (TDestination) (object) Convert<byte, int>(Convert<TSource, byte>(source));
+                            destination = (TDestination) (object) Convert<byte, int>(ref byteValue);
                             break;
                         case TypeCode.Int64:
-                            destination = (TDestination) (object) Convert<byte, long>(Convert<TSource, byte>(source));
+                            destination = (TDestination) (object) Convert<byte, long>(ref byteValue);
                             break;
                         case TypeCode.SByte:
-                            destination = (TDestination) (object) Convert<byte, sbyte>(Convert<TSource, byte>(source));
+                            destination = (TDestination) (object) Convert<byte, sbyte>(ref byteValue);
                             break;
                         case TypeCode.UInt16:
-                            destination = (TDestination) (object) Convert<byte, ushort>(Convert<TSource, byte>(source));
+                            destination = (TDestination) (object) Convert<byte, ushort>(ref byteValue);
                             break;
                         case TypeCode.UInt32:
-                            destination = (TDestination) (object) Convert<byte, uint>(Convert<TSource, byte>(source));
+                            destination = (TDestination) (object) Convert<byte, uint>(ref byteValue);
                             break;
                         case TypeCode.UInt64:
-                            destination = (TDestination) (object) Convert<byte, ulong>(Convert<TSource, byte>(source));
+                            destination = (TDestination) (object) Convert<byte, ulong>(ref byteValue);
                             break;
                         default:
                             destination = default;
@@ -293,31 +327,32 @@ namespace Unity.Properties
 
                     break;
                 case TypeCode.SByte:
+                    var sByteValue = Convert<TSource, sbyte>(ref source);
                     switch (destinationTypeCode)
                     {
                         case TypeCode.Byte:
-                            destination = (TDestination) (object) Convert<sbyte, byte>(Convert<TSource, sbyte>(source));
+                            destination = (TDestination) (object) Convert<sbyte, byte>(ref sByteValue);
                             break;
                         case TypeCode.Int16:
-                            destination = (TDestination) (object) Convert<sbyte, short>(Convert<TSource, sbyte>(source));
+                            destination = (TDestination) (object) Convert<sbyte, short>(ref sByteValue);
                             break;
                         case TypeCode.Int32:
-                            destination = (TDestination) (object) Convert<sbyte, int>(Convert<TSource, sbyte>(source));
+                            destination = (TDestination) (object) Convert<sbyte, int>(ref sByteValue);
                             break;
                         case TypeCode.Int64:
-                            destination = (TDestination) (object) Convert<sbyte, long>(Convert<TSource, sbyte>(source));
+                            destination = (TDestination) (object) Convert<sbyte, long>(ref sByteValue);
                             break;
                         case TypeCode.SByte:
-                            destination = (TDestination) (object) Convert<TSource, sbyte>(source);
+                            destination = (TDestination) (object) sByteValue;
                             break;
                         case TypeCode.UInt16:
-                            destination = (TDestination) (object) Convert<sbyte, ushort>(Convert<TSource, sbyte>(source));
+                            destination = (TDestination) (object) Convert<sbyte, ushort>(ref sByteValue);
                             break;
                         case TypeCode.UInt32:
-                            destination = (TDestination) (object) Convert<sbyte, uint>(Convert<TSource, sbyte>(source));
+                            destination = (TDestination) (object) Convert<sbyte, uint>(ref sByteValue);
                             break;
                         case TypeCode.UInt64:
-                            destination = (TDestination) (object) Convert<sbyte, ulong>(Convert<TSource, sbyte>(source));
+                            destination = (TDestination) (object) Convert<sbyte, ulong>(ref sByteValue);
                             break;
                         default:
                             destination = default;
@@ -326,31 +361,32 @@ namespace Unity.Properties
 
                     break;
                 case TypeCode.Int16:
+                    var shortValue = Convert<TSource, short>(ref source);
                     switch (destinationTypeCode)
                     {
                         case TypeCode.Byte:
-                            destination = (TDestination) (object) Convert<short, byte>(Convert<TSource, short>(source));
+                            destination = (TDestination) (object) Convert<short, byte>(ref shortValue);
                             break;
                         case TypeCode.Int16:
-                            destination = (TDestination) (object) Convert<TSource, short>(source);
+                            destination = (TDestination) (object) shortValue;
                             break;
                         case TypeCode.Int32:
-                            destination = (TDestination) (object) Convert<short, int>(Convert<TSource, short>(source));
+                            destination = (TDestination) (object) Convert<short, int>(ref shortValue);
                             break;
                         case TypeCode.Int64:
-                            destination = (TDestination) (object) Convert<short, long>(Convert<TSource, short>(source));
+                            destination = (TDestination) (object) Convert<short, long>(ref shortValue);
                             break;
                         case TypeCode.SByte:
-                            destination = (TDestination) (object) Convert<short, sbyte>(Convert<TSource, short>(source));
+                            destination = (TDestination) (object) Convert<short, sbyte>(ref shortValue);
                             break;
                         case TypeCode.UInt16:
-                            destination = (TDestination) (object) Convert<short, ushort>(Convert<TSource, short>(source));
+                            destination = (TDestination) (object) Convert<short, ushort>(ref shortValue);
                             break;
                         case TypeCode.UInt32:
-                            destination = (TDestination) (object) Convert<short, uint>(Convert<TSource, short>(source));
+                            destination = (TDestination) (object) Convert<short, uint>(ref shortValue);
                             break;
                         case TypeCode.UInt64:
-                            destination = (TDestination) (object) Convert<short, ulong>(Convert<TSource, short>(source));
+                            destination = (TDestination) (object) Convert<short, ulong>(ref shortValue);
                             break;
                         default:
                             destination = default;
@@ -359,31 +395,32 @@ namespace Unity.Properties
 
                     break;
                 case TypeCode.UInt16:
+                    var uShortValue = Convert<TSource, ushort>(ref source);
                     switch (destinationTypeCode)
                     {
                         case TypeCode.Byte:
-                            destination = (TDestination) (object) Convert<ushort, byte>(Convert<TSource, ushort>(source));
+                            destination = (TDestination) (object) Convert<ushort, byte>(ref uShortValue);
                             break;
                         case TypeCode.Int16:
-                            destination = (TDestination) (object) Convert<ushort, short>(Convert<TSource, ushort>(source));
+                            destination = (TDestination) (object) Convert<ushort, short>(ref uShortValue);
                             break;
                         case TypeCode.Int32:
-                            destination = (TDestination) (object) Convert<ushort, int>(Convert<TSource, ushort>(source));
+                            destination = (TDestination) (object) Convert<ushort, int>(ref uShortValue);
                             break;
                         case TypeCode.Int64:
-                            destination = (TDestination) (object) Convert<ushort, long>(Convert<TSource, ushort>(source));
+                            destination = (TDestination) (object) Convert<ushort, long>(ref uShortValue);
                             break;
                         case TypeCode.SByte:
-                            destination = (TDestination) (object) Convert<ushort, sbyte>(Convert<TSource, ushort>(source));
+                            destination = (TDestination) (object) Convert<ushort, sbyte>(ref uShortValue);
                             break;
                         case TypeCode.UInt16:
-                            destination = (TDestination) (object) Convert<TSource, ushort>(source);
+                            destination = (TDestination) (object) uShortValue;
                             break;
                         case TypeCode.UInt32:
-                            destination = (TDestination) (object) Convert<ushort, uint>(Convert<TSource, ushort>(source));
+                            destination = (TDestination) (object) Convert<ushort, uint>(ref uShortValue);
                             break;
                         case TypeCode.UInt64:
-                            destination = (TDestination) (object) Convert<ushort, ulong>(Convert<TSource, ushort>(source));
+                            destination = (TDestination) (object) Convert<ushort, ulong>(ref uShortValue);
                             break;
                         default:
                             destination = default;
@@ -392,31 +429,32 @@ namespace Unity.Properties
 
                     break;
                 case TypeCode.UInt32:
+                    var uintValue = Convert<TSource, uint>(ref source);
                     switch (destinationTypeCode)
                     {
                         case TypeCode.Byte:
-                            destination = (TDestination) (object) Convert<uint, byte>(Convert<TSource, uint>(source));
+                            destination = (TDestination) (object) Convert<uint, byte>(ref uintValue);
                             break;
                         case TypeCode.Int16:
-                            destination = (TDestination) (object) Convert<uint, short>(Convert<TSource, uint>(source));
+                            destination = (TDestination) (object) Convert<uint, short>(ref uintValue);
                             break;
                         case TypeCode.Int32:
-                            destination = (TDestination) (object) Convert<uint, int>(Convert<TSource, uint>(source));
+                            destination = (TDestination) (object) Convert<uint, int>(ref uintValue);
                             break;
                         case TypeCode.Int64:
-                            destination = (TDestination) (object) Convert<uint, long>(Convert<TSource, uint>(source));
+                            destination = (TDestination) (object) Convert<uint, long>(ref uintValue);
                             break;
                         case TypeCode.SByte:
-                            destination = (TDestination) (object) Convert<uint, sbyte>(Convert<TSource, uint>(source));
+                            destination = (TDestination) (object) Convert<uint, sbyte>(ref uintValue);
                             break;
                         case TypeCode.UInt16:
-                            destination = (TDestination) (object) Convert<uint, ushort>(Convert<TSource, uint>(source));
+                            destination = (TDestination) (object) Convert<uint, ushort>(ref uintValue);
                             break;
                         case TypeCode.UInt32:
-                            destination = (TDestination) (object) Convert<TSource, uint>(source);
+                            destination = (TDestination) (object) uintValue;
                             break;
                         case TypeCode.UInt64:
-                            destination = (TDestination) (object) Convert<uint, ulong>(Convert<TSource, uint>(source));
+                            destination = (TDestination) (object) Convert<uint, ulong>(ref uintValue);
                             break;
                         default:
                             destination = default;
@@ -425,31 +463,32 @@ namespace Unity.Properties
 
                     break;
                 case TypeCode.Int64:
+                    var longValue = Convert<TSource, long>(ref source);
                     switch (destinationTypeCode)
                     {
                         case TypeCode.Byte:
-                            destination = (TDestination) (object) Convert<long, byte>(Convert<TSource, long>(source));
+                            destination = (TDestination) (object) Convert<long, byte>(ref longValue);
                             break;
                         case TypeCode.Int16:
-                            destination = (TDestination) (object) Convert<long, short>(Convert<TSource, long>(source));
+                            destination = (TDestination) (object) Convert<long, short>(ref longValue);
                             break;
                         case TypeCode.Int32:
-                            destination = (TDestination) (object) Convert<long, int>(Convert<TSource, long>(source));
+                            destination = (TDestination) (object) Convert<long, int>(ref longValue);
                             break;
                         case TypeCode.Int64:
-                            destination = (TDestination) (object) Convert<long, long>(Convert<TSource, long>(source));
+                            destination = (TDestination) (object) Convert<long, long>(ref longValue);
                             break;
                         case TypeCode.SByte:
-                            destination = (TDestination) (object) Convert<TSource, sbyte>(source);
+                            destination = (TDestination) (object) longValue;
                             break;
                         case TypeCode.UInt16:
-                            destination = (TDestination) (object) Convert<long, ushort>(Convert<TSource, long>(source));
+                            destination = (TDestination) (object) Convert<long, ushort>(ref longValue);
                             break;
                         case TypeCode.UInt32:
-                            destination = (TDestination) (object) Convert<long, uint>(Convert<TSource, long>(source));
+                            destination = (TDestination) (object) Convert<long, uint>(ref longValue);
                             break;
                         case TypeCode.UInt64:
-                            destination = (TDestination) (object) Convert<long, ulong>(Convert<TSource, long>(source));
+                            destination = (TDestination) (object) Convert<long, ulong>(ref longValue);
                             break;
                         default:
                             destination = default;
@@ -734,7 +773,7 @@ namespace Unity.Properties
                         return r;
                     
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, bool>(fromDouble)
+                        ? Convert<double, bool>(ref fromDouble)
                         : default;
                 };
                 Converter<bool, string>.Convert = v => v.ToString();
@@ -744,7 +783,7 @@ namespace Unity.Properties
                         return r;
                     
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, sbyte>(fromDouble)
+                        ? Convert<double, sbyte>(ref fromDouble)
                         : default;
                 };
                 Converter<sbyte, string>.Convert = v => v.ToString();
@@ -754,7 +793,7 @@ namespace Unity.Properties
                         return r;
                     
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, short>(fromDouble)
+                        ? Convert<double, short>(ref fromDouble)
                         : default;
                 };
                 Converter<short, string>.Convert = v => v.ToString();
@@ -764,7 +803,7 @@ namespace Unity.Properties
                         return r;
                     
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, int>(fromDouble)
+                        ? Convert<double, int>(ref fromDouble)
                         : default;
                 };
                 Converter<int, string>.Convert = v => v.ToString();
@@ -774,7 +813,7 @@ namespace Unity.Properties
                         return r;
                     
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, long>(fromDouble)
+                        ? Convert<double, long>(ref fromDouble)
                         : default;
                 };
                 Converter<long, string>.Convert = v => v.ToString();
@@ -784,7 +823,7 @@ namespace Unity.Properties
                         return r;
                     
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, byte>(fromDouble)
+                        ? Convert<double, byte>(ref fromDouble)
                         : default;
                 };
                 Converter<byte, string>.Convert = v => v.ToString();
@@ -794,7 +833,7 @@ namespace Unity.Properties
                         return r;
                     
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, ushort>(fromDouble)
+                        ? Convert<double, ushort>(ref fromDouble)
                         : default;
                 };
                 Converter<ushort, string>.Convert = v => v.ToString();
@@ -804,7 +843,7 @@ namespace Unity.Properties
                         return r;
                     
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, uint>(fromDouble)
+                        ? Convert<double, uint>(ref fromDouble)
                         : default;
                 };
                 Converter<uint, string>.Convert = v => v.ToString();
@@ -816,7 +855,7 @@ namespace Unity.Properties
                     }
 
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, ulong>(fromDouble)
+                        ? Convert<double, ulong>(ref fromDouble)
                         : default;
                 };
                 Converter<ulong, string>.Convert = v => v.ToString();
@@ -826,7 +865,7 @@ namespace Unity.Properties
                         return r;
                     
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, float>(fromDouble)
+                        ? Convert<double, float>(ref fromDouble)
                         : default;
                 };
                 Converter<float, string>.Convert = v => v.ToString(CultureInfo.InvariantCulture);

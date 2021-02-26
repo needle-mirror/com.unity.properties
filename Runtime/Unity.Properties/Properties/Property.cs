@@ -135,7 +135,7 @@ namespace Unity.Properties
         /// <inheritdoc/>
         bool IProperty<TContainer>.TrySetValue(ref TContainer container, object value)
         {
-            if (!TypeConversion.TryConvert(value, out TValue typed))
+            if (!TypeConversion.TryConvert(ref value, out TValue typed))
                 return false;
 
             SetValue(ref container, typed);
