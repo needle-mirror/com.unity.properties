@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.7.1] - 2021-08-05
+### Fixed
+* `TypeConversion` primitive converters now perform a direct C# cast instead of clamping.
+
 ## [1.7.0] - 2021-02-26
 ### Added
 * Added overloads to `TypeConversion.Convert` and `TypeConversion.TryConvert` to pass the source as a `ref` to avoid creating copies during conversion.

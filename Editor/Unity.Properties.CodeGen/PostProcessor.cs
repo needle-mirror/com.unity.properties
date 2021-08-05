@@ -32,7 +32,7 @@ namespace Unity.Properties.CodeGen
             // Exclude based on name.
             if (s_ExcludeIfAssemblyNameContains.Any(x => name.Contains(x))) return false;
             
-            var isEditor = compiledAssembly.Defines.Contains("UNITY_EDITOR");
+            var isEditor = compiledAssembly.Defines?.Contains("UNITY_EDITOR") ?? false;
             return !isEditor || Utility.ShouldGeneratePropertyBagsInEditor(compiledAssembly.Name);
         }
 

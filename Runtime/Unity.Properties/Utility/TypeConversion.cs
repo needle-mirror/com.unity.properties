@@ -1,10 +1,72 @@
 #if !NET_DOTS
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Unity.Properties.Internal;
 
 namespace Unity.Properties
 {
+    readonly struct ConversionRegistry
+    {
+        class ConverterKeyComparer : IEqualityComparer<ConverterKey>
+        {
+            public bool Equals(ConverterKey x, ConverterKey y)
+            {
+                return x.SourceType == y.SourceType && x.DestinationType == y.DestinationType;
+            }
+
+            public int GetHashCode(ConverterKey obj)
+            {
+                return ((obj.SourceType != null ? obj.SourceType.GetHashCode() : 0) * 397) ^ (obj.DestinationType != null ? obj.DestinationType.GetHashCode() : 0);
+            }
+        }
+
+        static readonly ConverterKeyComparer Comparer = new ConverterKeyComparer();
+
+        readonly struct ConverterKey
+        {
+            public readonly Type SourceType;
+            public readonly Type DestinationType;
+
+            public ConverterKey(Type source, Type destination)
+            {
+                SourceType = source;
+                DestinationType = destination;
+            }
+        }
+
+        readonly Dictionary<ConverterKey, Delegate> m_Converters;
+
+        ConversionRegistry(Dictionary<ConverterKey, Delegate> storage)
+        {
+            m_Converters = storage;
+        }
+
+        public static ConversionRegistry Create()
+        {
+            return new ConversionRegistry(new Dictionary<ConverterKey, Delegate>(Comparer));
+        }
+
+        public void Register(Type source, Type destination, Delegate converter)
+        {
+            m_Converters[new ConverterKey(source, destination)] = converter;
+        }
+
+        public Delegate GetConverter(Type source, Type destination)
+        {
+            var key = new ConverterKey(source, destination);
+            return m_Converters.TryGetValue(key, out var converter)
+                ? converter
+                : null;
+        }
+
+        public bool TryGetConverter(Type source, Type destination, out Delegate converter)
+        {
+            converter = GetConverter(source, destination);
+            return null != converter;
+        }
+    }
+
     /// <summary>
     /// Represents the method that will handle converting an object of type <typeparamref name="TSource"/> to an object of type <typeparamref name="TDestination"/>.
     /// </summary>
@@ -18,10 +80,9 @@ namespace Unity.Properties
     /// </summary>
     public static class TypeConversion
     {
-        struct Converter<TSource, TDestination>
-        {
-            public static ConvertDelegate<TSource, TDestination> Convert;
-        }
+        static readonly ConversionRegistry s_GlobalConverters = ConversionRegistry.Create();
+
+        internal static Func<string, (bool, UnityEngine.Object)> s_GlobalObjectIdConverter;
 
         static TypeConversion()
         {
@@ -31,13 +92,14 @@ namespace Unity.Properties
         /// <summary>
         /// Registers a new converter from <typeparamref name="TSource"/> to <typeparamref name="TDestination"/>.
         /// </summary>
-        /// <param name="convert"></param>
+        /// <param name="converter"></param>
         /// <typeparam name="TSource"></typeparam>
         /// <typeparam name="TDestination"></typeparam>
-        public static void Register<TSource, TDestination>(ConvertDelegate<TSource, TDestination> convert)
+        public static void Register<TSource, TDestination>(ConvertDelegate<TSource, TDestination> converter)
         {
-            Converter<TSource, TDestination>.Convert = convert;
+            s_GlobalConverters.Register(typeof(TSource), typeof(TDestination), converter);
         }
+
 
         /// <summary>
         /// Converts the specified value from <typeparamref name="TSource"/> to <typeparamref name="TDestination"/>.
@@ -80,9 +142,9 @@ namespace Unity.Properties
         ///<returns><see langword="true"/> if the conversion succeeded; otherwise, <see langword="false"/>.</returns>
         public static bool TryConvert<TSource, TDestination>(ref TSource source, out TDestination destination)
         {
-            if (null != Converter<TSource, TDestination>.Convert)
+            if (s_GlobalConverters.TryGetConverter(typeof(TSource), typeof(TDestination), out var converter))
             {
-                destination = Converter<TSource, TDestination>.Convert(source);
+                destination = ((ConvertDelegate<TSource, TDestination>) converter)(source);
                 return true;
             }
 
@@ -539,205 +601,205 @@ namespace Unity.Properties
 
             static void RegisterInt8Converters()
             {
-                Converter<sbyte, char>.Convert = v => (char) Clamp(v, char.MinValue, char.MaxValue);
-                Converter<sbyte, bool>.Convert = v => v != 0;
-                Converter<sbyte, sbyte>.Convert = v => (sbyte) v;
-                Converter<sbyte, short>.Convert = v => (short) Clamp(v, short.MinValue, short.MaxValue);
-                Converter<sbyte, int>.Convert = v => (int) v;
-                Converter<sbyte, long>.Convert = v => (long) v;
-                Converter<sbyte, byte>.Convert = v => (byte) v;
-                Converter<sbyte, ushort>.Convert = v => (ushort) v;
-                Converter<sbyte, uint>.Convert = v => (uint) Clamp(v, uint.MinValue, uint.MaxValue);
-                Converter<sbyte, ulong>.Convert = v => (ulong) Clamp(v, ulong.MinValue, ulong.MaxValue);
-                Converter<sbyte, float>.Convert = v => (float) v;
-                Converter<sbyte, double>.Convert = v => (double) v;
-                Converter<sbyte, object>.Convert = v => (object) v;
+                TypeConversion.Register((sbyte v) => (char) v);
+                TypeConversion.Register((sbyte v) => v != 0);
+                TypeConversion.Register((sbyte v) => (sbyte) v);
+                TypeConversion.Register((sbyte v) => (short) v);
+                TypeConversion.Register((sbyte v) => (int) v);
+                TypeConversion.Register((sbyte v) => (long) v);
+                TypeConversion.Register((sbyte v) => (byte) v);
+                TypeConversion.Register((sbyte v) => (ushort) v);
+                TypeConversion.Register((sbyte v) => (uint) v);
+                TypeConversion.Register((sbyte v) => (ulong) v);
+                TypeConversion.Register((sbyte v) => (float) v);
+                TypeConversion.Register((sbyte v) => (double) v);
+                TypeConversion.Register((sbyte v) => (object) v);
             }
 
             static void RegisterInt16Converters()
             {
-                Converter<short, char>.Convert = v => (char) Clamp(v, char.MinValue, char.MaxValue);
-                Converter<short, bool>.Convert = v => v != 0;
-                Converter<short, sbyte>.Convert = v =>  (sbyte) Clamp(v, sbyte.MinValue, sbyte.MaxValue);
-                Converter<short, short>.Convert = v => (short) v;
-                Converter<short, int>.Convert = v => (int) v;
-                Converter<short, long>.Convert = v => (long) v;
-                Converter<short, byte>.Convert = v => (byte) v;
-                Converter<short, ushort>.Convert = v => (ushort) v;
-                Converter<short, uint>.Convert = v => (uint) Clamp(v, uint.MinValue, uint.MaxValue);
-                Converter<short, ulong>.Convert = v =>  (ulong) Clamp(v, ulong.MinValue, ulong.MaxValue);
-                Converter<short, float>.Convert = v => (float) v;
-                Converter<short, double>.Convert = v => (double) v;
-                Converter<short, object>.Convert = v => (object) v;
+                TypeConversion.Register((short v) => (char) v);
+                TypeConversion.Register((short v) => v != 0);
+                TypeConversion.Register((short v) =>  (sbyte) v);
+                TypeConversion.Register((short v) => (short) v);
+                TypeConversion.Register((short v) => (int) v);
+                TypeConversion.Register((short v) => (long) v);
+                TypeConversion.Register((short v) => (byte) v);
+                TypeConversion.Register((short v) => (ushort) v);
+                TypeConversion.Register((short v) => (uint) v);
+                TypeConversion.Register((short v) =>  (ulong) v);
+                TypeConversion.Register((short v) => (float) v);
+                TypeConversion.Register((short v) => (double) v);
+                TypeConversion.Register((short v) => (object) v);
             }
 
             static void RegisterInt32Converters()
-            {
-                Converter<int, char>.Convert = v => (char) Clamp(v, char.MinValue, char.MaxValue);
-                Converter<int, bool>.Convert = v => v != 0;
-                Converter<int, sbyte>.Convert = v => (sbyte) Clamp(v, sbyte.MinValue, sbyte.MaxValue);
-                Converter<int, short>.Convert = v => (short) Clamp(v, short.MinValue, short.MaxValue);
-                Converter<int, int>.Convert = v => (int) v;
-                Converter<int, long>.Convert = v => (long) v;
-                Converter<int, byte>.Convert = v => (byte) Clamp(v, byte.MinValue, byte.MaxValue);
-                Converter<int, ushort>.Convert = v => (ushort) Clamp(v, ushort.MinValue, ushort.MaxValue);
-                Converter<int, uint>.Convert = v => (uint) Clamp(v, uint.MinValue, uint.MaxValue);
-                Converter<int, ulong>.Convert = v => (ulong) Clamp(v, ulong.MinValue, ulong.MaxValue);
-                Converter<int, float>.Convert = v => (float) v;
-                Converter<int, double>.Convert = v => (double) v;
-                Converter<int, object>.Convert = v => (object) v;
+            { 
+                TypeConversion.Register((int v) => (char) v);
+                TypeConversion.Register((int v) => v != 0);
+                TypeConversion.Register((int v) => (sbyte) v);
+                TypeConversion.Register((int v) => (short) v);
+                TypeConversion.Register((int v) => (int) v);
+                TypeConversion.Register((int v) => (long) v);
+                TypeConversion.Register((int v) => (byte) v);
+                TypeConversion.Register((int v) => (ushort) v);
+                TypeConversion.Register((int v) => (uint) v);
+                TypeConversion.Register((int v) => (ulong) v);
+                TypeConversion.Register((int v) => (float) v);
+                TypeConversion.Register((int v) => (double) v);
+                TypeConversion.Register((int v) => (object) v);
             }
 
             static void RegisterInt64Converters()
             {
-                Converter<long, char>.Convert = v => (char) Clamp(v, char.MinValue, char.MaxValue);
-                Converter<long, bool>.Convert = v => v != 0;
-                Converter<long, sbyte>.Convert = v => (sbyte) Clamp(v, sbyte.MinValue, sbyte.MaxValue);
-                Converter<long, short>.Convert = v => (short) Clamp(v, short.MinValue, short.MaxValue);
-                Converter<long, int>.Convert = v => (int) Clamp(v, int.MinValue, int.MaxValue);
-                Converter<long, long>.Convert = v => (long) v;
-                Converter<long, byte>.Convert = v => (byte) Clamp(v, byte.MinValue, byte.MaxValue);
-                Converter<long, ushort>.Convert = v => (ushort) Clamp(v, ushort.MinValue, ushort.MaxValue);
-                Converter<long, uint>.Convert = v => (uint) Clamp(v, uint.MinValue, uint.MaxValue);
-                Converter<long, ulong>.Convert = v => (ulong) Clamp(v, ulong.MinValue, ulong.MaxValue);
-                Converter<long, float>.Convert = v => (float) v;
-                Converter<long, double>.Convert = v => (double) v;
-                Converter<long, object>.Convert = v => (object) v;
+                TypeConversion.Register((long v) => (char) v);
+                TypeConversion.Register((long v) => v != 0);
+                TypeConversion.Register((long v) => (sbyte) v);
+                TypeConversion.Register((long v) => (short) v);
+                TypeConversion.Register((long v) => (int) v);
+                TypeConversion.Register((long v) => (long) v);
+                TypeConversion.Register((long v) => (byte) v);
+                TypeConversion.Register((long v) => (ushort) v);
+                TypeConversion.Register((long v) => (uint) v);
+                TypeConversion.Register((long v) => (ulong) v);
+                TypeConversion.Register((long v) => (float) v);
+                TypeConversion.Register((long v) => (double) v);
+                TypeConversion.Register((long v) => (object) v);
             }
 
             static void RegisterUInt8Converters()
             {
-                Converter<byte, char>.Convert = v => (char) Clamp(v, char.MinValue, char.MaxValue);
-                Converter<byte, bool>.Convert = v => v != 0;
-                Converter<byte, sbyte>.Convert = v => (sbyte) Clamp(v, 0, sbyte.MaxValue);
-                Converter<byte, short>.Convert = v => (short) v;
-                Converter<byte, int>.Convert = v => (int) v;
-                Converter<byte, long>.Convert = v => (long) v;
-                Converter<byte, byte>.Convert = v => (byte) v;
-                Converter<byte, ushort>.Convert = v => (ushort) v;
-                Converter<byte, uint>.Convert = v => (uint) v;
-                Converter<byte, ulong>.Convert = v => (ulong) v;
-                Converter<byte, float>.Convert = v => (float) v;
-                Converter<byte, double>.Convert = v => (double) v;
-                Converter<byte, object>.Convert = v => (object) v;
+                TypeConversion.Register((byte v) => (char) v);
+                TypeConversion.Register((byte v) => v != 0);
+                TypeConversion.Register((byte v) => (sbyte) v);
+                TypeConversion.Register((byte v) => (short) v);
+                TypeConversion.Register((byte v) => (int) v);
+                TypeConversion.Register((byte v) => (long) v);
+                TypeConversion.Register((byte v) => (byte) v);
+                TypeConversion.Register((byte v) => (ushort) v);
+                TypeConversion.Register((byte v) => (uint) v);
+                TypeConversion.Register((byte v) => (ulong) v);
+                TypeConversion.Register((byte v) => (float) v);
+                TypeConversion.Register((byte v) => (double) v);
+                TypeConversion.Register((byte v) => (object) v);
             }
 
             static void RegisterUInt16Converters()
             {
-                Converter<ushort, char>.Convert = v => (char) Clamp(v, char.MinValue, char.MaxValue);
-                Converter<ushort, bool>.Convert = v => v != 0;
-                Converter<ushort, sbyte>.Convert = v => (sbyte) Clamp(v, 0, sbyte.MaxValue);
-                Converter<ushort, short>.Convert = v => (short) Clamp(v, 0, short.MaxValue);
-                Converter<ushort, int>.Convert = v => (int) v;
-                Converter<ushort, long>.Convert = v => (long) v;
-                Converter<ushort, byte>.Convert = v => (byte) Clamp(v, byte.MinValue, byte.MaxValue);
-                Converter<ushort, ushort>.Convert = v => (ushort) v;
-                Converter<ushort, uint>.Convert = v => (uint) v;
-                Converter<ushort, ulong>.Convert = v => (ulong) v;
-                Converter<ushort, float>.Convert = v => (float) v;
-                Converter<ushort, double>.Convert = v => (double) v;
-                Converter<ushort, object>.Convert = v => (object) v;
+                TypeConversion.Register((ushort v) => (char) v);
+                TypeConversion.Register((ushort v) => v != 0);
+                TypeConversion.Register((ushort v) => (sbyte) v);
+                TypeConversion.Register((ushort v) => (short) v);
+                TypeConversion.Register((ushort v) => (int) v);
+                TypeConversion.Register((ushort v) => (long) v);
+                TypeConversion.Register((ushort v) => (byte) v);
+                TypeConversion.Register((ushort v) => (ushort) v);
+                TypeConversion.Register((ushort v) => (uint) v);
+                TypeConversion.Register((ushort v) => (ulong) v);
+                TypeConversion.Register((ushort v) => (float) v);
+                TypeConversion.Register((ushort v) => (double) v);
+                TypeConversion.Register((ushort v) => (object) v);
             }
 
             static void RegisterUInt32Converters()
             {
-                Converter<uint, char>.Convert = v => (char) Clamp(v, char.MinValue, char.MaxValue);
-                Converter<uint, bool>.Convert = v => v != 0;
-                Converter<uint, sbyte>.Convert = v => (sbyte) Clamp(v, 0, sbyte.MaxValue);
-                Converter<uint, short>.Convert = v => (short) Clamp(v, 0, short.MaxValue);
-                Converter<uint, int>.Convert = v => (int) Clamp(v, 0, int.MaxValue);
-                Converter<uint, long>.Convert = v => (long) Clamp(v, 0, long.MaxValue);
-                Converter<uint, byte>.Convert = v => (byte) Clamp(v, byte.MinValue, byte.MaxValue);
-                Converter<uint, ushort>.Convert = v => (ushort) Clamp(v, ushort.MinValue, ushort.MaxValue);
-                Converter<uint, uint>.Convert = v => (uint) v;
-                Converter<uint, ulong>.Convert = v => (ulong) v;
-                Converter<uint, float>.Convert = v => (float) v;
-                Converter<uint, double>.Convert = v => (double) v;
-                Converter<uint, object>.Convert = v => (object) v;
+                TypeConversion.Register((uint v) => (char) v);
+                TypeConversion.Register((uint v) => v != 0);
+                TypeConversion.Register((uint v) => (sbyte) v);
+                TypeConversion.Register((uint v) => (short) v);
+                TypeConversion.Register((uint v) => (int) v);
+                TypeConversion.Register((uint v) => (long) v);
+                TypeConversion.Register((uint v) => (byte) v);
+                TypeConversion.Register((uint v) => (ushort) v);
+                TypeConversion.Register((uint v) => (uint) v);
+                TypeConversion.Register((uint v) => (ulong) v);
+                TypeConversion.Register((uint v) => (float) v);
+                TypeConversion.Register((uint v) => (double) v);
+                TypeConversion.Register((uint v) => (object) v);
             }
 
             static void RegisterUInt64Converters()
             {
-                Converter<ulong, char>.Convert = v => (char) Clamp(v, char.MinValue, char.MaxValue);
-                Converter<ulong, bool>.Convert = v => v != 0;
-                Converter<ulong, sbyte>.Convert = v => (sbyte) Clamp(v, 0, sbyte.MaxValue);
-                Converter<ulong, short>.Convert = v => (short) Clamp(v, 0, short.MaxValue);
-                Converter<ulong, int>.Convert = v => (int) Clamp(v, 0, int.MaxValue);
-                Converter<ulong, long>.Convert = v => (long) Clamp(v, 0, long.MaxValue);
-                Converter<ulong, byte>.Convert = v => (byte) Clamp(v, byte.MinValue, byte.MaxValue);
-                Converter<ulong, ushort>.Convert = v => (ushort) Clamp(v, ushort.MinValue, ushort.MaxValue);
-                Converter<ulong, uint>.Convert = v => (uint) Clamp(v, uint.MinValue, uint.MaxValue);
-                Converter<ulong, ulong>.Convert = v => (ulong) v;
-                Converter<ulong, float>.Convert = v => (float) v;
-                Converter<ulong, double>.Convert = v => (double) v;
-                Converter<ulong, object>.Convert = v => (object) v;
-                Converter<ulong, string>.Convert = v => v.ToString();
+                TypeConversion.Register((ulong v) => (char) v);
+                TypeConversion.Register((ulong v) => v != 0);
+                TypeConversion.Register((ulong v) => (sbyte) v);
+                TypeConversion.Register((ulong v) => (short) v);
+                TypeConversion.Register((ulong v) => (int) v);
+                TypeConversion.Register((ulong v) => (long) v);
+                TypeConversion.Register((ulong v) => (byte) v);
+                TypeConversion.Register((ulong v) => (ushort) v);
+                TypeConversion.Register((ulong v) => (uint) v);
+                TypeConversion.Register((ulong v) => (ulong) v);
+                TypeConversion.Register((ulong v) => (float) v);
+                TypeConversion.Register((ulong v) => (double) v);
+                TypeConversion.Register((ulong v) => (object) v);
+                TypeConversion.Register((ulong v) => v.ToString());
             }
 
             static void RegisterFloat32Converters()
             {
-                Converter<float, char>.Convert = v => (char) Clamp(v, char.MinValue, char.MaxValue);
-                Converter<float, bool>.Convert = v => Math.Abs(v) > float.Epsilon;
-                Converter<float, sbyte>.Convert = v => (sbyte) Clamp(v, sbyte.MinValue, sbyte.MaxValue);
-                Converter<float, short>.Convert = v => (short) Clamp(v, short.MinValue, short.MaxValue);
-                Converter<float, int>.Convert = v => (int) Clamp(v, int.MinValue, int.MaxValue);
-                Converter<float, long>.Convert = v => (long) Clamp(v, long.MinValue, long.MaxValue);
-                Converter<float, byte>.Convert = v => (byte) Clamp(v, byte.MinValue, byte.MaxValue);
-                Converter<float, ushort>.Convert = v => (ushort) Clamp(v, ushort.MinValue, ushort.MaxValue);
-                Converter<float, uint>.Convert = v => (uint) Clamp(v, uint.MinValue, uint.MaxValue);
-                Converter<float, ulong>.Convert = v => (ulong) Clamp(v, ulong.MinValue, ulong.MaxValue);
-                Converter<float, float>.Convert = v => (float) v;
-                Converter<float, double>.Convert = v => (double) v;
-                Converter<float, object>.Convert = v => (object) v;
+                TypeConversion.Register((float v) => (char) v);
+                TypeConversion.Register((float v) => Math.Abs(v) > float.Epsilon);
+                TypeConversion.Register((float v) => (sbyte) v);
+                TypeConversion.Register((float v) => (short) v);
+                TypeConversion.Register((float v) => (int) v);
+                TypeConversion.Register((float v) => (long) v);
+                TypeConversion.Register((float v) => (byte) v);
+                TypeConversion.Register((float v) => (ushort) v);
+                TypeConversion.Register((float v) => (uint) v);
+                TypeConversion.Register((float v) => (ulong) v);
+                TypeConversion.Register((float v) => (float) v);
+                TypeConversion.Register((float v) => (double) v);
+                TypeConversion.Register((float v) => (object) v);
             }
 
             static void RegisterFloat64Converters()
             {
-                Converter<double, char>.Convert = v => (char) Clamp(v, char.MinValue, char.MaxValue);
-                Converter<double, bool>.Convert = v => Math.Abs(v) > double.Epsilon;
-                Converter<double, sbyte>.Convert = v => (sbyte) Clamp(v, sbyte.MinValue, sbyte.MaxValue);
-                Converter<double, short>.Convert = v => (short) Clamp(v, short.MinValue, short.MaxValue);
-                Converter<double, int>.Convert = v => (int) Clamp(v, int.MinValue, int.MaxValue);
-                Converter<double, long>.Convert = v => (long) Clamp(v, long.MinValue, long.MaxValue);
-                Converter<double, byte>.Convert = v => (byte) Clamp(v, byte.MinValue, byte.MaxValue);
-                Converter<double, ushort>.Convert = v => (ushort) Clamp(v, ushort.MinValue, ushort.MaxValue);
-                Converter<double, uint>.Convert = v => (uint) Clamp(v, uint.MinValue, uint.MaxValue);
-                Converter<double, ulong>.Convert = v => (ulong) Clamp(v, ulong.MinValue, ulong.MaxValue);
-                Converter<double, float>.Convert = v => (float) Clamp(v, float.MinValue, float.MaxValue);
-                Converter<double, double>.Convert = v => (double) v;
-                Converter<double, object>.Convert = v => (object) v;
+                TypeConversion.Register((double v) => (char) v);
+                TypeConversion.Register((double v) => Math.Abs(v) > double.Epsilon);
+                TypeConversion.Register((double v) => (sbyte) v);
+                TypeConversion.Register((double v) => (short) v);
+                TypeConversion.Register((double v) => (int) v);
+                TypeConversion.Register((double v) => (long) v);
+                TypeConversion.Register((double v) => (byte) v);
+                TypeConversion.Register((double v) => (ushort) v);
+                TypeConversion.Register((double v) => (uint) v);
+                TypeConversion.Register((double v) => (ulong) v);
+                TypeConversion.Register((double v) => (float) v);
+                TypeConversion.Register((double v) => (double) v);
+                TypeConversion.Register((double v) => (object) v);
             }
 
             static void RegisterBooleanConverters()
             {
-                Converter<bool, char>.Convert = v => v ? (char) 1 : (char) 0;
-                Converter<bool, bool>.Convert = v => v;
-                Converter<bool, sbyte>.Convert = v => v ? (sbyte) 1 : (sbyte) 0;
-                Converter<bool, short>.Convert = v => v ? (short) 1 : (short) 0;
-                Converter<bool, int>.Convert = v => v ? (int) 1 : (int) 0;
-                Converter<bool, long>.Convert = v => v ? (long) 1 : (long) 0;
-                Converter<bool, byte>.Convert = v => v ? (byte) 1 : (byte) 0;
-                Converter<bool, ushort>.Convert = v => v ? (ushort) 1 : (ushort) 0;
-                Converter<bool, uint>.Convert = v => v ? (uint) 1 : (uint) 0;
-                Converter<bool, ulong>.Convert = v => v ? (ulong) 1 : (ulong) 0;
-                Converter<bool, float>.Convert = v => v ? (float) 1 : (float) 0;
-                Converter<bool, double>.Convert = v => v ? (double) 1 : (double) 0;
-                Converter<bool, object>.Convert = v => (object) v;
+                TypeConversion.Register((bool v) => v ? (char) 1 : (char) 0);
+                TypeConversion.Register((bool v) => v);
+                TypeConversion.Register((bool v) => v ? (sbyte) 1 : (sbyte) 0);
+                TypeConversion.Register((bool v) => v ? (short) 1 : (short) 0);
+                TypeConversion.Register((bool v) => v ? (int) 1 : (int) 0);
+                TypeConversion.Register((bool v) => v ? (long) 1 : (long) 0);
+                TypeConversion.Register((bool v) => v ? (byte) 1 : (byte) 0);
+                TypeConversion.Register((bool v) => v ? (ushort) 1 : (ushort) 0);
+                TypeConversion.Register((bool v) => v ? (uint) 1 : (uint) 0);
+                TypeConversion.Register((bool v) => v ? (ulong) 1 : (ulong) 0);
+                TypeConversion.Register((bool v) => v ? (float) 1 : (float) 0);
+                TypeConversion.Register((bool v) => v ? (double) 1 : (double) 0);
+                TypeConversion.Register((bool v) => (object) v);
             }
             
             static void RegisterVectorConverters()
             {
 #if !UNITY_DOTSPLAYER
-                Converter<UnityEngine.Vector2, UnityEngine.Vector2Int>.Convert = v => new UnityEngine.Vector2Int((int)v.x, (int)v.y);
-                Converter<UnityEngine.Vector3, UnityEngine.Vector3Int>.Convert = v => new UnityEngine.Vector3Int((int)v.x, (int)v.y, (int)v.z);
-                Converter<UnityEngine.Vector2Int, UnityEngine.Vector2>.Convert = v => v;
-                Converter<UnityEngine.Vector3Int, UnityEngine.Vector3>.Convert = v => v;
+                TypeConversion.Register((UnityEngine.Vector2 v) => new UnityEngine.Vector2Int((int)v.x, (int)v.y));
+                TypeConversion.Register((UnityEngine.Vector3 v) => new UnityEngine.Vector3Int((int)v.x, (int)v.y, (int)v.z));
+                TypeConversion.Register((UnityEngine.Vector2Int v) => v);
+                TypeConversion.Register((UnityEngine.Vector3Int v) => v);
 #endif
             }
 
             static void RegisterCharConverters()
             {
-                Converter<string, char>.Convert = v =>
+                TypeConversion.Register((string v) =>
                 {
                     if (v.Length != 1)
                     {
@@ -745,109 +807,109 @@ namespace Unity.Properties
                     }
 
                     return v[0];
-                };
-                Converter<char, char>.Convert = v => v;
-                Converter<char, bool>.Convert = v => v != (char) 0;
-                Converter<char, sbyte>.Convert = v => (sbyte) v;
-                Converter<char, short>.Convert = v => (short) v;
-                Converter<char, int>.Convert = v => (int) v;
-                Converter<char, long>.Convert = v => (long) v;
-                Converter<char, byte>.Convert = v => (byte) v;
-                Converter<char, ushort>.Convert = v => (ushort) v;
-                Converter<char, uint>.Convert = v => (uint) v;
-                Converter<char, ulong>.Convert = v => (ulong) v;
-                Converter<char, float>.Convert = v => (float) v;
-                Converter<char, double>.Convert = v => (double) v;
-                Converter<char, object>.Convert = v => (object) v;
-                Converter<char, string>.Convert = v => v.ToString();
+                });
+                TypeConversion.Register((char v) => v);
+                TypeConversion.Register((char v) => v != (char) 0);
+                TypeConversion.Register((char v) => (sbyte) v);
+                TypeConversion.Register((char v) => (short) v);
+                TypeConversion.Register((char v) => (int) v);
+                TypeConversion.Register((char v) => (long) v);
+                TypeConversion.Register((char v) => (byte) v);
+                TypeConversion.Register((char v) => (ushort) v);
+                TypeConversion.Register((char v) => (uint) v);
+                TypeConversion.Register((char v) => (ulong) v);
+                TypeConversion.Register((char v) => (float) v);
+                TypeConversion.Register((char v) => (double) v);
+                TypeConversion.Register((char v) => (object) v);
+                TypeConversion.Register((char v) => v.ToString());
             }
 
-            static void RegisterStringConverters()
+static void RegisterStringConverters()
             {
-                Converter<string, string>.Convert = v => v;
-                Converter<string, char>.Convert = v => !string.IsNullOrEmpty(v) ? v[0] : '\0';
-                Converter<char, string>.Convert = v => v.ToString();
-                Converter<string, bool>.Convert = v =>
+                TypeConversion.Register((string v) => v);
+                TypeConversion.Register((string v) => !string.IsNullOrEmpty(v) ? v[0] : '\0');
+                TypeConversion.Register((char v) => v.ToString());
+                TypeConversion.Register((string v) =>
                 {
                     if (bool.TryParse(v, out var r))
                         return r;
-                    
+
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, bool>(ref fromDouble)
+                        ? Convert<double, bool>(fromDouble)
                         : default;
-                };
-                Converter<bool, string>.Convert = v => v.ToString();
-                Converter<string, sbyte>.Convert = v =>
+                });
+                TypeConversion.Register((bool v) => v.ToString());
+                TypeConversion.Register((string v) =>
                 {
                     if (sbyte.TryParse(v, out var r))
                         return r;
-                    
+
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, sbyte>(ref fromDouble)
+                        ? Convert<double, sbyte>(fromDouble)
                         : default;
-                };
-                Converter<sbyte, string>.Convert = v => v.ToString();
-                Converter<string, short>.Convert = v =>
+                });
+                TypeConversion.Register((sbyte v) => v.ToString());
+                TypeConversion.Register((string v) =>
                 {
                     if (short.TryParse(v, out var r))
                         return r;
-                    
+
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, short>(ref fromDouble)
+                        ? Convert<double, short>(fromDouble)
                         : default;
-                };
-                Converter<short, string>.Convert = v => v.ToString();
-                Converter<string, int>.Convert = v =>
+                });
+                TypeConversion.Register((short v) => v.ToString());
+                TypeConversion.Register((string v) =>
                 {
                     if (int.TryParse(v, out var r))
                         return r;
-                    
+
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, int>(ref fromDouble)
+                        ? Convert<double, int>(fromDouble)
                         : default;
-                };
-                Converter<int, string>.Convert = v => v.ToString();
-                Converter<string, long>.Convert = v =>
+                });
+                TypeConversion.Register((int v) => v.ToString());
+                TypeConversion.Register((string v) =>
                 {
                     if (long.TryParse(v, out var r))
                         return r;
-                    
+
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, long>(ref fromDouble)
+                        ? Convert<double, long>(fromDouble)
                         : default;
-                };
-                Converter<long, string>.Convert = v => v.ToString();
-                Converter<string, byte>.Convert = v =>
+                });
+                TypeConversion.Register((long v) => v.ToString());
+                TypeConversion.Register((string v) =>
                 {
                     if (byte.TryParse(v, out var r))
                         return r;
-                    
+
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, byte>(ref fromDouble)
+                        ? Convert<double, byte>(fromDouble)
                         : default;
-                };
-                Converter<byte, string>.Convert = v => v.ToString();
-                Converter<string, ushort>.Convert = v =>
+                });
+                TypeConversion.Register((byte v) => v.ToString());
+                TypeConversion.Register((string v) =>
                 {
                     if (ushort.TryParse(v, out var r))
                         return r;
-                    
+
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, ushort>(ref fromDouble)
+                        ? Convert<double, ushort>(fromDouble)
                         : default;
-                };
-                Converter<ushort, string>.Convert = v => v.ToString();
-                Converter<string, uint>.Convert = v =>
+                });
+                TypeConversion.Register((ushort v) => v.ToString());
+                TypeConversion.Register((string v) =>
                 {
                     if (uint.TryParse(v, out var r))
                         return r;
-                    
+
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, uint>(ref fromDouble)
+                        ? Convert<double, uint>(fromDouble)
                         : default;
-                };
-                Converter<uint, string>.Convert = v => v.ToString();
-                Converter<string, ulong>.Convert = v =>
+                });
+                TypeConversion.Register((uint v) => v.ToString());
+                TypeConversion.Register((string v) =>
                 {
                     if (ulong.TryParse(v, out var r))
                     {
@@ -855,53 +917,44 @@ namespace Unity.Properties
                     }
 
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, ulong>(ref fromDouble)
+                        ? Convert<double, ulong>(fromDouble)
                         : default;
-                };
-                Converter<ulong, string>.Convert = v => v.ToString();
-                Converter<string, float>.Convert = v =>
+                });
+                TypeConversion.Register((ulong v) => v.ToString());
+                TypeConversion.Register((string v) =>
                 {
                     if (float.TryParse(v, out var r))
                         return r;
-                    
+
                     return double.TryParse(v, out var fromDouble)
-                        ? Convert<double, float>(ref fromDouble)
+                        ? Convert<double, float>(fromDouble)
                         : default;
-                };
-                Converter<float, string>.Convert = v => v.ToString(CultureInfo.InvariantCulture);
-                Converter<string, double>.Convert = v =>
+                });
+                TypeConversion.Register((float v) => v.ToString(CultureInfo.InvariantCulture));
+                TypeConversion.Register((string v) =>
                 {
                     double.TryParse(v, out var r);
                     return r;
-                };
-                Converter<double, string>.Convert = v => v.ToString(CultureInfo.InvariantCulture);
-                Converter<string, object>.Convert = v => v;
+                });
+                TypeConversion.Register((double v) => v.ToString(CultureInfo.InvariantCulture));
+                TypeConversion.Register((string v) => v);
             }
 
             static void RegisterObjectConverters()
             {
-                Converter<object, char>.Convert = v => v is char value ? value : default;
-                Converter<object, bool>.Convert = v => v is bool value ? value : default;
-                Converter<object, sbyte>.Convert = v => v is sbyte value ? value : default;
-                Converter<object, short>.Convert = v => v is short value ? value : default;
-                Converter<object, int>.Convert = v => v is int value ? value : default;
-                Converter<object, long>.Convert = v => v is long value ? value : default;
-                Converter<object, byte>.Convert = v => v is byte value ? value : default;
-                Converter<object, ushort>.Convert = v => v is ushort value ? value : default;
-                Converter<object, uint>.Convert = v => v is uint value ? value : default;
-                Converter<object, ulong>.Convert = v => v is ulong value ? value : default;
-                Converter<object, float>.Convert = v => v is float value ? value : default;
-                Converter<object, double>.Convert = v => v is double value ? value : default;
-                Converter<object, object>.Convert = v => v;
-            } 
-            
-            static double Clamp(double value, double min, double max)
-            {
-                if (value < min)
-                    value = min;
-                else if (value > max)
-                    value = max;
-                return value;
+                TypeConversion.Register((object v) => v is char value ? value : default);
+                TypeConversion.Register((object v) => v is bool value ? value : default);
+                TypeConversion.Register((object v) => v is sbyte value ? value : default);
+                TypeConversion.Register((object v) => v is short value ? value : default);
+                TypeConversion.Register((object v) => v is int value ? value : default);
+                TypeConversion.Register((object v) => v is long value ? value : default);
+                TypeConversion.Register((object v) => v is byte value ? value : default);
+                TypeConversion.Register((object v) => v is ushort value ? value : default);
+                TypeConversion.Register((object v) => v is uint value ? value : default);
+                TypeConversion.Register((object v) => v is ulong value ? value : default);
+                TypeConversion.Register((object v) => v is float value ? value : default);
+                TypeConversion.Register((object v) => v is double value ? value : default);
+                TypeConversion.Register((object v) => v);
             }
         }
     }
