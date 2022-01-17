@@ -29,11 +29,14 @@ namespace Unity.Properties.CodeGen
         {
             var name = compiledAssembly.Name;
 
+            if (name == "Unity.Properties")
+                return false;
+
             // Exclude based on name.
             if (s_ExcludeIfAssemblyNameContains.Any(x => name.Contains(x))) return false;
             
             var isEditor = compiledAssembly.Defines?.Contains("UNITY_EDITOR") ?? false;
-            return !isEditor || Utility.ShouldGeneratePropertyBagsInEditor(compiledAssembly.Name);
+            return !isEditor;
         }
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)

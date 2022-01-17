@@ -9,37 +9,6 @@ namespace Unity.Properties.CodeGen
 {
     static class Utility
     {
-        static readonly GeneratePropertyBagsForTypesQualifiedWithAttribute[] s_AssemblyDefinedTypesQualifiedWithAttributes;
-        static readonly HashSet<string> s_AssembliesWithEditorCodeGenEnabled = new HashSet<string>();
-
-        static Utility()
-        {
-            s_AssemblyDefinedTypesQualifiedWithAttributes = AppDomain.CurrentDomain.GetAssemblies()
-                                                   .Where(a => !a.FullName.StartsWith("UnityEngine"))
-                                                   .Where(a => !a.FullName.StartsWith("UnityEditor"))
-                                                   .SelectMany(a => a.GetCustomAttributes<GeneratePropertyBagsForTypesQualifiedWithAttribute>())
-                                                   .ToArray();
-            
-            var assembliesWithEditorCodeGenEnabled = AppDomain.CurrentDomain.GetAssemblies()
-                                                           .Where(a => !a.FullName.StartsWith("UnityEngine"))
-                                                           .Where(a => !a.FullName.StartsWith("UnityEditor"))
-                                                           .Where(a => a.GetCustomAttributes<GeneratePropertyBagsInEditorAttribute>().Any())
-                                                           .Select(a => a.GetName().Name).ToArray();
-
-            foreach (var name in assembliesWithEditorCodeGenEnabled)
-                s_AssembliesWithEditorCodeGenEnabled.Add(name);
-        }
-
-        /// <summary>
-        /// Returns true if the given assembly has edit time property bag generation enabled.
-        /// </summary>
-        /// <param name="assemblyName">The full name of the assembly.</param>
-        /// <returns></returns>
-        internal static bool ShouldGeneratePropertyBagsInEditor(string assemblyName)
-        {
-            return s_AssembliesWithEditorCodeGenEnabled.Contains(assemblyName);
-        }
-
         /// <summary>
         /// We will be gathering types from all over, so we want to collapse TypeReferences that refer to the same types
         /// which a TypeDefinition does, however TypeReferences keep the generic specifications which we care about. As
@@ -110,11 +79,6 @@ namespace Unity.Properties.CodeGen
                 }
                 
                 if (type.HasCustomAttributes && type.CustomAttributes.Any(a => a.AttributeType.FullName == generatePropertyBagAttribute.FullName))
-                {
-                    yield return type;
-                }
-
-                if (type.Interfaces.Any(i => s_AssemblyDefinedTypesQualifiedWithAttributes.Any(a => i.InterfaceType.FullName == context.ImportReference(a.Type).FullName && MatchesPropertyContainerOptions(type, a.Options))))
                 {
                     yield return type;
                 }

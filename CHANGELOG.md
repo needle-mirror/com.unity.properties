@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.7.2] - 2022-01-17
+### Fixed
+* Fix `BadImageFormatException` when running Unity.Properties.CodeGen.
+
 ## [1.7.1] - 2021-08-05
 ### Fixed
 * `TypeConversion` primitive converters now perform a direct C# cast instead of clamping.
