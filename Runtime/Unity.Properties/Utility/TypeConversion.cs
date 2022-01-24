@@ -154,7 +154,10 @@ namespace Unity.Properties
 
                 if (underlyingType.IsEnum)
                 {
-                    underlyingType = Enum.GetUnderlyingType(underlyingType);
+                    var enumUnderlyingType = Enum.GetUnderlyingType(underlyingType);
+                    var value = System.Convert.ChangeType(source, enumUnderlyingType);
+                    destination = (TDestination) Enum.ToObject(underlyingType, value);
+                    return true;
                 }
                 
                 destination = (TDestination) System.Convert.ChangeType(source, underlyingType);

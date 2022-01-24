@@ -1,9 +1,13 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
-## [1.7.4] - 2022-01-24
+## [1.8.2] - 2022-01-24
 ### Fixed
 * Fix nullable enum types for Unity `2021.2` and up.
+
+## [1.8.0] - 2022-01-17
+### Changed
+* Update Unity to version '2020.3'.
 
 ## [1.7.2] - 2022-01-17
 ### Fixed
