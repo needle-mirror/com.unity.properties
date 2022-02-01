@@ -106,7 +106,7 @@ namespace Unity.Properties.CodeGen
             return reference;
         }
         
-#if !UNITY_DOTSPLAYER
+#if !UNITY_DOTSRUNTIME
         public void AddInitializeOnLoadMethodAttribute(ICustomAttributeProvider provider)
         {
             if (IsEditor)

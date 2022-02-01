@@ -14,7 +14,7 @@ namespace Unity.Properties.CodeGen.Blocks
         
         public static TypeDefinition Generate(Context context, IEnumerable<Tuple<TypeDefinition, TypeReference>> types)
         {
-#if !UNITY_DOTSPLAYER
+#if !UNITY_DOTSRUNTIME
 			var accessModifier = TypeAttributes.NotPublic;
 #else
 			var accessModifier = TypeAttributes.Public;
@@ -45,7 +45,7 @@ namespace Unity.Properties.CodeGen.Blocks
                 @returnType: context.ImportReference(typeof(void))
             );
                 
-#if !UNITY_DOTSPLAYER
+#if !UNITY_DOTSRUNTIME
             // We need our registration to be triggered as soon as the assemblies are loaded so we do so with the following
             // custom attributes in hybrid. DOTS Player will solve this elsewhere (in TypeRegGen)
             context.AddInitializeOnLoadMethodAttribute(method);

@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.8.3] - 2022-02-01
+### Fixed
+* Changed internal usage of the `UNITY_DOTSPLAYER` define to `UNITY_DOTSRUNTIME`.
+
 ## [1.8.2] - 2022-01-24
 ### Fixed
 * Fix nullable enum types for Unity `2021.2` and up.

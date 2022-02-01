@@ -93,7 +93,7 @@ namespace Unity.Properties.CodeGen
 
         static bool IsUnityEngineType(Context context, TypeReference type)
         {
-#if !UNITY_DOTSPLAYER
+#if !UNITY_DOTSRUNTIME
             while (true)
             {
                 var unityEngineObjectTypeReference = context.ImportReference(typeof(UnityEngine.Object));
@@ -209,7 +209,7 @@ namespace Unity.Properties.CodeGen
             var dontCreatePropertyAttributeTypeReference = context.ImportReference(typeof(DontCreatePropertyAttribute));
             var createPropertyAttributeTypeReference = context.ImportReference(typeof(CreatePropertyAttribute));
             var nonSerializedAttributeTypeReference = context.ImportReference(typeof(NonSerializedAttribute));
-#if !UNITY_DOTSPLAYER
+#if !UNITY_DOTSRUNTIME
             var serializeFieldAttributeTypeReference = context.ImportReference(typeof(UnityEngine.SerializeField));
 #endif
             for (;;)
@@ -249,7 +249,7 @@ namespace Unity.Properties.CodeGen
                             continue;
                         }
                         
-#if !UNITY_DOTSPLAYER
+#if !UNITY_DOTSRUNTIME
                         if (field.HasAttribute(serializeFieldAttributeTypeReference))
                         {
                             yield return field;
@@ -299,7 +299,7 @@ namespace Unity.Properties.CodeGen
                             continue;
                         }
 
-#if !UNITY_DOTSPLAYER
+#if !UNITY_DOTSRUNTIME
                         if (property.HasAttribute(serializeFieldAttributeTypeReference))
                         {
                             yield return property;

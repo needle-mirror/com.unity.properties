@@ -82,7 +82,9 @@ namespace Unity.Properties
     {
         static readonly ConversionRegistry s_GlobalConverters = ConversionRegistry.Create();
 
+#if !UNITY_DOTSRUNTIME
         internal static Func<string, (bool, UnityEngine.Object)> s_GlobalObjectIdConverter;
+#endif
 
         static TypeConversion()
         {
@@ -164,7 +166,7 @@ namespace Unity.Properties
                 return true;
             }
 
-#if !UNITY_DOTSPLAYER
+#if !UNITY_DOTSRUNTIME
             if (RuntimeTypeInfoCache<TDestination>.IsUnityObject)
             {
                 if (TryConvertToUnityEngineObject(ref source, out destination))
@@ -212,7 +214,7 @@ namespace Unity.Properties
             return TryConvert(ref source, out destination);
         }
 
-#if !UNITY_DOTSPLAYER
+#if !UNITY_DOTSRUNTIME
         static bool TryConvertToUnityEngineObject<TSource, TDestination>(ref TSource source, out TDestination destination)
         {
             if (!typeof(UnityEngine.Object).IsAssignableFrom(typeof(TDestination)))
@@ -792,7 +794,7 @@ namespace Unity.Properties
             
             static void RegisterVectorConverters()
             {
-#if !UNITY_DOTSPLAYER
+#if !UNITY_DOTSRUNTIME
                 TypeConversion.Register((UnityEngine.Vector2 v) => new UnityEngine.Vector2Int((int)v.x, (int)v.y));
                 TypeConversion.Register((UnityEngine.Vector3 v) => new UnityEngine.Vector3Int((int)v.x, (int)v.y, (int)v.z));
                 TypeConversion.Register((UnityEngine.Vector2Int v) => v);
