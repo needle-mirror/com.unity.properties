@@ -29,6 +29,14 @@ namespace Unity.Properties.Tests
 
         class TestProperty : Property<TestContainer, int>
         {
+            public TestProperty()
+            {
+                AddAttribute(new AttributeA { A = 1 });
+                AddAttribute(new AttributeB { B = 2 });
+                AddAttribute(new AttributeC { C = 3 });
+                AddAttribute(new AttributeA { A = 4 });
+            }
+            
             public override string Name => "test";
             public override bool IsReadOnly => false;
             public override int GetValue(ref TestContainer container) => throw new NotImplementedException();
@@ -38,11 +46,7 @@ namespace Unity.Properties.Tests
         [Test]
         public void CreatingAProperty_WithAttributes_AttributesCanBeQueried()
         {
-            var property = new TestProperty()
-                           .WithAttribute(new AttributeA {A = 1})
-                           .WithAttribute(new AttributeB {B = 2})
-                           .WithAttribute(new AttributeC {C = 3})
-                           .WithAttribute(new AttributeA {A = 4});
+            var property = new TestProperty();
 
             Assert.That(property.HasAttribute<AttributeA>(), Is.True);
             Assert.That(property.HasAttribute<AttributeB>(), Is.True);

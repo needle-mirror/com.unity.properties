@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Properties.Internal;
-using Unity.Properties.Reflection.Internal;
 
 namespace Unity.Properties.Reflection.Tests
 {
@@ -12,7 +11,7 @@ namespace Unity.Properties.Reflection.Tests
         {
             var propertyBag = new ReflectedPropertyBagProvider().CreatePropertyBag<List<int>>();
 
-            Assert.That(propertyBag.GetType(), Is.EqualTo(typeof(ListPropertyBag<List<int>, int>)));
+            Assert.That(propertyBag.GetType(), Is.EqualTo(typeof(ListPropertyBag<int>)));
         }
     }
 }

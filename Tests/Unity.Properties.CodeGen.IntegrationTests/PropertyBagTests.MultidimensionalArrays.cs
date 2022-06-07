@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
-using Unity.Properties.Internal;
 
 namespace Unity.Properties.CodeGen.IntegrationTests
 {
@@ -20,24 +18,26 @@ namespace Unity.Properties.CodeGen.IntegrationTests
 #pragma warning restore 649
 
     [TestFixture]
-    sealed partial class PropertyBagTests
+    sealed partial class SourceGeneratorsTestFixture
     {
         [Test]
         public void ClassWithMultidimensionalArray_HasPropertyBagGenerated()
         {
-            var propertyBag = PropertyBagStore.GetPropertyBag(typeof(ClassWithMultidimensionalArray)) as ContainerPropertyBag<ClassWithMultidimensionalArray>;
-            Assert.That(propertyBag, Is.Not.Null);
-            var container = new ClassWithMultidimensionalArray();
-            Assert.That(propertyBag.GetProperties(ref container).Count(), Is.EqualTo(0));
+            AssertPropertyBagIsCodeGenerated<ClassWithMultidimensionalArray>();
+            AssertPropertyCount<ClassWithMultidimensionalArray>(1);
+            AssertPropertyBagContainsProperty<ClassWithMultidimensionalArray, int[,]>("IntArrayField");
         }
-        
+
         [Test]
         public void ClassWithMultidimensionalGeneric_HasPropertyBagGenerated()
         {
-            var propertyBag = PropertyBagStore.GetPropertyBag(typeof(ClassWithMultidimensionalGeneric)) as ContainerPropertyBag<ClassWithMultidimensionalGeneric>;
-            Assert.That(propertyBag, Is.Not.Null);
-            var container = new ClassWithMultidimensionalGeneric();
-            Assert.That(propertyBag.GetProperties(ref container).Count(), Is.EqualTo(0));
+            AssertPropertyBagIsCodeGenerated<ClassWithMultidimensionalGeneric>();
+            AssertPropertyCount<ClassWithMultidimensionalGeneric>(2);
+            AssertPropertyBagContainsProperty<ClassWithMultidimensionalGeneric, Dictionary<int, int[,]>>("DictionaryWithMultidimensionalArray");
+            AssertPropertyBagContainsProperty<ClassWithMultidimensionalGeneric, Dictionary<int, List<int[,]>>>("DictionaryWithListOfMultidimensionalArray");
+            AssertPropertyBagIsADictionaryPropertyBag<Dictionary<int, int[,]>, int, int[,]>();
+            AssertPropertyBagIsADictionaryPropertyBag<Dictionary<int, List<int[,]>>, int, List<int[,]>>();
+            AssertPropertyBagIsAListPropertyBag<List<int[,]>, int[,]>();
         }
     }
 }

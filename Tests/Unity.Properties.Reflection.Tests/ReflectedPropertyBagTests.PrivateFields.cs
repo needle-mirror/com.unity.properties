@@ -1,5 +1,5 @@
 using NUnit.Framework;
-using Unity.Properties.Reflection.Internal;
+using Unity.Properties.Internal;
 
 namespace Unity.Properties.Reflection.Tests
 {

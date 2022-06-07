@@ -1,7 +1,8 @@
 using System;
 using NUnit.Framework;
-using Unity.Properties.Reflection.Internal;
+using Unity.Properties.Internal;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace Unity.Properties.Reflection.Tests
 {
@@ -27,33 +28,40 @@ namespace Unity.Properties.Reflection.Tests
             public static string PublicFieldWithSerializeFieldAndNonSerializedAttributesName => nameof(PublicFieldWithSerializeFieldAndNonSerializedAttributes);
             public static string PrivateFieldWithSerializeFieldAndNonSerializedAttributesName => nameof(PrivateFieldWithSerializeFieldAndNonSerializedAttributes);
 
+            [Preserve]
             public int PublicFieldWithNoAttributes;
+
+            [Preserve]
             int PrivateFieldWithNoAttributes;
+
+            [Preserve]
             public int PublicPropertyWithNoAttributes { get; set; }
+
+            [Preserve]
             int PrivatePropertyWithNoAttributes { get; set; }
-            
-            [CreateProperty] public int PublicFieldWithCreatePropertyAttribute;
-            [CreateProperty] int PrivateFieldWithCreatePropertyAttribute;
-            [CreateProperty] public int PublicPropertyWithCreatePropertyAttribute { get; set; }
-            [CreateProperty] int PrivatePropertyWithCreatePropertyAttribute { get; set; }
-            
-            [SerializeField] public int PublicFieldWithSerializeFieldAttribute;
-            [SerializeField] int PrivateFieldWithSerializeFieldAttribute;
-            [SerializeField] public int PublicPropertyWithSerializeFieldAttribute { get; set; }
-            [SerializeField] int PrivatePropertyWithSerializeFieldAttribute { get; set; }
-            
-            [CreateProperty, NonSerialized] public int PublicFieldWithCreatePropertyAndNonSerializedAttributes;
-            [CreateProperty, NonSerialized] int PrivateFieldWithCreatePropertyAndNonSerializedAttributes;
-            
-            [SerializeField, NonSerialized] public int PublicFieldWithSerializeFieldAndNonSerializedAttributes;
-            [SerializeField, NonSerialized] int PrivateFieldWithSerializeFieldAndNonSerializedAttributes;
+
+            [CreateProperty, Preserve] public int PublicFieldWithCreatePropertyAttribute;
+            [CreateProperty, Preserve] int PrivateFieldWithCreatePropertyAttribute;
+            [CreateProperty, Preserve] public int PublicPropertyWithCreatePropertyAttribute { get; set; }
+            [CreateProperty, Preserve] int PrivatePropertyWithCreatePropertyAttribute { get; set; }
+
+            [SerializeField, Preserve] public int PublicFieldWithSerializeFieldAttribute;
+            [SerializeField, Preserve] int PrivateFieldWithSerializeFieldAttribute;
+            [SerializeField, Preserve] public int PublicPropertyWithSerializeFieldAttribute { get; set; }
+            [SerializeField, Preserve] int PrivatePropertyWithSerializeFieldAttribute { get; set; }
+
+            [CreateProperty, NonSerialized, Preserve] public int PublicFieldWithCreatePropertyAndNonSerializedAttributes;
+            [CreateProperty, NonSerialized, Preserve] int PrivateFieldWithCreatePropertyAndNonSerializedAttributes;
+
+            [SerializeField, NonSerialized, Preserve] public int PublicFieldWithSerializeFieldAndNonSerializedAttributes;
+            [SerializeField, NonSerialized, Preserve] int PrivateFieldWithSerializeFieldAndNonSerializedAttributes;
         }
-        
+
         [Test]
         public void CreatePropertyBag_ClassWithMemberAttributes_PropertiesAreGeneratedCorrectly()
         {
             var propertyBag = new ReflectedPropertyBagProvider().CreatePropertyBag<ClassWithMemberAttributes>();
-            
+
             Assert.That(propertyBag, Is.Not.Null);
 
             Assert.That(propertyBag.HasProperty(ClassWithMemberAttributes.PublicFieldWithNoAttributesName), Is.True);

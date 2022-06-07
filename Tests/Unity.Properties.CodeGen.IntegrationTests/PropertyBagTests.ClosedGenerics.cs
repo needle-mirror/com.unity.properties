@@ -1,8 +1,7 @@
-﻿using Unity.Properties;
+﻿using JetBrains.Annotations;
+using Unity.Properties;
 using NUnit.Framework;
 using Unity.Properties.CodeGen.IntegrationTests;
-using Unity.Properties.Internal;
-using UnityEngine;
 
 [assembly: GeneratePropertyBagsForType(typeof(ClassWithGeneric<int>))]
 [assembly: GeneratePropertyBagsForType(typeof(ClassWithGeneric<NestedClass<float>>))]
@@ -16,14 +15,15 @@ namespace Unity.Properties.CodeGen.IntegrationTests
         public T Value;
     }
 
-    public class NestedClass<V>
+    [UsedImplicitly]
+    public class NestedClass<T>
     {
-        public V Value;
+        public T Value;
     }
 
     public class ClassWithGenericParameterAndGenericBase<T> : Foo<T, float>
     {
-        
+
     }
 
     [GeneratePropertyBag]
@@ -41,65 +41,55 @@ namespace Unity.Properties.CodeGen.IntegrationTests
     {
         public T0 Value0;
         public T1 Value1;
-        
-        [CreateProperty] public T0 Value0Property { get; set; } 
+
+        [CreateProperty] public T0 Value0Property { get; set; }
     }
-    
+
 #pragma warning restore 649
-    
+
     [TestFixture]
-    sealed partial class PropertyBagTests
+    sealed partial class SourceGeneratorsTestFixture
     {
         [Test]
         public void ClassWithGeneric_HasPropertyBagGenerated()
         {
-            Assert.That(PropertyBagStore.GetPropertyBag(typeof(ClassWithGeneric<int>)), Is.InstanceOf(typeof(ContainerPropertyBag<ClassWithGeneric<int>>)));
+            AssertPropertyBagIsCodeGenerated<ClassWithGeneric<int>>();
+            AssertPropertyBagContainsProperty<ClassWithGeneric<int>, int>("Value");
+            AssertPropertyCount<ClassWithGeneric<int>>(1);
         }
-        
+
         [Test]
         public void ClassWithGenericNestedGeneric_HasPropertyBagGenerated()
         {
-            Assert.That(PropertyBagStore.GetPropertyBag(typeof(ClassWithGeneric<NestedClass<float>>)), Is.InstanceOf(typeof(ContainerPropertyBag<ClassWithGeneric<NestedClass<float>>>)));
-            Assert.That(PropertyBagStore.GetPropertyBag(typeof(NestedClass<float>)), Is.InstanceOf(typeof(ContainerPropertyBag<NestedClass<float>>)));
+            AssertPropertyBagIsCodeGenerated<ClassWithGeneric<NestedClass<float>>>();
+            AssertPropertyBagContainsProperty<ClassWithGeneric<NestedClass<float>>, NestedClass<float>>("Value");
+            AssertPropertyCount<ClassWithGeneric<NestedClass<float>>>(1);
+
+            AssertPropertyBagIsCodeGenerated<NestedClass<float>>();
+            AssertPropertyBagContainsProperty<NestedClass<float>, float>("Value");
+            AssertPropertyCount<NestedClass<float>>(1);
         }
-        
+
         [Test]
         public void ClassWithSomeResolvedGenerics_HasPropertyBagGenerated()
         {
-            Assert.That(PropertyBagStore.GetPropertyBag(typeof(ClassWithGenericParameterAndGenericBase<int>)), Is.InstanceOf(typeof(ContainerPropertyBag<ClassWithGenericParameterAndGenericBase<int>>)));
-            
-            var container = new ClassWithGenericParameterAndGenericBase<int>
-            {
-                Value0 = 1, 
-                Value1 = 4.2f
-            };
-
-            PropertyContainer.Visit(ref container, new DebugVisitor()); 
+            AssertPropertyBagIsCodeGenerated<ClassWithGenericParameterAndGenericBase<int>>();
+            AssertPropertyBagContainsProperty<ClassWithGenericParameterAndGenericBase<int>, int>("Value0");
+            AssertPropertyBagContainsProperty<ClassWithGenericParameterAndGenericBase<int>, float>("Value1");
+            AssertPropertyBagContainsProperty<ClassWithGenericParameterAndGenericBase<int>, int>("Value0Property");
+            AssertPropertyCount<ClassWithGenericParameterAndGenericBase<int>>(3);
         }
-        
+
         [Test]
         public void ClassWithGenericBaseClass_HasPropertyBagGenerated()
         {
-            Assert.That(PropertyBagStore.GetPropertyBag(typeof(Baz)), Is.InstanceOf(typeof(ContainerPropertyBag<Baz>)));
-
-            var container = new Baz 
-            {
-                Root = 1,
-                Value = "Hello",
-                Value0 = 1.23f,
-                Value1 = 42,
-                Value0Property = 1.4f
-            };
-
-            PropertyContainer.Visit(ref container, new DebugVisitor()); 
-        }
-
-        class DebugVisitor : PropertyVisitor
-        {
-            protected override void VisitProperty<TContainer, TValue>(Property<TContainer, TValue> property, ref TContainer container, ref TValue value)
-            {
-                Debug.Log(property.Name + " = " + value.ToString() + " (" + typeof(TValue) + ")");
-            }
+            AssertPropertyBagIsCodeGenerated<Baz>();
+            AssertPropertyBagContainsProperty<Baz, float>("Root");
+            AssertPropertyBagContainsProperty<Baz, string>("Value");
+            AssertPropertyBagContainsProperty<Baz, float>("Value0");
+            AssertPropertyBagContainsProperty<Baz, int>("Value1");
+            AssertPropertyBagContainsProperty<Baz, float>("Value0Property");
+            AssertPropertyCount<Baz>(5);
         }
     }
 }

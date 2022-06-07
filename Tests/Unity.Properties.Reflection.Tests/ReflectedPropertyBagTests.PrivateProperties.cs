@@ -1,5 +1,6 @@
 using NUnit.Framework;
-using Unity.Properties.Reflection.Internal;
+using Unity.Properties.Internal;
+using UnityEngine.Scripting;
 
 namespace Unity.Properties.Reflection.Tests
 {
@@ -11,8 +12,11 @@ namespace Unity.Properties.Reflection.Tests
             public static string FloatPropertyName => nameof(FloatProperty);
             public static string NonMaskedPropertyName => nameof(NonMaskedProperty);
 
+            [Preserve]
             private int IntProperty { get; set; } = 42;
+            [Preserve]
             [CreateProperty] private float FloatProperty { get; set; } = 123.456f;
+            [Preserve]
             [CreateProperty] private int NonMaskedProperty { get; set; } = 1;
         }
 
@@ -21,16 +25,19 @@ namespace Unity.Properties.Reflection.Tests
             public static string BoolPropertyName => nameof(BoolProperty);
             public static string StringPropertyName => nameof(StringProperty);
 
+            [Preserve]
             private bool BoolProperty { get; set; } = true;
+            [Preserve]
             [CreateProperty] private string StringProperty { get; set; } = "Hello the World!";
+            [Preserve]
             [CreateProperty] private int NonMaskedProperty { get; set; } = 2;
         }
-        
+
         [Test]
         public void CreatePropertyBag_ClassWithPrivateProperties_PropertiesAreGenerated()
         {
             var propertyBag = new ReflectedPropertyBagProvider().CreatePropertyBag<ClassWithPrivateProperties>();
-            
+
             Assert.That(propertyBag, Is.Not.Null);
 
             Assert.That(propertyBag.HasProperty(ClassWithPrivateProperties.IntPropertyName), Is.False);
@@ -38,9 +45,9 @@ namespace Unity.Properties.Reflection.Tests
             Assert.That(propertyBag.HasProperty(ClassWithPrivateProperties.NonMaskedPropertyName), Is.True);
             Assert.That(propertyBag.HasProperty(DerivedClassWithPrivateProperties.BoolPropertyName), Is.False);
             Assert.That(propertyBag.HasProperty(DerivedClassWithPrivateProperties.StringPropertyName), Is.False);
-            
+
             var container = new ClassWithPrivateProperties();
-            
+
             Assert.That(propertyBag.GetPropertyValue(ref container, ClassWithPrivateProperties.FloatPropertyName), Is.EqualTo(123.456f));
             Assert.That(propertyBag.GetPropertyValue(ref container, ClassWithPrivateProperties.NonMaskedPropertyName), Is.EqualTo(1));
         }
@@ -49,7 +56,7 @@ namespace Unity.Properties.Reflection.Tests
         public void CreatePropertyBag_DerivedClassWithPrivateProperties_PropertiesAreGenerated()
         {
             var propertyBag = new ReflectedPropertyBagProvider().CreatePropertyBag<DerivedClassWithPrivateProperties>();
-            
+
             Assert.That(propertyBag, Is.Not.Null);
 
             Assert.That(propertyBag.HasProperty(ClassWithPrivateProperties.IntPropertyName), Is.False);
@@ -57,9 +64,9 @@ namespace Unity.Properties.Reflection.Tests
             Assert.That(propertyBag.HasProperty(ClassWithPrivateProperties.NonMaskedPropertyName), Is.True);
             Assert.That(propertyBag.HasProperty(DerivedClassWithPrivateProperties.BoolPropertyName), Is.False);
             Assert.That(propertyBag.HasProperty(DerivedClassWithPrivateProperties.StringPropertyName), Is.True);
-            
+
             var container = new DerivedClassWithPrivateProperties();
-            
+
             Assert.That(propertyBag.GetPropertyValue(ref container, ClassWithPrivateProperties.FloatPropertyName), Is.EqualTo(123.456f));
             Assert.That(propertyBag.GetPropertyValue(ref container, ClassWithPrivateProperties.NonMaskedPropertyName), Is.EqualTo(2));
             Assert.That(propertyBag.GetPropertyValue(ref container, DerivedClassWithPrivateProperties.StringPropertyName), Is.EqualTo("Hello the World!"));

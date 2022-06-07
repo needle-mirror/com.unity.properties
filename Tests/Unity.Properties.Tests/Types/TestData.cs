@@ -346,9 +346,9 @@ namespace Unity.Properties.Tests
         {
             public PropertyBag()
             {
-                Properties.PropertyBag.RegisterList<ClassWithArrays, int[], int>();
-                Properties.PropertyBag.RegisterList<ClassWithArrays, ClassWithPrimitives[], ClassWithPrimitives>();
-                Properties.PropertyBag.RegisterList<ClassWithArrays, StructWithPrimitives[], StructWithPrimitives>();
+                Properties.PropertyBag.RegisterArray<ClassWithArrays, int>();
+                Properties.PropertyBag.RegisterArray<ClassWithArrays, ClassWithPrimitives>();
+                Properties.PropertyBag.RegisterArray<ClassWithArrays, StructWithPrimitives>();
                 
                 AddProperty(new DelegateProperty<ClassWithArrays, int[]>(
                                 name: nameof(Int32Array), 
@@ -379,11 +379,11 @@ namespace Unity.Properties.Tests
         {
             public PropertyBag()
             {
-                Properties.PropertyBag.RegisterList<ClassWithLists, List<int>, int>();
-                Properties.PropertyBag.RegisterList<ClassWithLists, List<ClassWithPrimitives>, ClassWithPrimitives>();
-                Properties.PropertyBag.RegisterList<ClassWithLists, List<StructWithPrimitives>, StructWithPrimitives>();
-                Properties.PropertyBag.RegisterList<ClassWithLists, List<List<int>>, List<int>>();
-                Properties.PropertyBag.RegisterList<List<List<int>>, List<int>, int>();
+                Properties.PropertyBag.RegisterList<ClassWithLists, int>();
+                Properties.PropertyBag.RegisterList<ClassWithLists, ClassWithPrimitives>();
+                Properties.PropertyBag.RegisterList<ClassWithLists, StructWithPrimitives>();
+                Properties.PropertyBag.RegisterList<ClassWithLists, List<int>>();
+                Properties.PropertyBag.RegisterList<List<List<int>>, int>();
                 
                 AddProperty(new DelegateProperty<ClassWithLists, List<int>>(
                                 name: nameof(Int32List), 
@@ -416,7 +416,7 @@ namespace Unity.Properties.Tests
         {
             public PropertyBag()
             {
-                Properties.PropertyBag.RegisterDictionary<ClassWithDictionaries, Dictionary<string, int>, string, int>();
+                Properties.PropertyBag.RegisterIDictionary<ClassWithDictionaries, Dictionary<string, int>, string, int>();
 
                 AddProperty(new DelegateProperty<ClassWithDictionaries, Dictionary<string, int>>(
                                 name: nameof(DictionaryStringInt32),
@@ -599,5 +599,12 @@ namespace Unity.Properties.Tests
                                 setter: (ref ClassWithUnityObjects c, ScriptableObjectWithPrimitives v) => c.ScriptableObjectValue = v));
             }
         }
+    }
+    
+    [GeneratePropertyBag]
+    class ClassWithHashSets
+    {
+        public HashSet<int> Int32HashSet;
+        public HashSet<ClassWithPrimitives> ClassWithPrimitivesHashSet;
     }
 }

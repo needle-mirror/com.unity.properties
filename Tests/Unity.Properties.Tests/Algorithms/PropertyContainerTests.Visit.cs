@@ -1,5 +1,4 @@
 using System.Text;
-using System.Threading;
 using NUnit.Framework;
 
 namespace Unity.Properties.Tests
@@ -23,7 +22,7 @@ namespace Unity.Properties.Tests
             protected override void VisitProperty<TContainer, TValue>(Property<TContainer, TValue> property, ref TContainer container, ref TValue value)
             {
                 m_Builder.Append(property.Name + ".");
-                property.Visit(this, ref value);
+                PropertyContainer.Accept(this, ref value);
             }
         }
         
@@ -47,7 +46,7 @@ namespace Unity.Properties.Tests
                 InterfaceValue = new ClassDerivedA1()
             };
 
-            PropertyContainer.Visit(ref container, visitor, new PropertyPath(path));
+            PropertyContainer.Accept(visitor, ref container, new PropertyPath(path));
             visitor.Matches(expected);
             visitor.Reset();
         }

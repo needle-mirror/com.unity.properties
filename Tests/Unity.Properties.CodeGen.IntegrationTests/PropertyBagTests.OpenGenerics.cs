@@ -1,8 +1,8 @@
 using NUnit.Framework;
 using Unity.Properties;
 using Unity.Properties.CodeGen.IntegrationTests;
-using Unity.Properties.Internal;
 
+[assembly: GeneratePropertyBagsForType(typeof(ClassWithOpenGeneric<>))]
 [assembly: GeneratePropertyBagsForTypesQualifiedWith(typeof(IGeneratePropertyBag))]
 
 namespace Unity.Properties.CodeGen.IntegrationTests
@@ -16,9 +16,9 @@ namespace Unity.Properties.CodeGen.IntegrationTests
 
     interface IGeneratePropertyBag
     {
-        
-    } 
-    
+
+    }
+
     public class ClassWithOpenGenericInterface<T> : IGeneratePropertyBag
     {
         public T Value;
@@ -26,18 +26,18 @@ namespace Unity.Properties.CodeGen.IntegrationTests
 #pragma warning restore 649
 
     [TestFixture]
-    sealed partial class PropertyBagTests
+    sealed partial class SourceGeneratorsTestFixture
     {
         [Test]
         public void ClassWithOpenGeneric_DoesNotHavePropertyBagGenerated()
         {
-            Assert.That(PropertyBagStore.GetPropertyBag(typeof(ClassWithOpenGeneric<>)), Is.Null);
+            AssertPropertyBagDoesNotExist(typeof(ClassWithOpenGeneric<>));
         }
-        
+
         [Test]
         public void ClassWithOpenGenericInterface_DoesNotHavePropertyBagGenerated()
         {
-            Assert.That(PropertyBagStore.GetPropertyBag(typeof(ClassWithOpenGenericInterface<>)), Is.Null);
+            AssertPropertyBagDoesNotExist(typeof(ClassWithOpenGenericInterface<>));
         }
     }
 }

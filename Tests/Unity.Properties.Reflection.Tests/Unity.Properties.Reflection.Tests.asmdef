@@ -1,14 +1,12 @@
 {
     "name": "Unity.Properties.Reflection.Tests",
+    "rootNamespace": "",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.Properties.Reflection",
         "Unity.Properties"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
@@ -19,6 +17,12 @@
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "2022.1.0b1",
+            "define": "ENABLE_IL2CPP_REFLECTION"
+        }
+    ],
     "noEngineReferences": false
 }

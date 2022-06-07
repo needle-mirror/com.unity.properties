@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using Unity.Properties.Reflection.Internal;
+using Unity.Properties.Internal;
+using UnityEngine.Scripting;
+
 #pragma warning disable 649
 
 namespace Unity.Properties.Reflection.Tests
@@ -11,12 +13,15 @@ namespace Unity.Properties.Reflection.Tests
     {
         class ClassWithMultidimensionalArray
         {
+            [Preserve]
             public int[,] IntArrayField;
         }
 
         class ClassWithMultidimensionalGeneric
         {
+            [Preserve]
             public Dictionary<int, int[,]> DictionaryWithMultidimensionalArray;
+            [Preserve]
             public Dictionary<int, List<int[,]>> DictionaryWithListOfMultidimensionalArray;
         }
 
@@ -31,7 +36,7 @@ namespace Unity.Properties.Reflection.Tests
         {
             var propertyBag = new ReflectedPropertyBagProvider().CreatePropertyBag<ClassWithMultidimensionalArray>();
             var container = new ClassWithMultidimensionalArray();
-            Assert.That(propertyBag.GetProperties(ref container).Count(), Is.EqualTo(0));
+            Assert.That(propertyBag.GetProperties(ref container).Count(), Is.EqualTo(1));
         }
 
         [Test]
@@ -39,7 +44,7 @@ namespace Unity.Properties.Reflection.Tests
         {
             var propertyBag = new ReflectedPropertyBagProvider().CreatePropertyBag<ClassWithMultidimensionalGeneric>();
             var container = new ClassWithMultidimensionalGeneric();
-            Assert.That(propertyBag.GetProperties(ref container).Count(), Is.EqualTo(0));
+            Assert.That(propertyBag.GetProperties(ref container).Count(), Is.EqualTo(2));
         }
     }
 }

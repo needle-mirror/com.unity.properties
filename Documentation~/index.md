@@ -2,7 +2,7 @@
 
 The `com.unity.properties` package offers a generic API to visit .Net objects at runtime. This API is found in the `Unity.Properties` assembly (referenced automatically for convenience), under the `Unity.Properties` namespace.
 
-One can build various functionalities on top of the visitor pattern, including serialization, data migration, deep data comparisons, etc.
+One can build various functionalities on top of the visitor pattern, including serialization, data migration, deep data comparisons, data binding, etc.
 
 This manual targets developers either creating data types compatible with the _Properties API_, or creating new property visitors and adapters for domain-specific use cases.
 
@@ -12,15 +12,15 @@ This manual targets developers either creating data types compatible with the _P
 
 **Property Attributes** are standard .Net `System.Attribute` associated with a given property.
 
-**Property Bags** are collections of properties for a given .Net object type. Property bags are created lazily through reflection (in the Editor), or as a build post-processing step from types instrumented with the `Unity.Properties.GeneratePropertyBagAttribute` (in Player builds).
+**Property Bags** are collections of properties for a given .Net object type. Property bags are created lazily through reflection (in the Editor), or using a source generator when types are instrumented with the `Unity.Properties.GeneratePropertyBagAttribute` and the assembly is instrumented with the `Unity.Properties.GeneratePropertyBagsForAssemblyAttribute`.
 
 **Property Containers** are any .Net objects whose `System.Type` is associated with a property bag.
 
 **Property Paths** are constructed from strings, and can be used to resolve a specific property instance from a root object. For example, the path `"foo.bar.baz[12]"` resolves the 13th element of the `baz` list container found in the `bar` container, which is itself found in the `foo` container. You can create and manipulate property paths using the `Unity.Properties.PropertyPath` class.
 
-**Property Visitors** are the algorithms you build on top of the Properties API. Use the `Unity.Properties.PropertyVisitor` base class to create your own visitors.
+**Property Visitors** are the algorithms you build on top of the Properties API. Either use the `Unity.Properties.PropertyVisitor` base class to create your own visitors or implement the `IPropertyBagVisitor` and `IPropertyVisitor` interfaces.
 
-**Visitor Adapters** can be used to specialize visitors for given container or value types. Adapters all implement the `Unity.Properties.IPropertyVisitorAdapter` interface. Adapters are optional, but highly recommended, and as such they are supported by default when using the `Unity.Properties.PropertyVisitor` base class.
+**Visitor Adapters** can be used to specialize visitors for given container or value types. Adapters all implement the `Unity.Properties.IPropertyVisitorAdapter` interface. Adapters are optional, but highly recommended when using the `Unity.Properties.PropertyVisitor` base class.
 
 # Getting Started
 
@@ -48,7 +48,7 @@ namespace Unity.Properties.Samples
             Profiler.EndSample();
 
             Profiler.BeginSample("PropertyTest.Visit");
-            PropertyContainer.Visit(ref m_Container, m_Visitor);
+            PropertyContainer.Accept(m_Visitor, ref m_Container);
             Profiler.EndSample();
             
             ++m_FrameNumber;
@@ -86,14 +86,13 @@ namespace Unity.Properties.Samples
             AddAdapter(m_IntAdapter);
         }
 
-        class IntAdapter : Adapters.IVisit<int>
+        class IntAdapter : IVisitPropertyAdapter<int>
         {
             public int lastValue;
-            
-            public VisitStatus Visit<TContainer>(Property<TContainer, int> property, ref TContainer container, ref int value)
+
+            public void Visit<TContainer>(in VisitContext<TContainer, int> context, ref TContainer container, ref int value)
             {
                 lastValue = value;
-                return VisitStatus.Stop;
             }
         }
     }
@@ -108,21 +107,17 @@ This sample doesn't perform any useful work: it prints the `m_Container.X` value
 4. How to visit property containers using your custom visitor using `PropertyContainer.Visit`
 5. How to use the `[CreateProperty]` attribute to expose a .Net property
 
-Calling `PropertyContainer.Visit` is the most common way to use the _Properties API_.
+Calling `PropertyContainer.Accept` is the most common way to use the _Properties API_.
 
 # Performance Considerations
 
 ## Property Paths
 
-`Unity.Properties.PropertyPath` is a class, and currently allocates during construction. Avoid creating these objects in hot code paths (like the `MonoBehaviour.Update` method). Instead, create and cache them during initialization routines.
+`Unity.Properties.PropertyPath` is an immutable struct type. When constructing a property path from a `string`, it may allocate to extract the sub-string for each part. It will also allocate an array if the path has more than four parts. Avoid creating long property paths objects in hot code paths (like the `MonoBehaviour.Update` method). Instead, create and cache them during initialization routines.
 
 ## Reflected Property Bags (Editor)
 
 Property bags and strongly-typed properties are created using .Net reflection in the Editor, which can be quite slow the first time a property bag is requested for a given container type.
-
-To mitigate this issue, you can explicitly visit containers of a given type during initialization routines. This will _pre-warm_ the internal property bag cache.
-
-> Note: this is not ideal. We'll work out a way to make this easier in a future release.
 
 ## Reflected Field Properties on .Net Standard (Editor)
 
@@ -132,3 +127,6 @@ We're looking at ways to optimize this, but meanwhile you can manually wrap fiel
 
 This solution works on all .Net runtimes, AOT platforms, and where reflection may not be available. It also forces you to encapsulate fields, which is not a bad thing...
 
+## Source Generator (Editor)
+
+Property bags can be code generated during the compilation. This results in more performant property bags, which can avoid reflection in many cases, but can result in longer compilation times. To enable this for an assembly, the assembly must be tagged with `Unity.Properties.GeneratePropertyBagsForAssemblyAttribute` and individual types must be tagged with `Unity.Properties.GeneratePropertyBagAttribute`. 

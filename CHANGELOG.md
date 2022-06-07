@@ -1,6 +1,82 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [2.0.0] - 2022-02-09
+This new major version focuses on consistency and extensibility. As such, all the public APIs has been reviewed and refactored to make them easier to understand and use and harder to misuse. We are also exposing a lot of the internals so that users can create low-level visitors.
+
+This release also marks a change in how we generate property bags for IL2CPP platforms. Previously, we were using IL Post Processors to generate property bags; we have now switched to using Source Generators. In order to ensure that the impact on compilation and domain reload are as minimal as possible, code generation now requires an assembly to be tagged with the `GeneratePropertyBagsForAssembly` attribute.
+
+### Changed
+* Updated minimum Unity version to `2021.3`.
+* Updated `com.unity.test-framework.performance` to version `2.8.0`.
+* Removed dependency on `com.unity.nuget.mono-cecil`.
+* Changed the property bag generation from IL Post Processors to Source Generators. Assemblies now have to opt-in code generation by tagging the assembly with the `[GeneraPropertyBagsForAssembly]` attribute.
+
+* ***Breaking change*** `PropertyBag` and `Property` have been refactored for consistency and to provide more extensibility.
+  * `IPropertyBag<T>.GetProperties` now returns a `PropertyCollection<T>` instead of an `IEnumerable<IProperty<T>>`. The `PropertyCollection<T>` struct can be used to enumerate properties with no allocations in common cases.
+  * Added a `IPropertyBag<T>.GetProperties` overload that does not require an instance. This overload can only support cached properties. 
+  * Added `PropertyBag.GetPropertyBag(Type)` and `PropertyBag.GetPropertyBag<T>()` API methods.
+  * Added a `PropertyBag.Exists` method for checking if a property bag exists for a given type.
+  * Added a `PropertyBag.CreateInstance` method which allows type construction through an explicit delegate, property bag implementation or activator.
+  * `IProperty<T>.TrySetValue` has been renamed to `IProperty<T>.SetValue`.
+  * `IProperty.Visit<TValue>(PropertyVisitor, TValue)` has been removed. Use `PropertyContainer.Accept(IPropertyBagVisitor, TContainer)` instead.
+
+* ***Breaking change*** Visitors have been refactored for consistency and to provide more extensibility.
+  * Added all visitor interfaces to the public API (`IPropertyBagVisitor`, `IPropertyVisitor` etc). These can be used to write lower level and more specialized visitors.
+  * Added a `PropertyBag.AccepWithSpecializedVisitor` helper method to dispatch to the correct visitation overload.
+  * Visitation adapters (`IExclude` and `IVisit`) now pass a context object (respectively `ExcludeContext` and `VisitContext`) instead of the `IProperty`.
+  * `Unity.Properties.VisitStatus` has been removed. Visitation adapters now requires an explicit call to `ContinueVisitation` (equivalent of `VisitStatus.Unhandled`) or `ContinueVisitationWithoutAdapters` (equivalent of `VisitStatus.Handled`) in order continue visitation.
+
+* ***Breaking change*** The `PropertyContainer` has been refactored to increase consistency and user-friendliness.
+  * `PropertyContainer.Visit` has been renamed to `PropertyContainer.Accept` and the parameter order has changed.
+  * Added a `PropertyContainer.TryAccept` overload taking a `PropertyPath`.
+  * Added a `PropertyContainer.IsPathValid` overload taking a `string`.
+  * Added a `VisitParameters` parameter to all `PropertyContainer.Accept` overloads.
+  * `PropertyContainer.GetProperty(ref object, PropertyPath)` and `PropertyContainer.TryGetProperty(ref object, PropertyPath)` have been removed. The generic overload should now be used.
+  * `PropertyContainer.GetValue<T>(ref object, string)`, `PropertyContainer.GetValue<T>(ref object, PropertyPath)`, `PropertyContainer.TryGetValue<T>(ref object, string, out T)` and `PropertyContainer.TryGetValue<T>(ref object, PropertyPath, out T)` have been removed. The generic overload should now be used.
+  * `PropertyContainer.SetValue<T>(ref object, string)`, `PropertyContainer.SetValue<T>(ref object, PropertyPath, T)`, `PropertyContainer.TrySetValue<T>(ref object, string, T)` and `PropertyContainer.TrySetValue<T>(ref object, PropertyPath, T)` have been removed. The generic overload should now be used.
+  * `PropertyContainer.IsPathValid(ref object, PropertyPath)` has been removed. The generic overload should now be used.
+  * Fixed `PropertyContainer.IsPathValid` throwing an exception when a `null` value is visited on the given path.
+  * `VisitExceptionType` has been renamed to `VisitExceptionKind`
+  * `VisitErrorCode` has been renamed to `VisitReturnCode`.
+
+* ***Breaking change*** `TypeConversion` has been refactored to avoid stack overflows when trying to convert very large structs.
+  * `TypeConversion.Convert` and `TypeConversion.TryConvert` methods must now pass the source parameter as a `ref`.
+  * `TypeConversion.ConvertDelegate` has been renamed to `TypeConversion.TypeConverter` now passes the source parameters by `ref`.
+  * `TypeConversion` primitive converters now perform a direct C# cast instead of clamping.
+
+* ***Breaking change*** `PropertyPath` was heavily refactored and is now an immutable struct.
+  * `PropertyPath.PartsCount` has been renamed to `PropertyPath.Length`.
+  * `PropertyPath.Empty` has been renamed to `PropertyPath.IsEmpty`.
+  * `PropertyPath.PopPart` has been renamed to `PropertyPath.Pop` and was changed from an instance method to a static method.
+  * `PropertyPath.AppendPath` overloads has been renamed to `PropertyPath.Combine` and were changed from instance to static methods.
+  * `PropertyPath.AppendPart`, `PropertyPath.AppendName`, `PropertyPath.AppendIndex`, `PropertyPath.AppendKey` and `PropertyPath.AppendProperty` were changed from instance to static methods.
+  * `PropertyPath.Part` has been renamed to `PropertyPathPart`.
+  * `PropertyPath.PartType` has been renamed to `PropertyPathPartKind`.
+
+* ***Breaking change*** `TypeConstruction` has been merged into `Unity.Properties.TypeUtility` and is now partly available at runtime.
+  * `TypeConstruction.UnsetExplicitConstructionMethod` and `TypeConstruction.TryUnsetExplicitConstructionMethod` has been removed.
+  * `GetAllConstructableTypes` has been removed. It is now available through the `com.unity.properties.ui` package.
+  * `CanBeConstructedFromDerivedType` has been removed. It is now available through the `com.unity.properties.ui` package.
+  * Fixed type conversion issues for `Nullable` types.
+
+* ***Breaking change*** `TypeUtility` has been moved from `Unity.Properties.Editor` to `Unity.Properties` and is now available at runtime.
+* ***Breaking change*** The `GeneratePropertyBagsInEditorAttribute` has been removed.
+
+* ***Breaking change*** The `AOT` helpers have been removed in Unity 2022.1 and newer versions.
+
+### Added
+ 
+* Added a `PathVisitor` base class allowing to run the visitor at a specific `PropertyPath`.
+* Added a `ConcreteTypeVisitor` base class allowing to receive a strongly-typed callback for a given container instance.
+* Added a `TypeTraits` utility class.
+
+### Removed
+* Removed the global conversion between `Vector2` and `vector2Int`.
+* Removed the global conversion between `Vector3` and `vector3Int`.
+* Removed the `AnimationCurve` and `KeyFrame` types from the default property bags.
+* Removed internal usage of the `UNITY_DOTSRUNTIME` define.
+
 ## [1.8.3] - 2022-02-01
 ### Fixed
 * Changed internal usage of the `UNITY_DOTSPLAYER` define to `UNITY_DOTSRUNTIME`.
@@ -225,4 +301,3 @@ All notable changes to this package will be documented in this file.
 
 ### Changed
 * Complete refactor of the Properties package.
-

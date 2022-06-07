@@ -16,6 +16,12 @@
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "2022.1.0b1",
+            "define": "ENABLE_IL2CPP_REFLECTION"
+        }
+    ],
     "noEngineReferences": false
 }

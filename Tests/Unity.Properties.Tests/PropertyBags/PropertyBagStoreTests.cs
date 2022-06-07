@@ -7,14 +7,41 @@ namespace Unity.Properties.Tests
     {
         struct Foo
         {
-            
+
         }
 
         [Test]
-        [TestRequires_ENABLE_IL2CPP("This test is to ensure reflected bags are disabled on IL2CPP platforms.")]
         public void GetPropertyBag_WithUnregisteredType_ReturnsNull()
         {
-            Assert.That(Internal.PropertyBagStore.GetPropertyBag<Foo>(), Is.Null);
+            Assert.That(PropertyBag.Exists<Foo>(), Is.False);
+        }
+        
+        struct MyValue
+        {
+            public float value;
+        }
+
+        class MyClass
+        {
+            public float value;
+        }
+        
+        [Test]
+        public void TryGetPropertyBagForValue_WhenValueIsAValueType_DoesNotAllocate()
+        {
+            GCAllocTest.Method(() =>
+                {
+                    var valueType = new MyValue();
+                    PropertyBag.TryGetPropertyBagForValue(ref valueType, out _);
+                    
+                    var classType = new MyClass();
+                    PropertyBag.TryGetPropertyBagForValue(ref classType, out _);
+                })
+                // Necessary as the property bags will be generated the first time this is called.
+                .Warmup()
+                // 1 for the creation of an instance of MyClass.
+                .ExpectedCount(1)
+                .Run();
         }
     }
 }

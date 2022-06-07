@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace Unity.Properties.Reflection.Tests
 {
-    [TestFixture]
+    [TestFixture, TestRequires_IL2CPP_REFLECTION]
     class PropertyVisitorTests
     {
         class Visitor : PropertyVisitor
@@ -41,7 +41,7 @@ namespace Unity.Properties.Reflection.Tests
             
             var visitor = new Visitor();
             
-            PropertyContainer.Visit(ref container, visitor);
+            PropertyContainer.Accept(visitor, ref container);
             
             Assert.That(visitor.Count, Is.EqualTo(27));
         }
