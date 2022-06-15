@@ -185,11 +185,19 @@ namespace Unity.Properties.Tests
             Assert.That(TypeConversion.TryConvert(ref h, out texture), Is.True);
             Assert.That(texture, Is.EqualTo(tex));
         }
-        
+
         [Test]
         public void Conversion_FromToUnityObject_DoesNotThrowStackOverflow()
         {
             var texture = new Texture2D(256, 256);
+            Assert.That(TypeConversion.TryConvert(ref texture, out UnityEngine.Object obj), Is.True);
+            Assert.That(obj, Is.EqualTo(texture));
+        }
+        
+        [Test]
+        public void ConversionFromObject_FromToUnityObject_DoesNotThrowStackOverflow()
+        {
+            object texture = new Texture2D(256, 256);
             Assert.That(TypeConversion.TryConvert(ref texture, out UnityEngine.Object obj), Is.True);
             Assert.That(obj, Is.EqualTo(texture));
         }

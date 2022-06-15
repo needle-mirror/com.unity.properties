@@ -1,0 +1,21 @@
+apiRules:
+    - exclude:
+        uidRegex: Tests$
+        type: Namespace
+    - exclude:
+        uidRegex: SourceGenerator$
+        type: Namespace
+    - exclude:
+        uidRegex: $Blah
+        type: Namespace
+    - exclude:
+          uidRegex: ^Global Namespace.*
+          type: Namespace
+    - exclude:
+          hasAttribute:
+              uid: System.ObsoleteAttribute
+          type: Member
+    - exclude:
+          hasAttribute:
+              uid: System.ObsoleteAttribute
+          type: Type

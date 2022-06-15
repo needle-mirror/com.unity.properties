@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
-## [2.0.0] - 2022-02-09
+## [2.0.0] - 2022-06-14
 This new major version focuses on consistency and extensibility. As such, all the public APIs has been reviewed and refactored to make them easier to understand and use and harder to misuse. We are also exposing a lot of the internals so that users can create low-level visitors.
 
 This release also marks a change in how we generate property bags for IL2CPP platforms. Previously, we were using IL Post Processors to generate property bags; we have now switched to using Source Generators. In order to ensure that the impact on compilation and domain reload are as minimal as possible, code generation now requires an assembly to be tagged with the `GeneratePropertyBagsForAssembly` attribute.
@@ -76,6 +76,9 @@ This release also marks a change in how we generate property bags for IL2CPP pla
 * Removed the global conversion between `Vector3` and `vector3Int`.
 * Removed the `AnimationCurve` and `KeyFrame` types from the default property bags.
 * Removed internal usage of the `UNITY_DOTSRUNTIME` define.
+
+### Fixed
+* Fixed an issue where converting from `object` to a `UnityEngine.Object` would cause a stack overflow.
 
 ## [1.8.3] - 2022-02-01
 ### Fixed
