@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [2.1.0] - 2022-08-12
+
+### Fixed
+* Moved the `!USE_PROPERTIES_MODULES` define constraint from the assembly to individual files.
+
 ## [2.0.0] - 2022-06-14
 This new major version focuses on consistency and extensibility. As such, all the public APIs has been reviewed and refactored to make them easier to understand and use and harder to misuse. We are also exposing a lot of the internals so that users can create low-level visitors.
 
