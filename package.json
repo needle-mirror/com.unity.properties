@@ -1,7 +1,7 @@
 {
   "name": "com.unity.properties",
   "displayName": "Properties",
-  "version": "2.1.0-exp.1",
+  "version": "2.1.0-exp.2",
   "unity": "2021.3",
   "unityRelease": "0f1",
   "description": "Use Unity's Properties to instrument types and create visitation algorithms.",
@@ -13,11 +13,11 @@
     "com.unity.test-framework.performance": "2.8.0-preview"
   },
   "upmCi": {
-    "footprint": "335f4e44632f81cf11daff09a5b167376199fdcf"
+    "footprint": "87f0a008b92f87124bbee0e100a504ddea0db403"
   },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.properties.git",
     "type": "git",
-    "revision": "0cb51a457cb2277c352fb6146694f7ef7a253923"
+    "revision": "05f9149778d79b096fdaea1a6e4c4ffcf6d9e684"
   }
 }

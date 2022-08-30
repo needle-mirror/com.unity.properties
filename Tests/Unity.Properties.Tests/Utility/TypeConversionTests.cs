@@ -201,5 +201,12 @@ namespace Unity.Properties.Tests
             Assert.That(TypeConversion.TryConvert(ref texture, out UnityEngine.Object obj), Is.True);
             Assert.That(obj, Is.EqualTo(texture));
         }
+        
+        [Test]
+        public void ConversionFromMatrix4x4ToTexture2D_DoesNotThrowStackOverflow()
+        {
+            var src = new Matrix4x4();
+            Assert.That(TypeConversion.TryConvert(ref src, out Texture2D _), Is.False);
+        }
     }
 }
