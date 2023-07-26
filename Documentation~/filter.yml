@@ -3,6 +3,9 @@ apiRules:
         uidRegex: Tests$
         type: Namespace
     - exclude:
+        uidRegex: Blah.A.B$
+        type: Namespace
+    - exclude:
         uidRegex: SourceGenerator$
         type: Namespace
     - exclude:
