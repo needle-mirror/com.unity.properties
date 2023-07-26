@@ -1,4 +1,5 @@
-﻿using Blah.A.B;
+﻿using System.ComponentModel;
+using Blah.A.B;
 using NUnit.Framework;
 using Unity.Properties;
 using UnityEngine.Internal;
@@ -9,19 +10,23 @@ namespace Blah
     {
         /// <undoc/>
         [ExcludeFromDocs]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public class Test
         {
             /// <undoc/>
             [ExcludeFromDocs]
+            [EditorBrowsable(EditorBrowsableState.Never)]
             public class Foo
             {
                 /// <undoc/>
                 [ExcludeFromDocs]
+                [EditorBrowsable(EditorBrowsableState.Never)]
                 public class Bar
                 {
                     /// <undoc/>
                     [GeneratePropertyBag]
                     [ExcludeFromDocs]
+                    [EditorBrowsable(EditorBrowsableState.Never)]
                     public class ClassWithNestedNamespacesAndTypes
                     {
                     }
