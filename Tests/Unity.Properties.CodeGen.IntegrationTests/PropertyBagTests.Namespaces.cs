@@ -1,21 +1,29 @@
 ﻿using Blah.A.B;
 using NUnit.Framework;
 using Unity.Properties;
+using UnityEngine.Internal;
 
 namespace Blah
 {
     namespace A.B
     {
+        /// <undoc/>
+        [ExcludeFromDocs]
         public class Test
         {
+            /// <undoc/>
+            [ExcludeFromDocs]
             public class Foo
             {
+                /// <undoc/>
+                [ExcludeFromDocs]
                 public class Bar
                 {
+                    /// <undoc/>
                     [GeneratePropertyBag]
+                    [ExcludeFromDocs]
                     public class ClassWithNestedNamespacesAndTypes
                     {
-
                     }
                 }
             }

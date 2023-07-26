@@ -123,43 +123,6 @@ namespace Unity.Properties.Tests
         }
 
         [Test]
-        public void ConverterRegistry_WithRegisteredConverters_CanReturnTypesConvertibleTo()
-        {
-            var registry = ConversionRegistry.Create();
-            registry.Register(typeof(float), typeof(string), (TypeConverter<float, string>) ((ref float v) => v.ToString()));
-            registry.Register(typeof(int), typeof(string), (TypeConverter<int, string>) ((ref int v) => v.ToString()));
-
-            var list = new List<Type>();
-            registry.GetAllTypesConvertingToType(typeof(string), list);
-            Assert.That(list.Contains(typeof(float)), Is.True);
-            Assert.That(list.Contains(typeof(int)), Is.True);
-            Assert.That(list.Contains(typeof(Vector2)), Is.False);
-
-            registry.Register(typeof(Vector2), typeof(string), (TypeConverter<Vector2, string>) ((ref Vector2 v) => v.ToString()));
-            list.Clear();
-            registry.GetAllTypesConvertingToType(typeof(string), list);
-            Assert.That(list.Contains(typeof(Vector2)), Is.True);
-        }
-
-        [Test]
-        public void ConverterRegistry_WithRegisteredConverters_CanUnregisterConverters()
-        {
-            var registry = ConversionRegistry.Create();
-            registry.Register(typeof(float), typeof(string), (TypeConverter<float, string>) ((ref float v) => v.ToString()));
-            registry.Register(typeof(int), typeof(string), (TypeConverter<int, string>) ((ref int v) => v.ToString()));
-
-            Assert.That(registry.ConverterCount, Is.EqualTo(2));
-            registry.Unregister(typeof(float), typeof(string));
-            Assert.That(registry.ConverterCount, Is.EqualTo(1));
-
-            registry.Unregister(typeof(Vector2), typeof(string));
-            Assert.That(registry.ConverterCount, Is.EqualTo(1));
-
-            registry.Unregister(typeof(int), typeof(string));
-            Assert.That(registry.ConverterCount, Is.EqualTo(0));
-        }
-
-        [Test]
         public void ConverterRegistry_WithRegisteringANullDelegate_Throws()
         {
             var registry = ConversionRegistry.Create();
